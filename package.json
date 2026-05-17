@@ -1,0 +1,12 @@
+{
+  "name": "pi-agent-orchestrator",
+  "version": "0.1.0",
+  "description": "Multi-agent orchestration extension for Pi. Spawn specialized sub-agents with isolated context windows, custom prompts, and targeted skills.",
+  "keywords": ["pi-package"],
+  "author": "",
+  "license": "MIT",
+  "pi": {
+    "extensions": ["./extensions"],
+    "skills": ["./skills"]
+  }
+}
