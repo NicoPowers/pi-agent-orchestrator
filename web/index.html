@@ -43,7 +43,7 @@
   main {
     padding: 1.5rem;
     display: grid;
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 320px 1fr;
     gap: 1.5rem;
     max-width: 1600px;
     margin: 0 auto;
@@ -65,7 +65,14 @@
     letter-spacing: 0.08em;
     color: var(--dim);
   }
-  .spawn-form { display: flex; flex-direction: column; gap: 0.5rem; }
+  .spawn-form { display: flex; flex-direction: column; gap: 0.625rem; }
+  label {
+    font-size: 0.75rem;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: -0.25rem;
+  }
   input, select, button, textarea {
     background: var(--bg);
     border: 1px solid var(--border);
@@ -75,6 +82,7 @@
     font: inherit;
     font-size: 0.875rem;
   }
+  select:invalid, select option:first-child { color: var(--dim); }
   button {
     cursor: pointer;
     background: var(--accent);
@@ -160,43 +168,8 @@
     gap: 0.5rem;
   }
   .agent-actions input { flex: 1; }
-  .kanban {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin-top: 1rem;
-  }
-  @media (max-width: 700px) {
-    .kanban { grid-template-columns: 1fr; }
-  }
-  .column {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    min-height: 120px;
-  }
-  .column h3 {
-    margin: 0 0 0.75rem;
-    font-size: 0.875rem;
-    color: var(--dim);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .card {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 0.375rem;
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-    font-size: 0.875rem;
-    cursor: grab;
-  }
-  .card:hover { border-color: var(--dim); }
-  .empty { color: var(--dim); font-size: 0.875rem; padding: 0.5rem 0; }
   #global-log {
-    max-height: 180px;
+    max-height: 240px;
     overflow: auto;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.75rem;
@@ -222,33 +195,29 @@
     <div class="panel">
       <h2>Spawn Agent</h2>
       <form class="spawn-form" id="spawn-form">
-        <input id="spawn-name" placeholder="Name (e.g. lead)" required autocomplete="off">
-        <select id="spawn-parent"></select>
-        <input id="spawn-type" placeholder="Type (e.g. coder)" autocomplete="off">
-        <input id="spawn-model" placeholder="Model override (optional)" autocomplete="off">
-        <button type="submit">Spawn</button>
+        <label for="spawn-name">Name</label>
+        <input id="spawn-name" placeholder="e.g. lead, scout" required autocomplete="off">
+
+        <label for="spawn-parent">Parent</label>
+        <select id="spawn-parent">
+          <option value="self">self (root / orchestrator)</option>
+        </select>
+
+        <label for="spawn-type">Agent Type</label>
+        <select id="spawn-type">
+          <option value="">-- select type --</option>
+        </select>
+
+        <label for="spawn-model">Model Override</label>
+        <input id="spawn-model" placeholder="e.g. claude-sonnet-4, kimi-k2.6" autocomplete="off">
+        <span style="font-size:0.75rem;color:var(--dim);">Optional. Overrides the default model for this agent type.</span>
+
+        <button type="submit" style="margin-top:0.25rem;">Spawn</button>
       </form>
     </div>
     <div class="panel">
       <h2>Event Log</h2>
       <div id="global-log"></div>
-    </div>
-    <div class="panel">
-      <h2>Kanban</h2>
-      <div class="kanban">
-        <div class="column">
-          <h3>Backlog <span id="count-backlog">0</span></h3>
-          <div id="col-backlog"><div class="empty">No issues.</div></div>
-        </div>
-        <div class="column">
-          <h3>In Progress <span id="count-progress">0</span></h3>
-          <div id="col-progress"><div class="empty">No issues.</div></div>
-        </div>
-        <div class="column">
-          <h3>Done <span id="count-done">0</span></h3>
-          <div id="col-done"><div class="empty">No issues.</div></div>
-        </div>
-      </div>
     </div>
   </aside>
   <section>
@@ -261,11 +230,11 @@
 <script>
   const agentsEl = document.getElementById('agents');
   const parentSelect = document.getElementById('spawn-parent');
+  const typeSelect = document.getElementById('spawn-type');
   const connDot = document.getElementById('conn-dot');
   const connText = document.getElementById('conn-text');
   const logEl = document.getElementById('global-log');
   let agents = {};
-  let issues = [];
 
   function escapeHtml(t) {
     return (t || '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
@@ -279,16 +248,35 @@
     if (logEl.children.length > 100) logEl.lastChild.remove();
   }
 
+  async function loadAgentTypes() {
+    try {
+      const res = await fetch('/api/agent-types');
+      if (!res.ok) { pushLog('Failed to load agent types', 'error'); return; }
+      const defs = await res.json();
+      typeSelect.innerHTML = '<option value="">-- select type --</option>';
+      for (const d of defs) {
+        const opt = document.createElement('option');
+        opt.value = d.name;
+        opt.textContent = d.name + ' — ' + d.description;
+        typeSelect.appendChild(opt);
+      }
+      pushLog('Loaded ' + defs.length + ' agent types');
+    } catch (e) {
+      pushLog('Error loading agent types: ' + e.message, 'error');
+    }
+  }
+
   function updateParentSelect() {
     const val = parentSelect.value;
-    parentSelect.innerHTML = '<option value="self">self (root)</option>';
+    // keep first option (self)
+    parentSelect.innerHTML = '<option value="self">self (root / orchestrator)</option>';
     for (const name of Object.keys(agents)) {
       const opt = document.createElement('option');
       opt.value = name;
       opt.textContent = name;
       parentSelect.appendChild(opt);
     }
-    if (val && agents[val]) parentSelect.value = val;
+    if (val && (val === 'self' || agents[val])) parentSelect.value = val;
   }
 
   function renderAgents() {
@@ -297,7 +285,6 @@
       updateParentSelect();
       return;
     }
-    // Preserve existing terminal elements to avoid losing scroll position
     const existing = {};
     agentsEl.querySelectorAll('.agent').forEach(el => {
       const name = el.querySelector('.agent-name')?.textContent;
@@ -394,12 +381,16 @@
     e.preventDefault();
     const name = document.getElementById('spawn-name').value.trim();
     const parent = parentSelect.value;
-    const type = document.getElementById('spawn-type').value.trim();
+    const type = typeSelect.value;
     const model = document.getElementById('spawn-model').value.trim();
+    if (!type) {
+      pushLog('Please select an agent type.', 'warn');
+      return;
+    }
     try {
       const res = await fetch('/api/spawn', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name, parent, type: type || undefined, model: model || undefined })
+        body: JSON.stringify({ name, parent, type, model: model || undefined })
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) pushLog('Spawn failed: ' + (body.error || res.statusText), 'error');
@@ -408,6 +399,7 @@
       pushLog('Spawn error: ' + err.message, 'error');
     }
     e.target.reset();
+    typeSelect.value = '';
   });
 
   function setConnected(c) {
@@ -442,20 +434,6 @@
     }
   }
 
-  let ws;
-  function connectWS() {
-    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    try {
-      ws = new WebSocket(proto + '//' + location.host + '/ws');
-      ws.onopen = () => setConnected(true);
-      ws.onclose = () => { setConnected(false); setTimeout(connectWS, 2000); };
-      ws.onerror = () => {};
-      ws.onmessage = (e) => handleEvent(JSON.parse(e.data));
-    } catch {
-      useSSE();
-    }
-  }
-
   let es;
   function useSSE() {
     es = new EventSource('/events');
@@ -464,7 +442,8 @@
     es.onmessage = (e) => handleEvent(JSON.parse(e.data));
   }
 
-  connectWS();
+  useSSE();
+  loadAgentTypes();
 </script>
 </body>
 </html>
