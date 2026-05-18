@@ -10,12 +10,13 @@ import { removeWorktree, cleanupOrphanedWorktrees } from "./worktree.js";
 import { startServer, broadcast } from "./server.js";
 
 let serverHandle: { url: string; stop: () => void } | undefined;
+let orchestrationMode = false;
 
 export default function (pi: ExtensionAPI) {
   log("init", "multi-agent extension loaded");
 
-  console.log("🎛️  Orchestrator mode active. You are the root agent. Ask me to build something and I'll spawn specialists as needed.");
-  console.log("   Tools available: create_sub_agent, agent_send, agent_status, agent_kill");
+  console.log("🎛️  Multi-agent extension loaded. Normal Pi mode is active.");
+  console.log("   Use /orchestrate to enter orchestration mode when you want Pi to spawn specialist agents.");
   console.log("   Dashboard: /dashboard  |  Emergency stop: 🛑 button or /kill all");
 
   cleanupOrphanedWorktrees();
@@ -314,7 +315,18 @@ export default function (pi: ExtensionAPI) {
       model: Type.Optional(Type.String({ description: "Optional model override" })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-      log("tool", "create_sub_agent called", { name: params.name, type: params.type, reason: params.reason });
+      log("tool", "create_sub_agent called", { name: params.name, type: params.type, reason: params.reason, orchestrationMode });
+
+      if (!orchestrationMode) {
+        return {
+          content: [{
+            type: "text",
+            text: "Orchestration mode is not enabled. Ask the user to run /orchestrate before creating sub-agents.",
+          }],
+          isError: true,
+          details: { orchestrationMode },
+        };
+      }
 
       const definition = getDefinition(params.type, ctx.cwd);
       if (!definition) {
@@ -399,6 +411,33 @@ export default function (pi: ExtensionAPI) {
   });
 
   // ====== COMMANDS ======
+
+  pi.registerCommand("orchestrate", {
+    description: "Enable/disable orchestration mode. Usage: /orchestrate [on|off|status]",
+    handler: async (arg, ctx) => {
+      const mode = (arg || "on").trim().toLowerCase();
+      if (mode === "off" || mode === "false" || mode === "disable") {
+        orchestrationMode = false;
+        log("mode", "orchestration mode disabled");
+        ctx.ui.notify("Orchestration mode disabled. Normal Pi mode active.", "info");
+        return;
+      }
+      if (mode === "status") {
+        ctx.ui.notify(`Orchestration mode is ${orchestrationMode ? "enabled" : "disabled"}.`, "info");
+        return;
+      }
+      orchestrationMode = true;
+      log("mode", "orchestration mode enabled");
+      ctx.ui.notify(
+        [
+          "Orchestration mode enabled.",
+          "You are now the root orchestrator. Ask for a high-level goal and use create_sub_agent when specialist help is useful.",
+          "Use /orchestrate off to return to normal Pi mode.",
+        ].join("\n"),
+        "info"
+      );
+    },
+  });
 
   pi.registerCommand("agent-types", {
     description: "List available agent definitions",

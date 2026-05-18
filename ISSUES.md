@@ -4,7 +4,7 @@
 
 Build a lightweight, orchestrator-driven multi-agent system inside Pi.
 
-- The **orchestrator** (the root Pi interactive session running this extension) is the only agent allowed to create sub-agents.
+- The user explicitly enters orchestration mode with `/orchestrate`; only then does the root Pi interactive session act as the orchestrator.
 - Child agents can request help, but the request is routed back to the orchestrator, which decides whether to spawn, what type, which model, and why.
 - The **dashboard** is a supporting tool, not the driver:
   - Agent Type Library editor (prompts, skills, extensions, model assignment)
@@ -20,7 +20,7 @@ Build a lightweight, orchestrator-driven multi-agent system inside Pi.
 - Sub-agents share the parent’s worktree (same `/tmp/workspace` inside bwrap).
 - All agents run `pi --mode rpc --no-session` inside their sandbox.
 - Communication uses JSONL over stdout/stdin + a shared `comms/` directory for `delegate` tool.
-- The orchestrator exposes a `create_sub_agent` tool that only it can call.
+- The orchestrator exposes a `create_sub_agent` tool that only works when orchestration mode is enabled.
 - Dashboard talks to the extension via REST + SSE on ports 18765–18767 (or ephemeral).
 - All output is logged; live terminal is hidden by default behind expand/collapse.
 
@@ -194,7 +194,7 @@ Should return something like:
 1. `cd` into a git repository (not `~/.pi/`)
 2. Start `pi`
 3. `/reload`
-4. The orchestrator is now ready to create sub-agents when needed
+4. Run `/orchestrate` to enable orchestration mode
 5. Open the dashboard (`/dashboard`) to manage agent types or hit Emergency Stop if required
 
 Let’s keep this file focused and actionable. When an issue is done, we can mark it complete and move on.

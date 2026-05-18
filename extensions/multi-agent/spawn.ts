@@ -5,6 +5,7 @@ import * as os from "node:os";
 import { type Agent, type AgentDefinition, agents, log } from "./state.js";
 import { createWorktree, removeWorktree } from "./worktree.js";
 import { sendToAgent } from "./send.js";
+import { broadcast } from "./server.js";
 
 export function hasBwrap(): boolean {
   try {
@@ -243,10 +244,12 @@ export async function spawnAgent(
         if (event.type === "agent_start") {
           agent.status = "streaming";
           agent.accumulatedText = "";
+          broadcast({ type: "agent-start", data: { name: agent.id } });
         } else if (event.type === "message_update") {
           const delta = event.assistantMessageEvent;
           if (delta?.type === "text_delta" && typeof delta.delta === "string") {
             agent.accumulatedText += delta.delta;
+            broadcast({ type: "agent-delta", data: { name: agent.id, delta: delta.delta } });
           }
         } else if (event.type === "agent_end") {
           agent.status = "idle";
@@ -261,6 +264,7 @@ export async function spawnAgent(
             if (text && !agent.accumulatedText) agent.accumulatedText = text;
           }
           agent.history.push({ role: "assistant", text: agent.accumulatedText });
+          broadcast({ type: "agent-end", data: { name: agent.id, text: agent.accumulatedText } });
           if (agent._nextTurn) {
             agent._nextTurn.resolve();
             agent._nextTurn = undefined;

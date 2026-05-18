@@ -22,7 +22,12 @@ cd tests/fixtures/todo-project
 pi
 ```
 
-The Pi session **is** the orchestrator. The multi-agent extension auto-loads.
+The multi-agent extension auto-loads, but Pi starts in normal mode.
+
+Enter orchestration mode:
+```
+/orchestrate
+```
 
 Verify:
 ```

@@ -2,9 +2,10 @@
 
 Multi-agent orchestration extension for [Pi](https://pi.dev).
 
-The **orchestrator** (your interactive Pi session) intelligently creates and manages sub-agents. You define agent types and prompts via the dashboard; the orchestrator decides when to spawn specialists (researcher, implementer, reviewer, etc.) and routes work to them.
+When you explicitly enter orchestration mode with `/orchestrate`, your interactive Pi session becomes the **orchestrator**. You define agent types and prompts via the dashboard; the orchestrator decides when to spawn specialists (researcher, implementer, reviewer, etc.) and routes work to them.
 
 Key features:
+- Explicit orchestration mode (`/orchestrate`, `/orchestrate off`)
 - Orchestrator-driven spawning (`create_sub_agent` tool)
 - Real models from your Pi environment (`pi --list-models`)
 - Agent Type Library editor in the dashboard

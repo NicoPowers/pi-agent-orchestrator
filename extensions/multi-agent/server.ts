@@ -348,10 +348,7 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 
       Promise.resolve().then(async () => {
         try {
-          broadcast({ type: "agent-start", data: { name } });
           await deps.sendToAgent(agent, message, 300_000);
-          const result = agent.accumulatedText || "(agent returned empty response)";
-          broadcast({ type: "agent-end", data: { name, text: result } });
           log("server", `Dashboard send to ${name} completed`);
         } catch (err: any) {
           broadcast({ type: "agent-error", data: { name, error: err.message } });
