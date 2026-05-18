@@ -89,54 +89,30 @@ agent_send("lead", "write async-test.txt with 'async works' and cat it")
 
 ---
 
-### Issue 3: Per-Agent `delegate` Extension
+### Issue 3: Per-Agent `delegate` Extension ✅
 
-**Goal**: Agents inside bwrap can call `delegate(target, task)` to route work to sibling agents.
+**Status**: Implemented.
 
-**Current state**: No per-agent extension exists.
+**What changed:**
+- Created `extensions/delegate-agent.ts` — registers a `delegate` tool inside each sub-agent
+- Tool writes request to `/tmp/workspace/.pi/comms/requests/<toolCallId>.json`
+- Polls for response at `/tmp/workspace/.pi/comms/responses/<toolCallId>.json`
+- Returns response text when broker writes the result file
 
-**Design**:
-Create `extensions/delegate-agent.ts`:
-```typescript
-pi.registerTool({
-  name: "delegate",
-  parameters: { target: string, task: string },
-  execute: async (toolCallId, params) => {
-    const reqFile = `/workspace/.pi/comms/requests/${toolCallId}.json`;
-    await fs.writeFile(reqFile, JSON.stringify(params));
-    
-    // Poll for response from broker extension
-    const respFile = `/workspace/.pi/comms/responses/${toolCallId}.json`;
-    while (!fs.existsSync(respFile)) {
-      await sleep(500);
-    }
-    const response = await fs.readFile(respFile, "utf-8");
-    return { content: [{ type: "text", text: response }] };
-  }
-});
-```
+### Issue 4: Broker Extension Routes `delegate` Requests ✅
 
-**Integration**:
-- Load via `--extension /path/to/delegate-agent.ts` when spawning agents
-- Or place in package `extensions/` and reference it
+**Status**: Implemented.
 
----
+**What changed:**
+- Broker extension monitors JSONL stdout for `tool_execution_start` with `toolName: "delegate"`
+- Reads request file from shared worktree, looks up target agent in `agents` map
+- Calls `sendToAgent(targetAgent, task)` and writes result back to responses file
+- Original agent's `delegate` tool unblocks and continues with the routed result
 
-### Issue 4: Broker Extension Routes `delegate` Requests
-
-**Goal**: Broker extension detects `delegate` tool calls and routes them.
-
-**Design**:
-1. Monitor JSONL stream for `tool_execution_start` with `toolName: "delegate"`
-2. Parse `args: { target, task }`
-3. Call `sendToAgent(targetAgent, task)` (blocks)
-4. Write response to `/workspace/.pi/comms/responses/<toolCallId>.json`
-5. Original agent's `delegate` tool unblocks and continues
-
-**Parent chain routing**:
-- If target is a child of the calling agent → direct send
-- If target has its own children → recursive delegation
-- When final agent responds, route back up the chain
+**Spawn integration:**
+- `delegate-agent.ts` copied into worktree `.pi/extensions/` before each spawn
+- Sub-agents launched with `--no-extensions --extension /tmp/workspace/.pi/extensions/delegate-agent.ts`
+- `package.json` changed to only auto-load `multi-agent.ts` (prevents delegate loading in orchestrator)
 
 ---
 
