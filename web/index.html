@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pi Orchestrator</title>
+<style>
+  :root {
+    --bg: #0b0c0f;
+    --panel: #15171e;
+    --border: #2a2d38;
+    --text: #c9cdd9;
+    --dim: #6b7280;
+    --accent: #60a5fa;
+    --success: #34d399;
+    --warning: #fbbf24;
+    --error: #f87171;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(11,12,15,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 10;
+  }
+  h1 { margin: 0; font-size: 1.25rem; letter-spacing: -0.02em; }
+  .status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--dim); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); transition: background 0.3s; }
+  .dot.connected { background: var(--success); box-shadow: 0 0 8px var(--success); }
+  main {
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 1.5rem;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+  }
+  .sidebar { display: flex; flex-direction: column; gap: 1rem; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+  .panel h2 {
+    margin: 0 0 0.75rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--dim);
+  }
+  .spawn-form { display: flex; flex-direction: column; gap: 0.5rem; }
+  input, select, button, textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.5rem 0.625rem;
+    border-radius: 0.375rem;
+    font: inherit;
+    font-size: 0.875rem;
+  }
+  button {
+    cursor: pointer;
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0b0c0f;
+    font-weight: 600;
+  }
+  button:hover { filter: brightness(1.1); }
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border-color: var(--border);
+  }
+  button.secondary:hover { background: rgba(255,255,255,0.05); }
+  button.danger {
+    background: rgba(248,113,113,0.15);
+    border-color: var(--error);
+    color: var(--error);
+  }
+  button.danger:hover { background: rgba(248,113,113,0.25); }
+  .agents {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1rem;
+  }
+  .agent {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s;
+  }
+  .agent.streaming { border-color: rgba(96,165,250,0.4); }
+  .agent-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .agent-name { font-weight: 600; font-size: 0.9375rem; }
+  .badge {
+    font-size: 0.6875rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 999px;
+    background: var(--border);
+    color: var(--dim);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .badge.streaming { background: rgba(96,165,250,0.15); color: var(--accent); }
+  .badge.idle { background: rgba(52,211,153,0.15); color: var(--success); }
+  .badge.error, .badge.exited { background: rgba(248,113,113,0.15); color: var(--error); }
+  .agent-meta {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    color: var(--dim);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .terminal {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    overflow: auto;
+    max-height: 280px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text);
+  }
+  .agent-actions {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 0.5rem;
+  }
+  .agent-actions input { flex: 1; }
+  .kanban {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  @media (max-width: 700px) {
+    .kanban { grid-template-columns: 1fr; }
+  }
+  .column {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    min-height: 120px;
+  }
+  .column h3 {
+    margin: 0 0 0.75rem;
+    font-size: 0.875rem;
+    color: var(--dim);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    cursor: grab;
+  }
+  .card:hover { border-color: var(--dim); }
+  .empty { color: var(--dim); font-size: 0.875rem; padding: 0.5rem 0; }
+  #global-log {
+    max-height: 180px;
+    overflow: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.75rem;
+    color: var(--dim);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .log-line { border-left: 2px solid var(--border); padding-left: 0.5rem; }
+  .log-line.info { border-color: var(--accent); }
+  .log-line.success { border-color: var(--success); }
+  .log-line.warn { border-color: var(--warning); }
+  .log-line.error { border-color: var(--error); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🧠 Pi Orchestrator</h1>
+  <div class="status"><span class="dot" id="conn-dot"></span> <span id="conn-text">Disconnected</span></div>
+</header>
+<main>
+  <aside class="sidebar">
+    <div class="panel">
+      <h2>Spawn Agent</h2>
+      <form class="spawn-form" id="spawn-form">
+        <input id="spawn-name" placeholder="Name (e.g. lead)" required autocomplete="off">
+        <select id="spawn-parent"></select>
+        <input id="spawn-type" placeholder="Type (e.g. coder)" autocomplete="off">
+        <input id="spawn-model" placeholder="Model override (optional)" autocomplete="off">
+        <button type="submit">Spawn</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>Event Log</h2>
+      <div id="global-log"></div>
+    </div>
+    <div class="panel">
+      <h2>Kanban</h2>
+      <div class="kanban">
+        <div class="column">
+          <h3>Backlog <span id="count-backlog">0</span></h3>
+          <div id="col-backlog"><div class="empty">No issues.</div></div>
+        </div>
+        <div class="column">
+          <h3>In Progress <span id="count-progress">0</span></h3>
+          <div id="col-progress"><div class="empty">No issues.</div></div>
+        </div>
+        <div class="column">
+          <h3>Done <span id="count-done">0</span></h3>
+          <div id="col-done"><div class="empty">No issues.</div></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <section>
+    <div class="panel" style="min-height: 60vh;">
+      <h2>Active Agents</h2>
+      <div id="agents"><div class="empty">No agents running.</div></div>
+    </div>
+  </section>
+</main>
+<script>
+  const agentsEl = document.getElementById('agents');
+  const parentSelect = document.getElementById('spawn-parent');
+  const connDot = document.getElementById('conn-dot');
+  const connText = document.getElementById('conn-text');
+  const logEl = document.getElementById('global-log');
+  let agents = {};
+  let issues = [];
+
+  function escapeHtml(t) {
+    return (t || '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  }
+
+  function pushLog(text, level = 'info') {
+    const line = document.createElement('div');
+    line.className = 'log-line ' + level;
+    line.textContent = new Date().toLocaleTimeString() + '  ' + text;
+    logEl.prepend(line);
+    if (logEl.children.length > 100) logEl.lastChild.remove();
+  }
+
+  function updateParentSelect() {
+    const val = parentSelect.value;
+    parentSelect.innerHTML = '<option value="self">self (root)</option>';
+    for (const name of Object.keys(agents)) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      parentSelect.appendChild(opt);
+    }
+    if (val && agents[val]) parentSelect.value = val;
+  }
+
+  function renderAgents() {
+    if (!Object.keys(agents).length) {
+      agentsEl.innerHTML = '<div class="empty">No agents running.</div>';
+      updateParentSelect();
+      return;
+    }
+    // Preserve existing terminal elements to avoid losing scroll position
+    const existing = {};
+    agentsEl.querySelectorAll('.agent').forEach(el => {
+      const name = el.querySelector('.agent-name')?.textContent;
+      if (name) existing[name] = el.querySelector('.terminal');
+    });
+
+    agentsEl.innerHTML = '';
+    for (const [name, a] of Object.entries(agents)) {
+      const div = document.createElement('div');
+      div.className = 'agent' + (a.status === 'streaming' ? ' streaming' : '');
+      div.id = 'agent-' + name;
+      div.innerHTML = `
+        <div class="agent-header">
+          <span class="agent-name">${escapeHtml(name)}</span>
+          <span class="badge ${a.status}">${a.status}</span>
+        </div>
+        <div class="agent-meta">
+          <span>${a.definition ? 'type: ' + escapeHtml(a.definition) : 'no type'}</span>
+          <span>${a.parent ? 'parent: ' + escapeHtml(a.parent) : 'root'}</span>
+          <span>turns: ${a.turns || 0}</span>
+        </div>
+        <div class="terminal" id="term-${name}"></div>
+        <div class="agent-actions">
+          <input id="msg-${name}" placeholder="Message…" onkeydown="if(event.key==='Enter') sendMessage('${name}')">
+          <button onclick="sendMessage('${name}')">Send</button>
+          <button class="danger" onclick="killAgent('${name}')">Kill</button>
+        </div>
+      `;
+      const term = div.querySelector('.terminal');
+      if (existing[name]) {
+        term.textContent = existing[name].textContent;
+      } else {
+        term.textContent = a.text || '';
+      }
+      agentsEl.appendChild(div);
+    }
+    updateParentSelect();
+  }
+
+  function updateAgent(name, patch) {
+    if (!agents[name]) agents[name] = { status: 'idle', text: '', turns: 0 };
+    Object.assign(agents[name], patch);
+
+    let card = document.getElementById('agent-' + name);
+    if (!card) { renderAgents(); card = document.getElementById('agent-' + name); }
+    if (!card) return;
+
+    if (patch.status !== undefined) {
+      const badge = card.querySelector('.badge');
+      badge.className = 'badge ' + patch.status;
+      badge.textContent = patch.status;
+      card.className = 'agent' + (patch.status === 'streaming' ? ' streaming' : '');
+    }
+
+    const term = card.querySelector('.terminal');
+    if (patch.delta !== undefined && term) {
+      agents[name].text = (agents[name].text || '') + patch.delta;
+      term.textContent = agents[name].text;
+      term.scrollTop = term.scrollHeight;
+    }
+    if (patch.text !== undefined && term) {
+      term.textContent = patch.text;
+      term.scrollTop = term.scrollHeight;
+    }
+  }
+
+  async function sendMessage(name) {
+    const input = document.getElementById('msg-' + name);
+    const msg = input.value.trim();
+    if (!msg) return;
+    input.value = '';
+    try {
+      const res = await fetch('/api/agents/' + encodeURIComponent(name) + '/send', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+      if (!res.ok) pushLog('Send to ' + name + ' failed: ' + res.status, 'error');
+      else pushLog('Queued message for ' + name);
+    } catch (e) {
+      pushLog('Send to ' + name + ' error: ' + e.message, 'error');
+    }
+  }
+
+  async function killAgent(name) {
+    try {
+      const res = await fetch('/api/agents/' + encodeURIComponent(name) + '/kill', { method: 'POST' });
+      if (!res.ok) pushLog('Kill ' + name + ' failed: ' + res.status, 'error');
+    } catch (e) {
+      pushLog('Kill ' + name + ' error: ' + e.message, 'error');
+    }
+  }
+
+  document.getElementById('spawn-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('spawn-name').value.trim();
+    const parent = parentSelect.value;
+    const type = document.getElementById('spawn-type').value.trim();
+    const model = document.getElementById('spawn-model').value.trim();
+    try {
+      const res = await fetch('/api/spawn', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name, parent, type: type || undefined, model: model || undefined })
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) pushLog('Spawn failed: ' + (body.error || res.statusText), 'error');
+      else pushLog('Spawned ' + name);
+    } catch (err) {
+      pushLog('Spawn error: ' + err.message, 'error');
+    }
+    e.target.reset();
+  });
+
+  function setConnected(c) {
+    connDot.className = 'dot ' + (c ? 'connected' : '');
+    connText.textContent = c ? 'Connected' : 'Disconnected';
+  }
+
+  function handleEvent(ev) {
+    if (ev.type === 'init') {
+      agents = {};
+      for (const [k, v] of Object.entries(ev.data.agents || {})) agents[k] = { ...v };
+      renderAgents();
+      pushLog('Synced ' + Object.keys(agents).length + ' agents');
+    } else if (ev.type === 'agent-spawned' || ev.type === 'agent-update') {
+      updateAgent(ev.data.name, ev.data);
+      if (ev.type === 'agent-spawned') pushLog('Agent ' + ev.data.name + ' spawned (' + (ev.data.parent || 'root') + ')', 'success');
+    } else if (ev.type === 'agent-killed') {
+      delete agents[ev.data.name];
+      renderAgents();
+      pushLog('Agent ' + ev.data.name + ' killed', 'warn');
+    } else if (ev.type === 'agent-delta') {
+      updateAgent(ev.data.name, { delta: ev.data.delta });
+    } else if (ev.type === 'agent-start') {
+      updateAgent(ev.data.name, { status: 'streaming' });
+    } else if (ev.type === 'agent-end') {
+      updateAgent(ev.data.name, { status: 'idle', text: ev.data.text });
+    } else if (ev.type === 'agent-exit') {
+      updateAgent(ev.data.name, { status: 'exited' });
+      pushLog('Agent ' + ev.data.name + ' exited (code ' + (ev.data.code ?? '?') + ')', 'warn');
+    } else if (ev.type === 'delegate') {
+      pushLog(ev.data.from + ' → ' + ev.data.to + ' | ' + ev.data.task.slice(0, 60));
+    }
+  }
+
+  let ws;
+  function connectWS() {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    try {
+      ws = new WebSocket(proto + '//' + location.host + '/ws');
+      ws.onopen = () => setConnected(true);
+      ws.onclose = () => { setConnected(false); setTimeout(connectWS, 2000); };
+      ws.onerror = () => {};
+      ws.onmessage = (e) => handleEvent(JSON.parse(e.data));
+    } catch {
+      useSSE();
+    }
+  }
+
+  let es;
+  function useSSE() {
+    es = new EventSource('/events');
+    es.onopen = () => setConnected(true);
+    es.onerror = () => { setConnected(false); es.close(); setTimeout(useSSE, 2000); };
+    es.onmessage = (e) => handleEvent(JSON.parse(e.data));
+  }
+
+  connectWS();
+</script>
+</body>
+</html>

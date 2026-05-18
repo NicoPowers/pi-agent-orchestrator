@@ -1,12 +1,17 @@
 {
   "name": "pi-agent-orchestrator",
-  "version": "0.1.0",
-  "description": "Multi-agent orchestration extension for Pi. Spawn specialized sub-agents with isolated context windows, custom prompts, and targeted skills.",
+  "version": "0.2.0",
+  "description": "Multi-agent orchestration extension for Pi. Spawn specialized sub-agents with isolated context windows, custom prompts, and targeted skills. Includes a real-time web dashboard.",
   "keywords": ["pi-package"],
   "author": "",
   "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.75.1",
+    "typebox": "^1.1.0"
+  },
   "pi": {
-    "extensions": ["./extensions/multi-agent.ts"],
+    "extensions": ["./extensions/multi-agent/index.ts"],
     "skills": ["./skills"]
   }
 }
