@@ -73,7 +73,7 @@ export async function spawnAgent(
     fs.writeFileSync(promptFile, filledPrompt, { encoding: "utf-8", mode: 0o600 });
     promptInsideBwrap = `/tmp/workspace/.pi/prompts/${id}.md`;
 
-    const delegateInstructions = [
+    let delegateInstructions = [
       "",
       "---",
       "",
@@ -97,6 +97,28 @@ export async function spawnAgent(
       "Wait for each delegate response before making your next move.",
       "",
     ].join("\n");
+
+    // List sibling agents that share this worktree so this agent knows who it can delegate to
+    const siblingList: string[] = [];
+    for (const [otherId, otherAgent] of agents.entries()) {
+      if (otherAgent.worktreePath === worktreePath && otherId !== id) {
+        const typeLabel = otherAgent.definition?.name ? ` (${otherAgent.definition.name})` : "";
+        siblingList.push(`- ${otherId}${typeLabel}`);
+      }
+    }
+    if (siblingList.length > 0) {
+      delegateInstructions += [
+        "",
+        "### Available Agents",
+        "",
+        "You can delegate to the following agents in your team:",
+        ...siblingList,
+        "",
+        "If you need to reach your parent agent, use their name as the `target`.",
+        "",
+      ].join("\n");
+    }
+
     const delegatePromptFile = path.join(promptDir, `${id}-delegate.md`);
     fs.writeFileSync(delegatePromptFile, delegateInstructions, { encoding: "utf-8", mode: 0o600 });
     delegatePromptInsideBwrap = `/tmp/workspace/.pi/prompts/${id}-delegate.md`;
