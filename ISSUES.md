@@ -62,7 +62,7 @@ cat /tmp/pi-worktree-lead-*/hello.txt
 
 ### Issue 2: Async `agent_send` ✅
 
-**Status**: Implemented.
+**Status**: Implemented and tested.
 
 **What changed:**
 - `agent_send` tool now returns immediately with `"Queued task for 'lead'. Result will be delivered when the agent completes."`
@@ -74,6 +74,14 @@ cat /tmp/pi-worktree-lead-*/hello.txt
 - Orchestrator receives the result as a new steering message after its current turn finishes
 - Pending tasks are tracked in a `Map<string, PendingTask>` for observability
 - `/ask` command stays blocking (user-facing direct interaction)
+
+**Tested:**
+```
+agent_send("lead", "write async-test.txt with 'async works' and cat it")
+→ Returns immediately: "Queued task for 'lead'..."
+→ User can chat with orchestrator while lead works
+→ [lead] result delivered as steering message when complete
+```
 
 ---
 
