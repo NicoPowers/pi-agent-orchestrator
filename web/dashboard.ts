@@ -384,6 +384,27 @@ loadModelsForEditor();
 loadAgentTypesForEditor();
 
 // Wire up type editor buttons
-if (newTypeBtn) newTypeBtn.onclick = () => openTypeEditor();
-if (typeSaveBtn) typeSaveBtn.onclick = saveType;
-if (typeCancelBtn) typeCancelBtn.onclick = closeTypeEditor;
+if (newTypeBtn) (newTypeBtn as any).onclick = () => openTypeEditor();
+if (typeSaveBtn) (typeSaveBtn as any).onclick = saveType;
+if (typeCancelBtn) (typeCancelBtn as any).onclick = closeTypeEditor();
+
+// Emergency Stop
+const emergencyBtn = document.getElementById("emergency-btn") as HTMLButtonElement;
+if (emergencyBtn) {
+  emergencyBtn.addEventListener("click", async () => {
+    if (!confirm("Emergency Stop: Kill all agents and clean up worktrees?")) return;
+    try {
+      const res = await fetch("/api/emergency-stop", { method: "POST" });
+      if (res.ok) {
+        pushLog("EMERGENCY STOP executed", "error");
+        agents = {};
+        renderAgents();
+        renderHierarchy();
+      } else {
+        pushLog("Emergency stop failed", "error");
+      }
+    } catch (e: any) {
+      pushLog("Emergency stop error: " + e.message, "error");
+    }
+  });
+}

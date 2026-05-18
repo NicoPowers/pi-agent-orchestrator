@@ -347,4 +347,24 @@ if (newTypeBtn)
 if (typeSaveBtn)
   typeSaveBtn.onclick = saveType;
 if (typeCancelBtn)
-  typeCancelBtn.onclick = closeTypeEditor;
+  typeCancelBtn.onclick = closeTypeEditor();
+var emergencyBtn = document.getElementById("emergency-btn");
+if (emergencyBtn) {
+  emergencyBtn.addEventListener("click", async () => {
+    if (!confirm("Emergency Stop: Kill all agents and clean up worktrees?"))
+      return;
+    try {
+      const res = await fetch("/api/emergency-stop", { method: "POST" });
+      if (res.ok) {
+        pushLog("EMERGENCY STOP executed", "error");
+        agents = {};
+        renderAgents();
+        renderHierarchy();
+      } else {
+        pushLog("Emergency stop failed", "error");
+      }
+    } catch (e) {
+      pushLog("Emergency stop error: " + e.message, "error");
+    }
+  });
+}

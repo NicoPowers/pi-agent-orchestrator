@@ -359,6 +359,26 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
       return;
     }
 
+    // POST /api/emergency-stop
+    if (url.pathname === "/api/emergency-stop" && req.method === "POST") {
+      log("lifecycle", "EMERGENCY STOP triggered");
+      // Kill all agents
+      for (const [name, agent] of agents) {
+        if (!agent.proc.killed) {
+          try { agent.proc.kill("SIGTERM"); } catch {}
+        }
+      }
+      agents.clear();
+      // Remove all worktrees
+      try {
+        const { execSync } = require("child_process");
+        execSync("rm -rf /tmp/pi-worktree-*", { stdio: "ignore" });
+      } catch {}
+      broadcast({ type: "emergency-stop", data: {} });
+      send(res, jsonResponse({ success: true }));
+      return;
+    }
+
     // POST /api/agents/:name/kill
     const killMatch = url.pathname.match(/^\/api\/agents\/([^/]+)\/kill$/);
     if (killMatch && req.method === "POST") {
