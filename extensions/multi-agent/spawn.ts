@@ -37,9 +37,10 @@ export async function spawnAgent(
     definition?: AgentDefinition;
     parent?: string;
     worktreePath?: string;
+    extensions?: Array<{ name: string; path: string }>;
   }
 ): Promise<{ agent: Agent; error?: string }> {
-  const { model, repoCwd, definition, parent, worktreePath: reuseWorktree } = options;
+  const { model, repoCwd, definition, parent, worktreePath: reuseWorktree, extensions } = options;
 
   if (!hasBwrap()) {
     return { agent: null as any, error: "bwrap is not installed. Install bubblewrap to use agent sandboxing." };
@@ -142,22 +143,47 @@ export async function spawnAgent(
     }
   }
 
+  const extDir = path.join(worktreePath, ".pi", "extensions");
+  fs.mkdirSync(extDir, { recursive: true });
+
+  // Always copy delegate-agent.ts
   let delegateInsideBwrap: string | null = null;
   try {
     const delegateSource = path.join(__dirname, "..", "delegate-agent.ts");
     if (fs.existsSync(delegateSource)) {
-      const delegateDir = path.join(worktreePath, ".pi", "extensions");
-      const delegateDest = path.join(delegateDir, "delegate-agent.ts");
-      fs.mkdirSync(delegateDir, { recursive: true });
+      const delegateDest = path.join(extDir, "delegate-agent.ts");
       fs.copyFileSync(delegateSource, delegateDest);
       delegateInsideBwrap = "/tmp/workspace/.pi/extensions/delegate-agent.ts";
     }
   } catch {
     /* ignore copy failures */
   }
-  if (delegateInsideBwrap) {
+
+  // Copy any additional selected extensions
+  const extraExtPaths: string[] = [];
+  if (extensions && extensions.length > 0) {
+    for (const ext of extensions) {
+      try {
+        const destName = ext.name + ".ts";
+        const dest = path.join(extDir, destName);
+        fs.copyFileSync(ext.path, dest);
+        extraExtPaths.push(`/tmp/workspace/.pi/extensions/${destName}`);
+        log("spawn", `Copied extension '${ext.name}' to worktree`, { path: dest });
+      } catch (err: any) {
+        log("spawn", `Failed to copy extension '${ext.name}': ${err.message}`);
+      }
+    }
+  }
+
+  // Build --extension flags
+  if (delegateInsideBwrap || extraExtPaths.length > 0) {
     piArgs.push("--no-extensions");
-    piArgs.push("--extension", delegateInsideBwrap);
+    if (delegateInsideBwrap) {
+      piArgs.push("--extension", delegateInsideBwrap);
+    }
+    for (const p of extraExtPaths) {
+      piArgs.push("--extension", p);
+    }
   }
 
   const piInvocation = getPiInvocation(piArgs);

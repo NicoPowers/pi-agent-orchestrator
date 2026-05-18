@@ -3,6 +3,7 @@ import { Type } from "typebox";
 import * as fs from "node:fs";
 import { agents, pendingTasks, log, LOG_FILE } from "./state.js";
 import { discoverDefinitions, getDefinition } from "./definitions.js";
+import { discoverExtensions } from "./ext-discovery.js";
 import { spawnAgent } from "./spawn.js";
 import { sendToAgent } from "./send.js";
 import { removeWorktree, cleanupOrphanedWorktrees } from "./worktree.js";
@@ -25,6 +26,7 @@ export default function (pi: ExtensionAPI) {
         removeWorktree,
         discoverDefinitions,
         getDefinition,
+        discoverExtensions,
       });
       console.log(`🌐 Dashboard: ${serverHandle.url}`);
     } catch (err: any) {
@@ -97,6 +99,7 @@ export default function (pi: ExtensionAPI) {
       type: Type.Optional(Type.String({ description: "Agent definition name, e.g. 'coder'" })),
       model: Type.Optional(Type.String({ description: "Override model pattern" })),
       parent: Type.String({ description: "Parent agent name, or 'self' for root agents" }),
+      extensions: Type.Optional(Type.Array(Type.String(), { description: "Extension names to load in the agent" })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
       log("tool", `agent_spawn called`, { name: params.name, type: params.type, parent: params.parent });
@@ -135,12 +138,18 @@ export default function (pi: ExtensionAPI) {
         parentAgent.children.push(params.name);
       }
 
+      const allExts = discoverExtensions(ctx.cwd);
+      const extensions = (params.extensions || [])
+        .map((n: string) => allExts.find((e) => e.name === n))
+        .filter(Boolean);
+
       const result = await spawnAgent(params.name, {
         model: params.model,
         repoCwd: ctx.cwd,
         definition,
         parent: params.parent === "self" ? undefined : params.parent,
         worktreePath,
+        extensions,
       });
 
       if (result.error || !result.agent) {

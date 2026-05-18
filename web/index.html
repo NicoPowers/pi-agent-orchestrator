@@ -212,6 +212,11 @@
         <input id="spawn-model" placeholder="e.g. claude-sonnet-4, kimi-k2.6" autocomplete="off">
         <span style="font-size:0.75rem;color:var(--dim);">Optional. Overrides the default model for this agent type.</span>
 
+        <label>Extensions</label>
+        <div id="spawn-extensions" style="display:flex;flex-direction:column;gap:0.375rem;font-size:0.875rem;max-height:120px;overflow:auto;">
+          <span style="color:var(--dim);font-size:0.75rem;">Loading…</span>
+        </div>
+
         <button type="submit" style="margin-top:0.25rem;">Spawn</button>
       </form>
     </div>
@@ -263,6 +268,30 @@
       pushLog('Loaded ' + defs.length + ' agent types');
     } catch (e) {
       pushLog('Error loading agent types: ' + e.message, 'error');
+    }
+  }
+
+  async function loadExtensions() {
+    const container = document.getElementById('spawn-extensions');
+    try {
+      const res = await fetch('/api/extensions');
+      if (!res.ok) { container.innerHTML = '<span style="color:var(--dim);font-size:0.75rem;">No extensions found.</span>'; return; }
+      const exts = await res.json();
+      container.innerHTML = '';
+      if (!exts.length) {
+        container.innerHTML = '<span style="color:var(--dim);font-size:0.75rem;">No extensions available.</span>';
+        return;
+      }
+      for (const e of exts) {
+        const label = document.createElement('label');
+        label.style.cssText = 'display:flex;align-items:center;gap:0.5rem;cursor:pointer;';
+        label.innerHTML = `<input type="checkbox" name="extension" value="${escapeHtml(e.name)}"> <span>${escapeHtml(e.name)} <span style="color:var(--dim);font-size:0.75rem;">(${escapeHtml(e.scope)})</span></span>`;
+        container.appendChild(label);
+      }
+      pushLog('Loaded ' + exts.length + ' extensions');
+    } catch (e) {
+      container.innerHTML = '<span style="color:var(--dim);font-size:0.75rem;">Failed to load extensions.</span>';
+      pushLog('Error loading extensions: ' + e.message, 'error');
     }
   }
 
@@ -383,6 +412,8 @@
     const parent = parentSelect.value;
     const type = typeSelect.value;
     const model = document.getElementById('spawn-model').value.trim();
+    const extCheckboxes = document.querySelectorAll('input[name="extension"]:checked');
+    const extensions = Array.from(extCheckboxes).map((cb) => (cb as HTMLInputElement).value);
     if (!type) {
       pushLog('Please select an agent type.', 'warn');
       return;
@@ -390,16 +421,17 @@
     try {
       const res = await fetch('/api/spawn', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name, parent, type, model: model || undefined })
+        body: JSON.stringify({ name, parent, type, model: model || undefined, extensions: extensions.length ? extensions : undefined })
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) pushLog('Spawn failed: ' + (body.error || res.statusText), 'error');
-      else pushLog('Spawned ' + name);
+      else pushLog('Spawned ' + name + (extensions.length ? ' with ' + extensions.length + ' ext' : ''));
     } catch (err) {
       pushLog('Spawn error: ' + err.message, 'error');
     }
     e.target.reset();
     typeSelect.value = '';
+    loadExtensions();
   });
 
   function setConnected(c) {
@@ -444,6 +476,7 @@
 
   useSSE();
   loadAgentTypes();
+  loadExtensions();
 </script>
 </body>
 </html>

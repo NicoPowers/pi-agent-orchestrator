@@ -12,6 +12,7 @@ export interface ServerDeps {
   removeWorktree: (worktreePath: string) => Promise<void>;
   discoverDefinitions: (cwd: string) => Array<{ name: string; description: string; model?: string; tools?: string[]; source: string }>;
   getDefinition: (name: string, cwd: string) => { name: string; description: string; model?: string; tools?: string[]; skills?: string[]; systemPrompt: string; source: string; filePath: string } | undefined;
+  discoverExtensions: (cwd: string) => Array<{ name: string; path: string; scope: string }>;
 }
 
 interface ServerHandle {
@@ -192,7 +193,7 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
         send(res, errorResponse("Invalid JSON body"));
         return;
       }
-      const { name, parent, type, model } = body;
+      const { name, parent, type, model, extensions: requestedExtensions } = body;
 
       if (!name || !parent) {
         send(res, errorResponse("Missing required fields: name, parent"));
@@ -220,12 +221,18 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
         parentAgent.children.push(name);
       }
 
+      const allExts = deps.discoverExtensions(deps.repoCwd);
+      const extensions = (requestedExtensions || [])
+        .map((n: string) => allExts.find((e) => e.name === n))
+        .filter(Boolean);
+
       const result = await deps.spawnAgent(name, {
         model,
         repoCwd: deps.repoCwd,
         definition,
         parent: parent === "self" ? undefined : parent,
         worktreePath,
+        extensions,
       });
 
       if (result.error || !result.agent) {
