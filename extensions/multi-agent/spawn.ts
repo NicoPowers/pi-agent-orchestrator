@@ -233,6 +233,7 @@ export async function spawnAgent(
     worktreePath,
     parent,
     children: [],
+    _rpcRequests: new Map(),
   };
 
   const flush = () => {
@@ -242,6 +243,14 @@ export async function spawnAgent(
       if (!line.trim()) continue;
       try {
         const event = JSON.parse(line);
+        if (event.type === "response" && event.id && agent._rpcRequests?.has(event.id)) {
+          const pending = agent._rpcRequests.get(event.id)!;
+          clearTimeout(pending.timer);
+          agent._rpcRequests.delete(event.id);
+          if (event.success) pending.resolve(event.data ?? true);
+          else pending.reject(new Error(event.error || "RPC command failed"));
+          continue;
+        }
         agent.events.push({ ts: Date.now(), type: event.type || "unknown", event });
         if (agent.events.length > 500) agent.events.shift();
         if (event.type === "agent_start") {

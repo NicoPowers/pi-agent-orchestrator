@@ -18,6 +18,7 @@ var inspectTitle = document.getElementById("inspect-title");
 var inspectContent = document.getElementById("inspect-content");
 var inspectCloseBtn = document.getElementById("inspect-close-btn");
 var agents = {};
+var agentStats = {};
 var hierarchyExpanded = new Set;
 function escapeHtml(t) {
   return t.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c] ?? c);
@@ -26,6 +27,29 @@ function shortPath(p) {
   if (!p)
     return "";
   return p.length > 42 ? "…" + p.slice(-39) : p;
+}
+function formatCompactNumber(n) {
+  if (typeof n !== "number" || !Number.isFinite(n))
+    return "—";
+  if (n >= 1e6)
+    return (n / 1e6).toFixed(1) + "M";
+  if (n >= 1000)
+    return (n / 1000).toFixed(1) + "K";
+  return String(n);
+}
+function renderStats(name) {
+  const entry = agentStats[name];
+  if (!entry || entry.error)
+    return "<span>ctx: —</span><span>cost: —</span>";
+  const stats = entry.stats || {};
+  const state = entry.state || {};
+  const context = stats.contextUsage || {};
+  const used = context.tokens ?? context.current ?? stats.tokens?.total;
+  const max = context.contextWindow ?? context.max ?? state.model?.contextWindow;
+  const pct = used && max ? Math.round(used / max * 100) : undefined;
+  const cost = typeof stats.cost === "number" ? `$${stats.cost.toFixed(4)}` : "—";
+  const tokenText = used && max ? `${formatCompactNumber(used)} / ${formatCompactNumber(max)}` : formatCompactNumber(stats.tokens?.total);
+  return `<span>ctx: ${pct !== undefined ? pct + "% " : ""}${tokenText}</span><span>cost: ${cost}</span>`;
 }
 function pushLog(text, level = "info") {
   const line = document.createElement("div");
@@ -225,6 +249,7 @@ function renderAgents() {
         <span>${a.definition ? "type: " + escapeHtml(a.definition) : "no type"}</span>
         <span>${a.parent ? "parent: " + escapeHtml(a.parent) : "root"}</span>
         <span>turns: ${a.turns || 0}</span>
+        ${renderStats(name)}
         <span title="${escapeHtml(a.worktree || "")}">worktree: ${escapeHtml(shortPath(a.worktree || ""))}</span>
         ${a.worktree ? `<button class="secondary" id="btn-copy-path-${name}" style="font-size:0.7rem;padding:0.125rem 0.375rem;">Copy Path</button>` : ""}
       </div>
@@ -368,6 +393,15 @@ async function inspectAgent(name) {
     pushLog(`Inspect ${name} failed: ${e.message}`, "error");
   }
 }
+async function refreshAgentStats() {
+  try {
+    const res = await fetch("/api/agent-stats");
+    if (!res.ok)
+      return;
+    agentStats = await res.json();
+    renderAgents();
+  } catch {}
+}
 async function killAgent(name) {
   try {
     const res = await fetch("/api/agents/" + encodeURIComponent(name) + "/kill", { method: "POST" });
@@ -440,6 +474,8 @@ function useSSE() {
 useSSE();
 loadModelsForEditor();
 loadAgentTypesForEditor();
+refreshAgentStats();
+setInterval(refreshAgentStats, 5000);
 if (newTypeBtn)
   newTypeBtn.addEventListener("click", () => openTypeEditor());
 if (typeSaveBtn)

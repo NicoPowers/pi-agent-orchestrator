@@ -1,5 +1,18 @@
 import { type Agent, log } from "./state.js";
 
+export function rpcCommand<T = any>(agent: Agent, command: Record<string, any>, timeoutMs = 5_000): Promise<T> {
+  const id = `rpc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  agent._rpcRequests = agent._rpcRequests || new Map();
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      agent._rpcRequests?.delete(id);
+      reject(new Error(`RPC command '${command.type}' timed out`));
+    }, timeoutMs);
+    agent._rpcRequests!.set(id, { resolve, reject, timer });
+    agent.stdin.write(JSON.stringify({ ...command, id }) + "\n");
+  });
+}
+
 export async function sendToAgent(agent: Agent, message: string, timeoutMs: number, signal?: AbortSignal): Promise<void> {
   log("send", `Agent '${agent.id}' queuing send`);
   while (agent._currentSend) {

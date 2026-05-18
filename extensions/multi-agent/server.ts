@@ -2,6 +2,7 @@ import * as http from "node:http";
 import * as path from "node:path";
 import * as fs from "node:fs";
 import { type Agent, agents, log } from "./state.js";
+import { rpcCommand } from "./send.js";
 
 // ── Types ──
 
@@ -172,6 +173,23 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
     }
 
     // REST API
+
+    // GET /api/agent-stats
+    if (url.pathname === "/api/agent-stats" && req.method === "GET") {
+      const entries = await Promise.all(
+        Array.from(agents.entries()).map(async ([name, agent]) => {
+          try {
+            const stats = await rpcCommand(agent, { type: "get_session_stats" }, 5_000);
+            const state = await rpcCommand(agent, { type: "get_state" }, 5_000).catch(() => undefined);
+            return [name, { stats, state }];
+          } catch (err: any) {
+            return [name, { error: err.message }];
+          }
+        })
+      );
+      send(res, jsonResponse(Object.fromEntries(entries)));
+      return;
+    }
 
     // GET /api/agents
     if (url.pathname === "/api/agents" && req.method === "GET") {
