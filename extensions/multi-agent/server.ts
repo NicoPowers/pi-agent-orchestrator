@@ -204,6 +204,14 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
       return;
     }
 
+    // GET /api/models
+    if (url.pathname === "/api/models" && req.method === "GET") {
+      const { getAvailableModels } = await import("./models.js");
+      const models = getAvailableModels();
+      send(res, jsonResponse(models));
+      return;
+    }
+
     // POST /api/spawn
     if (url.pathname === "/api/spawn" && req.method === "POST") {
       let body: any;
