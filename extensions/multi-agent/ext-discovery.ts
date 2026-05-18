@@ -3,7 +3,14 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { log } from "./state.js";
 
-export interface DiscoveredExtension {
+export interface ExtensionMetadata {
+  description?: string;
+  expectedTools?: string[];
+  metadataStatus: "provided" | "unknown" | "invalid";
+  metadataSource?: string;
+}
+
+export interface DiscoveredExtension extends ExtensionMetadata {
   name: string;
   path: string;
   scope: "global" | "project" | "npm";
@@ -24,6 +31,38 @@ function readPiManifest(packageJsonPath: string): { extensions?: string[] } | nu
 
 function isExtensionFile(name: string): boolean {
   return name.endsWith(".ts") || name.endsWith(".js");
+}
+
+function normalizeExpectedTools(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const tools = Array.from(new Set(value.map((tool) => String(tool).trim()).filter(Boolean)));
+  return tools.length ? tools : undefined;
+}
+
+export function readExtensionMetadata(extPath: string): ExtensionMetadata {
+  let source: string;
+  try {
+    source = fs.readFileSync(extPath, "utf-8").slice(0, 64_000);
+  } catch {
+    return { metadataStatus: "unknown" };
+  }
+
+  const match = source.match(/pi-orchestrator:\s*(\{[^\n]*\})/) || source.match(/pi-orchestrator:\s*(\{[\s\S]*?\})\s*\*\//);
+  if (!match) return { metadataStatus: "unknown" };
+
+  try {
+    const raw = JSON.parse(match[1]);
+    const description = typeof raw.description === "string" ? raw.description.trim() : undefined;
+    const expectedTools = normalizeExpectedTools(raw.expectedTools ?? raw.tools);
+    return {
+      description: description || undefined,
+      expectedTools,
+      metadataStatus: "provided",
+      metadataSource: "source-comment",
+    };
+  } catch {
+    return { metadataStatus: "invalid", metadataSource: "source-comment" };
+  }
 }
 
 function resolveExtensionEntries(dir: string): string[] | null {
@@ -102,6 +141,7 @@ function getNpmPackageExtensions(): DiscoveredExtension[] {
         name: `${pkgName}/${extName}`,
         path: extPath,
         scope: "npm",
+        ...readExtensionMetadata(extPath),
       });
     }
   }
@@ -126,13 +166,13 @@ export function discoverExtensions(cwd: string): DiscoveredExtension[] {
   for (const p of globalPaths) {
     const name = path.basename(p).replace(/\.(ts|js)$/, "");
     if (name === "multi-agent" || name === "index") continue;
-    map.set(name, { name, path: p, scope: "global" });
+    map.set(name, { name, path: p, scope: "global", ...readExtensionMetadata(p) });
   }
 
   for (const p of localPaths) {
     const name = path.basename(p).replace(/\.(ts|js)$/, "");
     if (name === "multi-agent" || name === "index") continue;
-    map.set(name, { name, path: p, scope: "project" });
+    map.set(name, { name, path: p, scope: "project", ...readExtensionMetadata(p) });
   }
 
   for (const e of npmExts) {

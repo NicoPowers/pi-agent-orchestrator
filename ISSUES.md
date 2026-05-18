@@ -315,9 +315,47 @@ Before Phase 1 is considered complete, verify:
 
 ## Phase 3 — Static Extension Metadata
 
-- Optional static expected-tool metadata convention
-- Unknown tools shown as unknown, not error
-- No runtime extension introspection
+**Goal**: Add optional, best-effort static metadata for discovered extensions so later UI phases can preview expected tools without executing extension code.
+
+### Issue 1: Metadata Shape
+
+**What to do:**
+- Extend discovered extension info with optional `description`, `expectedTools`, `metadataStatus`, and `metadataSource`.
+- Treat metadata as advisory only.
+
+**Validation:**
+- Existing extension discovery still works when no metadata exists.
+
+### Issue 2: Static Metadata Convention
+
+**What to do:**
+- Support an optional source comment convention in extension `.ts`/`.js` files:
+  - `// pi-orchestrator: { "description": "...", "expectedTools": ["tool_a"] }`
+  - or block comment equivalent.
+- Parse metadata without importing or executing extension code.
+
+**Validation:**
+- Tests cover metadata present, absent, and invalid.
+
+### Issue 3: API Exposure
+
+**What to do:**
+- Include metadata fields in `GET /api/extensions` output.
+- Unknown metadata should return `metadataStatus: "unknown"`, not an error.
+- Invalid metadata should not break discovery.
+
+**Validation:**
+- `GET /api/extensions` remains JSON and tolerant of missing metadata.
+
+### Issue 4: Docs and Regression
+
+**What to do:**
+- Document the static metadata convention.
+- Do not add runtime extension introspection.
+- Do not wire metadata into spawn behavior yet.
+
+**Validation:**
+- `bun run check` passes.
 
 ## Phase 4 — Agent Definition Resolution
 

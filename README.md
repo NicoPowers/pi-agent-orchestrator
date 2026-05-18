@@ -147,6 +147,14 @@ skills: tdd, security-checklist
 
 Extension templates use `extensions:` instead of `skills:`. Phase 2 only adds backend storage and CRUD APIs; template resolution is applied to newly spawned agents in a later phase.
 
+Extensions may optionally advertise static, best-effort metadata without being executed. Add a source comment near the top of an extension file:
+
+```ts
+// pi-orchestrator: { "description": "Browser helpers", "expectedTools": ["open_page", "click"] }
+```
+
+Missing or invalid extension metadata is tolerated and reported as `metadataStatus: "unknown"` or `"invalid"`; it is advisory only.
+
 REST endpoints:
 
 ```text

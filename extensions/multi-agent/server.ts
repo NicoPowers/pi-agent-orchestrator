@@ -13,7 +13,7 @@ export interface ServerDeps {
   removeWorktree: (worktreePath: string) => Promise<void>;
   discoverDefinitions: (cwd: string) => Array<{ name: string; description: string; model?: string; thinking?: string; tools?: string[]; source: string }>;
   getDefinition: (name: string, cwd: string) => { name: string; description: string; model?: string; thinking?: string; tools?: string[]; skills?: string[]; systemPrompt: string; source: string; filePath: string } | undefined;
-  discoverExtensions: (cwd: string) => Array<{ name: string; path: string; scope: string }>;
+  discoverExtensions: (cwd: string) => Array<{ name: string; path: string; scope: string; description?: string; expectedTools?: string[]; metadataStatus?: string; metadataSource?: string }>;
 }
 
 interface ServerHandle {
@@ -206,7 +206,14 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
     if (url.pathname === "/api/extensions" && req.method === "GET") {
       const exts = deps.discoverExtensions(deps.repoCwd);
       send(res, jsonResponse(
-        exts.map((e) => ({ name: e.name, scope: e.scope }))
+        exts.map((e) => ({
+          name: e.name,
+          scope: e.scope,
+          description: (e as any).description,
+          expectedTools: (e as any).expectedTools,
+          metadataStatus: (e as any).metadataStatus || "unknown",
+          metadataSource: (e as any).metadataSource,
+        }))
       ));
       return;
     }
