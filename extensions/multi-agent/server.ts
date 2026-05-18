@@ -12,7 +12,6 @@ export interface ServerDeps {
   removeWorktree: (worktreePath: string) => Promise<void>;
   discoverDefinitions: (cwd: string) => Array<{ name: string; description: string; model?: string; tools?: string[]; source: string }>;
   getDefinition: (name: string, cwd: string) => { name: string; description: string; model?: string; tools?: string[]; skills?: string[]; systemPrompt: string; source: string; filePath: string } | undefined;
-  notifyTerminal?: (text: string) => void;
 }
 
 interface ServerHandle {
@@ -244,7 +243,7 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
       }
 
       broadcast({ type: "agent-spawned", data: serializeAgent(result.agent) });
-      deps.notifyTerminal?.(`[dashboard] Spawned agent '${name}'`);
+      log("server", `Dashboard spawned agent '${name}'`);
 
       send(res, jsonResponse(serializeAgent(result.agent), 201));
       return;
@@ -279,10 +278,10 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
           await deps.sendToAgent(agent, message, 300_000);
           const result = agent.accumulatedText || "(agent returned empty response)";
           broadcast({ type: "agent-end", data: { name, text: result } });
-          deps.notifyTerminal?.(`[${name}] ${result}`);
+          log("server", `Dashboard send to ${name} completed`);
         } catch (err: any) {
           broadcast({ type: "agent-error", data: { name, error: err.message } });
-          deps.notifyTerminal?.(`[${name}] Error: ${err.message}`);
+          log("server", `Dashboard send to ${name} failed: ${err.message}`);
         }
       });
 
@@ -319,7 +318,7 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 
       agents.delete(name);
       broadcast({ type: "agent-killed", data: { name } });
-      deps.notifyTerminal?.(`[dashboard] Killed agent '${name}'`);
+      log("server", `Dashboard killed agent '${name}'`);
 
       send(res, jsonResponse({ killed: true, name }));
       return;

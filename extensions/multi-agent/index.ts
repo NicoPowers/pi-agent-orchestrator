@@ -1,6 +1,7 @@
 import { type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { agents, pendingTasks, log } from "./state.js";
+import * as fs from "node:fs";
+import { agents, pendingTasks, log, LOG_FILE } from "./state.js";
 import { discoverDefinitions, getDefinition } from "./definitions.js";
 import { spawnAgent } from "./spawn.js";
 import { sendToAgent } from "./send.js";
@@ -24,9 +25,6 @@ export default function (pi: ExtensionAPI) {
         removeWorktree,
         discoverDefinitions,
         getDefinition,
-        notifyTerminal: (text: string) => {
-          pi.sendUserMessage(text, { deliverAs: "steer" });
-        },
       });
       console.log(`🌐 Dashboard: ${serverHandle.url}`);
     } catch (err: any) {
@@ -499,6 +497,20 @@ export default function (pi: ExtensionAPI) {
         spawn(cmd, [serverHandle.url], { detached: true, stdio: "ignore" });
       } catch {
         /* ignore open failures */
+      }
+    },
+  });
+
+  pi.registerCommand("logs", {
+    description: "Show recent multi-agent logs. Usage: /logs [lines=20]",
+    handler: async (args, ctx) => {
+      const lines = parseInt(args.trim(), 10) || 20;
+      try {
+        const all = fs.readFileSync(LOG_FILE, "utf-8").split("\n").filter(Boolean);
+        const recent = all.slice(-lines).join("\n");
+        ctx.ui.notify(recent || "No logs yet.", "info");
+      } catch {
+        ctx.ui.notify("Log file not found.", "error");
       }
     },
   });
