@@ -12,6 +12,18 @@ import { startServer, broadcast } from "./server.js";
 let serverHandle: { url: string; stop: () => void } | undefined;
 let orchestrationMode = false;
 
+function serializeAgentForDashboard(agent: import("./state.js").Agent) {
+  return {
+    name: agent.id,
+    status: agent.status,
+    definition: agent.definition?.name,
+    parent: agent.parent,
+    children: agent.children,
+    turns: Math.floor(agent.history.length / 2),
+    worktree: agent.worktreePath,
+  };
+}
+
 export default function (pi: ExtensionAPI) {
   log("init", "multi-agent extension loaded");
 
@@ -166,6 +178,7 @@ export default function (pi: ExtensionAPI) {
       }
 
       agents.set(params.name, result.agent);
+      broadcast({ type: "agent-spawned", data: serializeAgentForDashboard(result.agent) });
       await new Promise((r) => setTimeout(r, 1000));
 
       if (result.agent.status === "error" || result.agent.status === "exited") {
@@ -379,6 +392,7 @@ export default function (pi: ExtensionAPI) {
       }
 
       agents.set(params.name, result.agent);
+      broadcast({ type: "agent-spawned", data: serializeAgentForDashboard(result.agent) });
       log("spawn", `Orchestrator created '${params.name}' (type: ${params.type}) - ${params.reason}`);
 
       return {

@@ -145,7 +145,15 @@ function renderHierarchy() {
   const container = document.getElementById("hierarchy");
   if (!container)
     return;
-  const roots = Object.values(agents).filter((a) => !a.parent);
+  const childrenByParent = new Map;
+  for (const a of Object.values(agents)) {
+    if (!a.parent)
+      continue;
+    const list = childrenByParent.get(a.parent) || [];
+    list.push(a.name);
+    childrenByParent.set(a.parent, list);
+  }
+  const roots = Object.values(agents).filter((a) => !a.parent || !agents[a.parent]);
   if (!roots.length) {
     container.innerHTML = '<div style="color:var(--dim);font-size:0.75rem;">No agents yet.</div>';
     return;
@@ -153,15 +161,16 @@ function renderHierarchy() {
   let html = "";
   const renderNode = (agent, depth) => {
     const indent = "&nbsp;".repeat(depth * 3);
+    const childNames = Array.from(new Set([...agent.children || [], ...childrenByParent.get(agent.name) || []]));
     const isExpanded = hierarchyExpanded.has(agent.name);
-    const hasChildren = agent.children && agent.children.length > 0;
+    const hasChildren = childNames.length > 0;
     const expandIcon = hasChildren ? isExpanded ? "▼ " : "▶ " : "  ";
     html += `<div style="padding:2px 0;cursor:${hasChildren ? "pointer" : "default"};" data-name="${agent.name}">
       ${indent}${expandIcon}<strong>${agent.name}</strong> <span style="color:var(--dim);font-size:0.75rem;">[${agent.definition || "custom"}]</span>
       <span class="badge ${agent.status}">${agent.status}</span>
     </div>`;
     if (isExpanded && hasChildren) {
-      for (const childName of agent.children) {
+      for (const childName of childNames) {
         const child = agents[childName];
         if (child)
           renderNode(child, depth + 1);
@@ -174,7 +183,8 @@ function renderHierarchy() {
   container.querySelectorAll("div[data-name]").forEach((el) => {
     const name = el.getAttribute("data-name");
     const agent = agents[name];
-    if (agent?.children?.length) {
+    const hasChildren = !!agent && Object.values(agents).some((a) => a.parent === name) || !!agent?.children?.length;
+    if (hasChildren) {
       el.addEventListener("click", () => {
         if (hierarchyExpanded.has(name))
           hierarchyExpanded.delete(name);
