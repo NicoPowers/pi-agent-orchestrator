@@ -127,14 +127,25 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
     }
 
     // Static: dashboard
+    const webDir = path.join(__dirname, "..", "..", "web");
     if (url.pathname === "/" || url.pathname === "/index.html") {
-      const htmlPath = path.join(__dirname, "..", "..", "web", "index.html");
+      const htmlPath = path.join(webDir, "index.html");
       if (fs.existsSync(htmlPath)) {
         res.writeHead(200, { "Content-Type": "text/html", ...corsHeaders() });
         fs.createReadStream(htmlPath).pipe(res);
         return;
       }
       send(res, errorResponse("Dashboard not found", 404));
+      return;
+    }
+    if (url.pathname === "/dashboard.js") {
+      const jsPath = path.join(webDir, "dashboard.js");
+      if (fs.existsSync(jsPath)) {
+        res.writeHead(200, { "Content-Type": "application/javascript", ...corsHeaders() });
+        fs.createReadStream(jsPath).pipe(res);
+        return;
+      }
+      send(res, errorResponse("Dashboard script not found", 404));
       return;
     }
 

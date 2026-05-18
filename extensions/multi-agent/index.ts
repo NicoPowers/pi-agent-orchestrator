@@ -141,7 +141,7 @@ export default function (pi: ExtensionAPI) {
       const allExts = discoverExtensions(ctx.cwd);
       const extensions = (params.extensions || [])
         .map((n: string) => allExts.find((e) => e.name === n))
-        .filter(Boolean);
+        .filter((e): e is NonNullable<typeof e> => e !== undefined);
 
       const result = await spawnAgent(params.name, {
         model: params.model,
