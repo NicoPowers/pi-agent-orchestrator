@@ -659,17 +659,201 @@ Support rich directory skills where `SKILL.md` references co-located markdown, s
 
 ---
 
+# Phase 7G — Resource Source Settings UI
+
+**Status:** Implemented.
+
+## Goal
+
+Let users manage machine-wide and project-local Pi resource source paths from the dashboard, using Pi's native `settings.json` files instead of a Pi Orchestrator-specific config. This supports personal skills/extensions repositories cloned elsewhere on disk and shared across projects on the same machine.
+
+## Design Direction
+
+- Use Pi's existing settings files as the source of truth:
+  - global: `~/.pi/agent/settings.json`
+  - project: `.pi/settings.json`
+- Manage these Pi settings keys:
+  - `skills`: local skill file paths or directories
+  - `extensions`: local extension file paths or directories
+- Do not invent a separate orchestrator config for resource paths.
+- Show clear scope labels:
+  - Global / all projects on this machine
+  - Project / current repository only
+- Paths may be absolute or use `~`.
+- Validate paths before saving when possible, but allow advanced users to keep not-yet-created paths only with an explicit warning/confirmation.
+- Extensions deserve stronger warnings than skills because extensions execute code with full system permissions.
+- Resource source changes may require Pi session reload/restart before every running process sees them.
+
+## Pi Settings Behavior To Surface
+
+From Pi docs:
+
+- `~/.pi/agent/settings.json` applies globally across projects.
+- `.pi/settings.json` applies to the current project and overrides/merges with global settings.
+- Resource paths in global settings resolve relative to `~/.pi/agent` unless absolute or `~`-prefixed.
+- Resource paths in project settings resolve relative to `.pi` unless absolute or `~`-prefixed.
+- `skills` and `extensions` arrays support paths, directories, globs, exclusions, and exact include/exclude prefixes.
+
+## Tracer Bullet Issues
+
+### Issue 7G.1: Settings file read API
+
+**Status:** Implemented.
+
+**Goal**: Load global and project Pi settings relevant to resource sources.
+
+**What to do:**
+- Add backend endpoint, e.g. `GET /api/resource-settings`.
+- Read:
+  - `~/.pi/agent/settings.json`
+  - `<repo>/.pi/settings.json`
+- Return only the relevant fields initially:
+  - global `skills`, `extensions`
+  - project `skills`, `extensions`
+  - file paths for each settings file
+  - whether each file exists
+  - parse/read errors, if any
+- Preserve unknown settings in files; do not drop unrelated keys.
+
+**Validation:**
+- Empty/missing settings files return empty arrays and no crash.
+- Existing unrelated settings are not modified by read path.
+- Invalid JSON returns a useful error payload.
+
+### Issue 7G.2: Settings file update API
+
+**Status:** Implemented.
+
+**Goal**: Save resource source arrays without clobbering unrelated Pi settings.
+
+**What to do:**
+- Add backend endpoint, e.g. `PUT /api/resource-settings`.
+- Support updating one scope at a time:
+  - `scope: "global" | "project"`
+  - `skills?: string[]`
+  - `extensions?: string[]`
+- Read existing settings JSON, update only provided keys, and write back pretty JSON.
+- Create parent directory/file if needed.
+- Preserve unrelated settings.
+- Return updated settings payload.
+
+**Validation:**
+- Updating global skills preserves global model/theme settings.
+- Updating project extensions preserves project settings.
+- Missing settings file is created.
+- Invalid scope returns 400.
+
+### Issue 7G.3: Path validation and resource counts
+
+**Status:** Implemented.
+
+**Goal**: Help users understand whether a configured path works.
+
+**What to do:**
+- For each configured path, return validation metadata:
+  - raw path
+  - resolved path
+  - exists
+  - type: file/directory/missing/unknown
+  - approximate discovered skill/extension count if practical
+  - warnings/errors
+- Use Pi path resolution rules:
+  - global relative paths relative to `~/.pi/agent`
+  - project relative paths relative to `.pi`
+  - `~` expansion
+- For globs/exclusions, show best-effort validation rather than strict file stats.
+
+**Validation:**
+- Absolute path validates correctly.
+- `~` path validates correctly.
+- Relative global path resolves against `~/.pi/agent`.
+- Relative project path resolves against `<repo>/.pi`.
+- Missing path shows warning but does not crash.
+
+### Issue 7G.4: Dashboard Resource Sources page
+
+**Status:** Implemented.
+
+**Goal**: Add a UI for managing Pi resource source settings.
+
+**What to do:**
+- Add a new dashboard section, e.g. `Resource Sources` or `Settings`.
+- Show two panels:
+  - Global / all projects
+  - Project / current repo
+- Each panel has editable lists for:
+  - Skill source paths
+  - Extension source paths
+- Actions:
+  - add path
+  - remove path
+  - save changes
+  - reset unsaved changes
+- Show validation badges next to each path.
+- Show the underlying settings file path for transparency.
+
+**Validation:**
+- User can add/remove global skill source path.
+- User can add/remove project extension source path.
+- UI shows unsaved changes.
+- Dashboard refreshes discovered skills/extensions after save.
+
+### Issue 7G.5: Safety and clarity copy
+
+**Status:** Implemented.
+
+**Goal**: Make the resource model understandable and safe.
+
+**What to do:**
+- Add inline helper text/tooltips explaining:
+  - global means all projects on this machine
+  - project means current repository only
+  - skills are markdown instructions and may include scripts agents can invoke
+  - extensions execute code and should only come from trusted paths
+  - settings changes may require reload/restart for all sessions to see them
+- Link or quote the relevant Pi docs behavior in concise UI copy.
+
+**Validation:**
+- New users can understand where paths are saved.
+- Extension source warning is visible before save.
+- Global/project scope distinction is unambiguous.
+
+### Issue 7G.6: Optional agent tools for resource settings
+
+**Status:** Implemented.
+
+**Goal**: Let the interactive agent inspect and modify resource source settings when asked.
+
+**What to do:**
+- Consider adding tools:
+  - `resource_settings_read`
+  - `resource_settings_update`
+- Keep writes explicit and scoped.
+- Require exact paths and preserve unrelated settings.
+- Return clear warnings for extension paths.
+
+**Validation:**
+- Agent can report current global/project resource paths.
+- Agent can add a skill source path when user asks.
+- Agent warns before adding extension source paths.
+
+---
+
 # Phase 7F — Future Enhancements / Parking Lot
 
 These are intentionally not part of 7A–7E unless explicitly pulled forward.
 
-- Delete/archive skills from dashboard.
-- Rename/move skills with reference updates.
-- Import skills from remote repositories.
-- Package skill marketplace/browser.
+- Rename skills with reference updates.
+- Copy/derive skills into project or global scope for customization.
+  - Use case: copy a package-provided/read-only skill into `.pi/skills` or `~/.pi/agent/skills`, rename it, then tweak it.
+  - Pi collision behavior from docs/source: skills are keyed by frontmatter `name`; name collisions warn and keep the first discovered skill. Default discovery order is global/user first, then project, then explicit paths/packages as loaded by the resource loader. If copying a skill for customization, give it a distinct `name`/description to avoid collision ambiguity. A copied skill with the same name may be ignored in favor of the earlier discovered skill.
+  - Potential UI: `Copy Skill…` action with target scope and required new name; copy entire directory tree; rewrite frontmatter name/description.
+  - Add a friendly warning in the copy dialog explaining that duplicate skill names collide and Pi keeps the first discovered skill, so copied/customized skills should usually get a new name.
+- Template description clarity.
+  - Current behavior: skill/extension template descriptions are dashboard metadata only. Capability resolution uses template `name`, `items`, and `applyToAll`; the template `description` is not injected into agent prompts and is not passed to child agents.
+  - Keep using template descriptions for humans: list cards, editor context, and future search/filtering.
+  - Add UI helper text so users do not assume template descriptions affect model behavior.
 - Diff view before save.
-- CodeMirror or Monaco markdown editor.
 - Skill usage telemetry: which agents loaded or used a skill.
 - Skill validation autofix.
-- Prompt action: “turn this conversation into a skill.”
 - Generate tests/examples for skill scripts.

@@ -78,6 +78,36 @@ export interface ExtensionInfo {
   metadataSource?: string;
 }
 
+export interface ResourcePathValidation {
+  rawPath: string;
+  resolvedPath?: string;
+  exists: boolean;
+  type: "file" | "directory" | "missing" | "glob" | "exclusion" | "unknown";
+  count?: number;
+  warnings: string[];
+  errors: string[];
+}
+
+export interface ResourceScopeSettings {
+  scope: "global" | "project";
+  label: string;
+  settingsPath: string;
+  exists: boolean;
+  skills: string[];
+  extensions: string[];
+  parseError?: string;
+  readError?: string;
+  validation: {
+    skills: ResourcePathValidation[];
+    extensions: ResourcePathValidation[];
+  };
+}
+
+export interface ResourceSettingsInfo {
+  global: ResourceScopeSettings;
+  project: ResourceScopeSettings;
+}
+
 export type ServerEvent =
   | { type: "init"; data: { agents: Record<string, AgentInfo> } }
   | { type: "agent-spawned"; data: AgentInfo }

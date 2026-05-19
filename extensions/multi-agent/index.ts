@@ -209,6 +209,42 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.registerTool({
+    name: "resource_settings_read",
+    label: "Read Resource Settings",
+    description: "Read Pi global/project skills and extensions source path settings.",
+    parameters: Type.Object({}),
+    async execute(_toolCallId, _params, _signal, _onUpdate, ctx) {
+      const { readResourceSettings } = await import("./resource-settings.js");
+      const settings = readResourceSettings(ctx.cwd);
+      const lines = [settings.global, settings.project].map((scope) => [
+        `${scope.label}: ${scope.settingsPath}${scope.exists ? "" : " (not created yet)"}`,
+        `  skills: ${scope.skills.length ? scope.skills.join(", ") : "—"}`,
+        `  extensions: ${scope.extensions.length ? scope.extensions.join(", ") : "—"}`,
+        scope.parseError ? `  parse error: ${scope.parseError}` : undefined,
+      ].filter(Boolean).join("\n"));
+      return { content: [{ type: "text", text: lines.join("\n\n") }], details: settings };
+    },
+  });
+
+  pi.registerTool({
+    name: "resource_settings_update",
+    label: "Update Resource Settings",
+    description: "Update one Pi settings scope's skills/extensions source paths while preserving unrelated settings. Warn before adding extension paths.",
+    parameters: Type.Object({
+      scope: Type.String({ description: "global or project" }),
+      skills: Type.Optional(Type.Array(Type.String(), { description: "Replacement skills source paths for this scope" })),
+      extensions: Type.Optional(Type.Array(Type.String(), { description: "Replacement extension source paths for this scope. Use only trusted paths." })),
+    }),
+    async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+      const { updateResourceSettings } = await import("./resource-settings.js");
+      const result = updateResourceSettings({ scope: params.scope === "global" ? "global" : params.scope === "project" ? "project" : (params.scope as any), skills: params.skills, extensions: params.extensions }, ctx.cwd);
+      if (!result.success || !result.settings) return { content: [{ type: "text", text: result.error || "Failed to update resource settings." }], isError: true, details: result };
+      const extensionWarning = params.extensions ? "\nWarning: extensions execute code with full system permissions; only use trusted paths." : "";
+      return { content: [{ type: "text", text: `Updated ${params.scope} Pi resource settings. Changes may require Pi reload/restart for all sessions to see them.${extensionWarning}` }], details: result.settings };
+    },
+  });
+
+  pi.registerTool({
     name: "agent_spawn",
     label: "Spawn Agent",
     description: [

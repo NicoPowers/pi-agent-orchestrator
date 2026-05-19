@@ -29853,6 +29853,7 @@ var tabs = [
   { id: "agents", label: "Live Agents" },
   { id: "types", label: "Agent Types" },
   { id: "skills", label: "Skill Library" },
+  { id: "resourceSettings", label: "Resource Sources" },
   { id: "skillTemplates", label: "Skill Templates" },
   { id: "extensionTemplates", label: "Extension Templates" },
   { id: "hierarchy", label: "Hierarchy" },
@@ -30138,6 +30139,13 @@ function App() {
             skillTemplates,
             onEditTemplate: (template) => setEditingTemplate({ kind: "skill", template }),
             onChanged: refreshTemplates
+          }, undefined, false, undefined, this),
+          activeTab === "resourceSettings" && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(PageFrame, {
+            mode: "wide",
+            children: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ResourceSettingsPanel, {
+              onSaved: refreshTemplates,
+              pushLog
+            }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
           activeTab === "skillTemplates" && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(PageFrame, {
             mode: "centered",
@@ -30566,6 +30574,336 @@ function EventLog({ logs }) {
           children: line.text
         }, line.id, false, undefined, this)) : "Waiting for events…"
       }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function ResourceSettingsPanel({ onSaved, pushLog }) {
+  const [settings, setSettings] = import_react2.useState(null);
+  const [drafts, setDrafts] = import_react2.useState({ global: { skills: [], extensions: [] }, project: { skills: [], extensions: [] } });
+  const [loading, setLoading] = import_react2.useState(false);
+  const [saving, setSaving] = import_react2.useState(null);
+  const [error, setError] = import_react2.useState("");
+  const load = import_react2.useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/resource-settings");
+      if (!res.ok)
+        throw new Error(await res.text());
+      const data = await res.json();
+      setSettings(data);
+      setDrafts({ global: { skills: data.global.skills, extensions: data.global.extensions }, project: { skills: data.project.skills, extensions: data.project.extensions } });
+    } catch (e) {
+      setError(e.message || "Failed to load resource settings");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  import_react2.useEffect(() => {
+    load();
+  }, [load]);
+  const save = async (scope) => {
+    const missing = [...drafts[scope].skills, ...drafts[scope].extensions].filter((value) => value.trim() && !value.trim().startsWith("!") && !/[*?\[\]{}]/.test(value)).filter((value) => {
+      const current = settings?.[scope];
+      const found = current?.validation.skills.concat(current.validation.extensions).find((item) => item.rawPath === value);
+      return found?.exists === false;
+    });
+    if (missing.length && !confirm(`Some paths do not exist yet:
+${missing.join(`
+`)}
+
+Save anyway?`))
+      return;
+    if (drafts[scope].extensions.length && !confirm("Extension source paths execute code with full system permissions. Save only trusted paths. Continue?"))
+      return;
+    setSaving(scope);
+    setError("");
+    try {
+      const res = await fetch("/api/resource-settings", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ scope, ...drafts[scope] }) });
+      if (!res.ok)
+        throw new Error(await res.text());
+      const data = await res.json();
+      setSettings(data);
+      setDrafts({ global: { skills: data.global.skills, extensions: data.global.extensions }, project: { skills: data.project.skills, extensions: data.project.extensions } });
+      pushLog(`Saved ${scope} resource sources. Reload/restart may be needed for all sessions.`, "success");
+      onSaved();
+    } catch (e) {
+      setError(e.message || "Failed to save resource settings");
+      pushLog(`Failed to save resource settings: ${e.message}`, "error");
+    } finally {
+      setSaving(null);
+    }
+  };
+  const changed = (scope) => JSON.stringify(drafts[scope]) !== JSON.stringify({ skills: settings?.[scope].skills || [], extensions: settings?.[scope].extensions || [] });
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+    className: "space-y-4",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Card, {
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardHeader, {
+            className: "border-b border-border",
+            children: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+              className: "flex items-center justify-between gap-3",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardTitle, {
+                  children: "Pi Resource Sources"
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Button, {
+                  variant: "secondary",
+                  onClick: load,
+                  disabled: loading,
+                  children: "Refresh"
+                }, undefined, false, undefined, this)
+              ]
+            }, undefined, true, undefined, this)
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardContent, {
+            className: "space-y-2 pt-4 text-sm text-muted-foreground",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("p", {
+                children: [
+                  "Manage Pi's native ",
+                  /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("code", {
+                    children: "settings.json"
+                  }, undefined, false, undefined, this),
+                  " resource arrays for ",
+                  /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("code", {
+                    children: "skills"
+                  }, undefined, false, undefined, this),
+                  " and ",
+                  /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("code", {
+                    children: "extensions"
+                  }, undefined, false, undefined, this),
+                  ". Global applies to all projects on this machine; project applies only to the current repository."
+                ]
+              }, undefined, true, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("p", {
+                children: [
+                  "Paths may be absolute, ",
+                  /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("code", {
+                    children: "~"
+                  }, undefined, false, undefined, this),
+                  "-prefixed, relative, globs, or exclusions. Global relative paths resolve from ",
+                  /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("code", {
+                    children: "~/.pi/agent"
+                  }, undefined, false, undefined, this),
+                  "; project relative paths resolve from ",
+                  /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("code", {
+                    children: ".pi"
+                  }, undefined, false, undefined, this),
+                  "."
+                ]
+              }, undefined, true, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("p", {
+                className: "text-amber-300",
+                children: "Extensions execute code with full system permissions. Only configure extension paths you trust. Settings changes may require Pi reload/restart for all running sessions to see them."
+              }, undefined, false, undefined, this),
+              error && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                className: "rounded-md border border-destructive/50 bg-destructive/10 p-2 text-destructive",
+                children: error
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      settings ? /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+        className: "grid gap-4 xl:grid-cols-2",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ResourceScopePanel, {
+            scope: settings.global,
+            draft: drafts.global,
+            onDraft: (draft) => setDrafts((prev) => ({ ...prev, global: draft })),
+            changed: changed("global"),
+            saving: saving === "global",
+            onSave: () => save("global"),
+            onReset: () => setDrafts((prev) => ({ ...prev, global: { skills: settings.global.skills, extensions: settings.global.extensions } }))
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ResourceScopePanel, {
+            scope: settings.project,
+            draft: drafts.project,
+            onDraft: (draft) => setDrafts((prev) => ({ ...prev, project: draft })),
+            changed: changed("project"),
+            saving: saving === "project",
+            onSave: () => save("project"),
+            onReset: () => setDrafts((prev) => ({ ...prev, project: { skills: settings.project.skills, extensions: settings.project.extensions } }))
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Card, {
+        children: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardContent, {
+          className: "p-6 text-sm text-muted-foreground",
+          children: loading ? "Loading resource settings…" : "No settings loaded."
+        }, undefined, false, undefined, this)
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function ResourceScopePanel({ scope, draft, onDraft, changed, saving, onSave, onReset }) {
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Card, {
+    className: "min-h-[60vh]",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardHeader, {
+        className: "border-b border-border",
+        children: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+          className: "flex items-start justify-between gap-3",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardTitle, {
+                  children: scope.label
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                  className: "mt-1 text-xs text-muted-foreground",
+                  title: scope.settingsPath,
+                  children: [
+                    scope.settingsPath,
+                    scope.exists ? "" : " (will be created)"
+                  ]
+                }, undefined, true, undefined, this)
+              ]
+            }, undefined, true, undefined, this),
+            changed && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Badge, {
+              variant: "default",
+              children: "Unsaved"
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardContent, {
+        className: "space-y-5 pt-4",
+        children: [
+          (scope.parseError || scope.readError) && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+            className: "rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive",
+            children: scope.parseError || scope.readError
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ResourceListEditor, {
+            title: "Skill source paths",
+            kind: "skills",
+            values: draft.skills,
+            validation: scope.validation.skills,
+            onChange: (skills) => onDraft({ ...draft, skills })
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ResourceListEditor, {
+            title: "Extension source paths",
+            kind: "extensions",
+            values: draft.extensions,
+            validation: scope.validation.extensions,
+            onChange: (extensions) => onDraft({ ...draft, extensions })
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+            className: "flex gap-2 border-t border-border pt-4",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Button, {
+                onClick: onSave,
+                disabled: !changed || saving,
+                children: saving ? "Saving…" : "Save changes"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Button, {
+                variant: "secondary",
+                onClick: onReset,
+                disabled: !changed || saving,
+                children: "Reset"
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function ResourceListEditor({ title, kind, values: values2, validation, onChange }) {
+  const update = (index2, value) => onChange(values2.map((item, i) => i === index2 ? value : item));
+  const remove = (index2) => onChange(values2.filter((_, i) => i !== index2));
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+    className: "space-y-2",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+        className: "flex items-center justify-between gap-2",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("h3", {
+                className: "text-sm font-semibold",
+                children: title
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("p", {
+                className: "text-xs text-muted-foreground",
+                children: kind === "skills" ? "Markdown instruction sources; skills may reference scripts agents can invoke." : "Trusted local extension files/directories only."
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Button, {
+            variant: "secondary",
+            className: "px-2 py-1 text-xs",
+            onClick: () => onChange([...values2, ""]),
+            children: "+ Add path"
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      !values2.length ? /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+        className: "rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground",
+        children: [
+          "No ",
+          kind,
+          " paths configured."
+        ]
+      }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+        className: "space-y-2",
+        children: values2.map((value, index2) => /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(ResourcePathRow, {
+          value,
+          validation: validation.find((item) => item.rawPath === value),
+          onChange: (next) => update(index2, next),
+          onRemove: () => remove(index2)
+        }, index2, false, undefined, this))
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function ResourcePathRow({ value, validation, onChange, onRemove }) {
+  const variant = validation?.errors.length ? "destructive" : validation?.exists ? "success" : "outline";
+  const label = validation ? validation.type === "glob" || validation.type === "exclusion" ? validation.type : validation.exists ? `${validation.type}${typeof validation.count === "number" ? ` · ${validation.count}` : ""}` : "missing" : "pending";
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+    className: "rounded-md border border-border p-2",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+        className: "flex gap-2",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Input, {
+            value,
+            onChange: (e) => onChange(e.target.value),
+            placeholder: "e.g. ~/my-pi-skills or ../shared/extensions"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Button, {
+            variant: "destructive",
+            className: "px-2 py-1 text-xs",
+            onClick: onRemove,
+            children: "Remove"
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+        className: "mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Badge, {
+            variant,
+            children: label
+          }, undefined, false, undefined, this),
+          validation?.resolvedPath && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
+            title: validation.resolvedPath,
+            children: shortPath(validation.resolvedPath)
+          }, undefined, false, undefined, this),
+          validation?.warnings.map((warning, i) => /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
+            className: "text-amber-300",
+            children: [
+              "⚠ ",
+              warning
+            ]
+          }, i, true, undefined, this)),
+          validation?.errors.map((err, i) => /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
+            className: "text-destructive",
+            children: err
+          }, i, false, undefined, this))
+        ]
+      }, undefined, true, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }

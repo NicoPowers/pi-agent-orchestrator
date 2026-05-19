@@ -205,6 +205,27 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
       return;
     }
 
+    // Resource source settings API
+    if (url.pathname === "/api/resource-settings" && req.method === "GET") {
+      const { readResourceSettings } = await import("./resource-settings.js");
+      send(res, jsonResponse(readResourceSettings(deps.repoCwd)));
+      return;
+    }
+    if (url.pathname === "/api/resource-settings" && req.method === "PUT") {
+      let body: any;
+      try {
+        body = JSON.parse(await readBody(req));
+      } catch {
+        send(res, errorResponse("Invalid JSON", 400));
+        return;
+      }
+      const { updateResourceSettings } = await import("./resource-settings.js");
+      const result = updateResourceSettings({ scope: body.scope, skills: body.skills, extensions: body.extensions }, deps.repoCwd);
+      if (result.success) send(res, jsonResponse(result.settings));
+      else send(res, errorResponse(result.error || "Failed to update resource settings", result.status || 400));
+      return;
+    }
+
     // Skill library API
     if (url.pathname === "/api/skills" && req.method === "GET") {
       const { discoverSkills } = await import("./skill-discovery.js");

@@ -2,7 +2,7 @@ import { StrictMode, useCallback, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { AgentInfo, AgentTypeInfo, ExtensionInfo, ModelInfo, ServerEvent, SkillDetailInfo, SkillInfo } from "./types.js";
+import type { AgentInfo, AgentTypeInfo, ExtensionInfo, ModelInfo, ResourcePathValidation, ResourceScopeSettings, ResourceSettingsInfo, ServerEvent, SkillDetailInfo, SkillInfo } from "./types.js";
 import { Badge } from "./components/ui/badge.js";
 import { Button } from "./components/ui/button.js";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card.js";
@@ -12,7 +12,7 @@ import { Select } from "./components/ui/select.js";
 
 type AgentState = AgentInfo & { text?: string };
 type LogLine = { id: number; text: string; level: "info" | "success" | "warn" | "error" };
-type Tab = "agents" | "types" | "skills" | "skillTemplates" | "extensionTemplates" | "hierarchy" | "log";
+type Tab = "agents" | "types" | "skills" | "resourceSettings" | "skillTemplates" | "extensionTemplates" | "hierarchy" | "log";
 type TemplateInfo = { name: string; description: string; items: string[]; applyToAll?: boolean; source: string; filePath: string };
 type SkillDiagnostic = { type: string; message: string; path?: string };
 type SkillFileEntry = { path: string; name: string; type: "file" | "directory"; size?: number; markdown?: boolean; editable: boolean };
@@ -24,6 +24,7 @@ const tabs: Array<{ id: Tab; label: string }> = [
   { id: "agents", label: "Live Agents" },
   { id: "types", label: "Agent Types" },
   { id: "skills", label: "Skill Library" },
+  { id: "resourceSettings", label: "Resource Sources" },
   { id: "skillTemplates", label: "Skill Templates" },
   { id: "extensionTemplates", label: "Extension Templates" },
   { id: "hierarchy", label: "Hierarchy" },
@@ -258,6 +259,7 @@ function App() {
         {activeTab === "agents" && <AgentsPanel agents={agents} stats={agentStats} onInspect={inspect} pushLog={pushLog} />}
         {activeTab === "types" && <PageFrame mode="centered"><AgentTypesPanel types={types} onNew={() => setEditingType(null)} onEdit={(type) => setEditingType(type)} large /></PageFrame>}
         {activeTab === "skills" && <SkillLibraryPanel skills={skills} diagnostics={skillDiagnostics} skillTemplates={skillTemplates} onEditTemplate={(template) => setEditingTemplate({ kind: "skill", template })} onChanged={refreshTemplates} />}
+        {activeTab === "resourceSettings" && <PageFrame mode="wide"><ResourceSettingsPanel onSaved={refreshTemplates} pushLog={pushLog} /></PageFrame>}
         {activeTab === "skillTemplates" && <PageFrame mode="centered"><TemplatesPanel kind="skill" templates={skillTemplates} onNew={() => setEditingTemplate({ kind: "skill" })} onEdit={(template) => setEditingTemplate({ kind: "skill", template })} onDeleted={refreshTemplates} pushLog={pushLog} /></PageFrame>}
         {activeTab === "extensionTemplates" && <PageFrame mode="centered"><TemplatesPanel kind="extension" templates={extensionTemplates} onNew={() => setEditingTemplate({ kind: "extension" })} onEdit={(template) => setEditingTemplate({ kind: "extension", template })} onDeleted={refreshTemplates} pushLog={pushLog} /></PageFrame>}
         {activeTab === "hierarchy" && <PageFrame mode="wide"><HierarchyPanel agents={agents} /></PageFrame>}
@@ -401,6 +403,108 @@ function HierarchyPanel({ agents }: { agents: Record<string, AgentState> }) {
 
 function EventLog({ logs }: { logs: LogLine[] }) {
   return <Card className="min-h-[70vh]"><CardHeader><CardTitle>Event Log</CardTitle></CardHeader><CardContent className="max-h-[70vh] space-y-1 overflow-auto font-mono text-xs text-muted-foreground">{logs.length ? logs.map((line) => <div key={line.id} className={`border-l-2 pl-2 ${line.level === "error" ? "border-destructive" : line.level === "success" ? "border-emerald-400" : line.level === "warn" ? "border-amber-400" : "border-primary"}`}>{line.text}</div>) : "Waiting for events…"}</CardContent></Card>;
+}
+
+function ResourceSettingsPanel({ onSaved, pushLog }: { onSaved: () => void; pushLog: (text: string, level?: LogLine["level"]) => void }) {
+  const [settings, setSettings] = useState<ResourceSettingsInfo | null>(null);
+  const [drafts, setDrafts] = useState<Record<"global" | "project", { skills: string[]; extensions: string[] }>>({ global: { skills: [], extensions: [] }, project: { skills: [], extensions: [] } });
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState<"global" | "project" | null>(null);
+  const [error, setError] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/resource-settings");
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json() as ResourceSettingsInfo;
+      setSettings(data);
+      setDrafts({ global: { skills: data.global.skills, extensions: data.global.extensions }, project: { skills: data.project.skills, extensions: data.project.extensions } });
+    } catch (e: any) {
+      setError(e.message || "Failed to load resource settings");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const save = async (scope: "global" | "project") => {
+    const missing = [...drafts[scope].skills, ...drafts[scope].extensions].filter((value) => value.trim() && !value.trim().startsWith("!") && !/[*?\[\]{}]/.test(value)).filter((value) => {
+      const current = settings?.[scope];
+      const found = current?.validation.skills.concat(current.validation.extensions).find((item) => item.rawPath === value);
+      return found?.exists === false;
+    });
+    if (missing.length && !confirm(`Some paths do not exist yet:\n${missing.join("\n")}\n\nSave anyway?`)) return;
+    if (drafts[scope].extensions.length && !confirm("Extension source paths execute code with full system permissions. Save only trusted paths. Continue?")) return;
+    setSaving(scope);
+    setError("");
+    try {
+      const res = await fetch("/api/resource-settings", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ scope, ...drafts[scope] }) });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json() as ResourceSettingsInfo;
+      setSettings(data);
+      setDrafts({ global: { skills: data.global.skills, extensions: data.global.extensions }, project: { skills: data.project.skills, extensions: data.project.extensions } });
+      pushLog(`Saved ${scope} resource sources. Reload/restart may be needed for all sessions.`, "success");
+      onSaved();
+    } catch (e: any) {
+      setError(e.message || "Failed to save resource settings");
+      pushLog(`Failed to save resource settings: ${e.message}`, "error");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const changed = (scope: "global" | "project") => JSON.stringify(drafts[scope]) !== JSON.stringify({ skills: settings?.[scope].skills || [], extensions: settings?.[scope].extensions || [] });
+
+  return <div className="space-y-4">
+    <Card>
+      <CardHeader className="border-b border-border"><div className="flex items-center justify-between gap-3"><CardTitle>Pi Resource Sources</CardTitle><Button variant="secondary" onClick={load} disabled={loading}>Refresh</Button></div></CardHeader>
+      <CardContent className="space-y-2 pt-4 text-sm text-muted-foreground">
+        <p>Manage Pi's native <code>settings.json</code> resource arrays for <code>skills</code> and <code>extensions</code>. Global applies to all projects on this machine; project applies only to the current repository.</p>
+        <p>Paths may be absolute, <code>~</code>-prefixed, relative, globs, or exclusions. Global relative paths resolve from <code>~/.pi/agent</code>; project relative paths resolve from <code>.pi</code>.</p>
+        <p className="text-amber-300">Extensions execute code with full system permissions. Only configure extension paths you trust. Settings changes may require Pi reload/restart for all running sessions to see them.</p>
+        {error && <div className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-destructive">{error}</div>}
+      </CardContent>
+    </Card>
+    {settings ? <div className="grid gap-4 xl:grid-cols-2">
+      <ResourceScopePanel scope={settings.global} draft={drafts.global} onDraft={(draft) => setDrafts((prev) => ({ ...prev, global: draft }))} changed={changed("global")} saving={saving === "global"} onSave={() => save("global")} onReset={() => setDrafts((prev) => ({ ...prev, global: { skills: settings.global.skills, extensions: settings.global.extensions } }))} />
+      <ResourceScopePanel scope={settings.project} draft={drafts.project} onDraft={(draft) => setDrafts((prev) => ({ ...prev, project: draft }))} changed={changed("project")} saving={saving === "project"} onSave={() => save("project")} onReset={() => setDrafts((prev) => ({ ...prev, project: { skills: settings.project.skills, extensions: settings.project.extensions } }))} />
+    </div> : <Card><CardContent className="p-6 text-sm text-muted-foreground">{loading ? "Loading resource settings…" : "No settings loaded."}</CardContent></Card>}
+  </div>;
+}
+
+function ResourceScopePanel({ scope, draft, onDraft, changed, saving, onSave, onReset }: { scope: ResourceScopeSettings; draft: { skills: string[]; extensions: string[] }; onDraft: (draft: { skills: string[]; extensions: string[] }) => void; changed: boolean; saving: boolean; onSave: () => void; onReset: () => void }) {
+  return <Card className="min-h-[60vh]">
+    <CardHeader className="border-b border-border"><div className="flex items-start justify-between gap-3"><div><CardTitle>{scope.label}</CardTitle><div className="mt-1 text-xs text-muted-foreground" title={scope.settingsPath}>{scope.settingsPath}{scope.exists ? "" : " (will be created)"}</div></div>{changed && <Badge variant="default">Unsaved</Badge>}</div></CardHeader>
+    <CardContent className="space-y-5 pt-4">
+      {(scope.parseError || scope.readError) && <div className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">{scope.parseError || scope.readError}</div>}
+      <ResourceListEditor title="Skill source paths" kind="skills" values={draft.skills} validation={scope.validation.skills} onChange={(skills) => onDraft({ ...draft, skills })} />
+      <ResourceListEditor title="Extension source paths" kind="extensions" values={draft.extensions} validation={scope.validation.extensions} onChange={(extensions) => onDraft({ ...draft, extensions })} />
+      <div className="flex gap-2 border-t border-border pt-4"><Button onClick={onSave} disabled={!changed || saving}>{saving ? "Saving…" : "Save changes"}</Button><Button variant="secondary" onClick={onReset} disabled={!changed || saving}>Reset</Button></div>
+    </CardContent>
+  </Card>;
+}
+
+function ResourceListEditor({ title, kind, values, validation, onChange }: { title: string; kind: "skills" | "extensions"; values: string[]; validation: ResourcePathValidation[]; onChange: (values: string[]) => void }) {
+  const update = (index: number, value: string) => onChange(values.map((item, i) => i === index ? value : item));
+  const remove = (index: number) => onChange(values.filter((_, i) => i !== index));
+  return <div className="space-y-2">
+    <div className="flex items-center justify-between gap-2"><div><h3 className="text-sm font-semibold">{title}</h3><p className="text-xs text-muted-foreground">{kind === "skills" ? "Markdown instruction sources; skills may reference scripts agents can invoke." : "Trusted local extension files/directories only."}</p></div><Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => onChange([...values, ""])}>+ Add path</Button></div>
+    {!values.length ? <div className="rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">No {kind} paths configured.</div> : <div className="space-y-2">
+      {values.map((value, index) => <ResourcePathRow key={index} value={value} validation={validation.find((item) => item.rawPath === value)} onChange={(next) => update(index, next)} onRemove={() => remove(index)} />)}
+    </div>}
+  </div>;
+}
+
+function ResourcePathRow({ value, validation, onChange, onRemove }: { value: string; validation?: ResourcePathValidation; onChange: (value: string) => void; onRemove: () => void }) {
+  const variant = validation?.errors.length ? "destructive" : validation?.exists ? "success" : "outline";
+  const label = validation ? validation.type === "glob" || validation.type === "exclusion" ? validation.type : validation.exists ? `${validation.type}${typeof validation.count === "number" ? ` · ${validation.count}` : ""}` : "missing" : "pending";
+  return <div className="rounded-md border border-border p-2">
+    <div className="flex gap-2"><Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="e.g. ~/my-pi-skills or ../shared/extensions" /><Button variant="destructive" className="px-2 py-1 text-xs" onClick={onRemove}>Remove</Button></div>
+    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><Badge variant={variant as any}>{label}</Badge>{validation?.resolvedPath && <span title={validation.resolvedPath}>{shortPath(validation.resolvedPath)}</span>}{validation?.warnings.map((warning, i) => <span key={i} className="text-amber-300">⚠ {warning}</span>)}{validation?.errors.map((err, i) => <span key={i} className="text-destructive">{err}</span>)}</div>
+  </div>;
 }
 
 function displayScopeLabel(scope?: string): string {
