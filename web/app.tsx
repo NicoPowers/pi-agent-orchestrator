@@ -490,6 +490,10 @@ function OrchestratorLibrariesPanel({ pushLog, onDisplaySettingsChanged }: { pus
       <CardContent className="space-y-2 pt-4 text-sm text-muted-foreground">
         <p>Orchestrator Libraries are user-owned, version-controlled folders for agent types, skill templates, extension templates, and curated skills/extensions.</p>
         <p>Configure libraries under <code>piAgentOrchestrator.libraries</code> in global or project settings. Libraries are loaded top to bottom within each scope; earlier libraries influence defaults and diagnostics.</p>
+        {loading && !data && <div className="space-y-3 pt-1">
+          <div className="rounded-md border border-border bg-background/60 p-3"><div className="mb-2 h-4 w-48 animate-pulse rounded bg-muted" /><div className="h-3 w-full max-w-2xl animate-pulse rounded bg-muted/70" /><div className="mt-2 h-3 w-3/4 max-w-xl animate-pulse rounded bg-muted/70" /></div>
+          <div className="rounded-md border border-dashed border-border p-6"><div className="mx-auto mb-2 h-4 w-64 animate-pulse rounded bg-muted" /><div className="mx-auto h-3 w-80 max-w-full animate-pulse rounded bg-muted/70" /></div>
+        </div>}
         {data?.settings && <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-background/60 p-3">
           <div><div className="font-medium text-foreground">Package example resources</div><div className="text-xs">Read-only package examples are useful for onboarding, but can be hidden once your own libraries are configured. Stored in project settings: <code>piAgentOrchestrator.showPackageExamples</code>.</div></div>
           <label className="flex shrink-0 items-center gap-2 text-sm text-foreground"><input type="checkbox" checked={data.settings.showPackageExamples} disabled={savingDisplay} onChange={(e) => setShowPackageExamples(e.target.checked)} /> Show package examples</label>

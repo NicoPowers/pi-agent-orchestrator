@@ -6,7 +6,7 @@ import {
   type TemplateDefinition,
 } from "./template-common.js";
 
-const config = { dirName: "extension-templates", itemField: "extensions" };
+const config = { dirName: "extension-templates", itemField: "extensions", libraryKind: "extensionTemplates" as const };
 
 export type ExtensionTemplate = TemplateDefinition;
 

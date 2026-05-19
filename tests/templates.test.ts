@@ -38,6 +38,23 @@ describe("template backend", () => {
     });
   });
 
+  it("saves and discovers templates in the first configured Orchestrator Library", async () => {
+    const { saveSkillTemplate, discoverSkillTemplates } = await import("../extensions/multi-agent/skill-templates.js");
+    const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/orchestrator-library.js");
+    const libraryRoot = path.join(tmpDir, "team-library");
+    fs.mkdirSync(path.join(libraryRoot, "skill-templates"), { recursive: true });
+    fs.writeFileSync(path.join(libraryRoot, "orchestrator-library.json"), JSON.stringify({ schema: ORCHESTRATOR_LIBRARY_SCHEMA, name: "team", resources: { skillTemplates: "skill-templates" } }));
+    fs.mkdirSync(path.join(tmpDir, ".pi"), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, ".pi", "settings.json"), JSON.stringify({ piAgentOrchestrator: { libraries: ["./team-library"] } }));
+
+    const result = saveSkillTemplate({ name: "core", description: "Core skills", items: ["team:skills/core/SKILL.md"], applyToAll: false }, tmpDir);
+
+    expect(result.success).toBe(true);
+    expect(result.path).toBe(path.join(libraryRoot, "skill-templates", "core.md"));
+    const templates = discoverSkillTemplates(tmpDir);
+    expect(templates[0]).toMatchObject({ name: "core", source: "orchestrator-library", scope: "team" });
+  });
+
   it("saves, loads, and deletes extension templates", async () => {
     const { saveExtensionTemplate, getExtensionTemplate, deleteExtensionTemplate, discoverExtensionTemplates } = await import("../extensions/multi-agent/extension-templates.js");
 

@@ -6,7 +6,7 @@ import {
   type TemplateDefinition,
 } from "./template-common.js";
 
-const config = { dirName: "skill-templates", itemField: "skills" };
+const config = { dirName: "skill-templates", itemField: "skills", libraryKind: "skillTemplates" as const };
 
 export type SkillTemplate = TemplateDefinition;
 

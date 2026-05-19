@@ -82,6 +82,23 @@ describe("definition discovery", () => {
     expect(def?.extensionTemplates).toEqual(["browser"]);
   });
 
+  it("discovers Orchestrator Library agent definitions", async () => {
+    const { discoverDefinitions } = await import("../extensions/multi-agent/definitions.js");
+    const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/orchestrator-library.js");
+
+    const libraryRoot = path.join(tmpDir, "team-library");
+    fs.mkdirSync(path.join(libraryRoot, "agents"), { recursive: true });
+    fs.writeFileSync(path.join(libraryRoot, "orchestrator-library.json"), JSON.stringify({ schema: ORCHESTRATOR_LIBRARY_SCHEMA, name: "team", resources: { agents: "agents" } }));
+    fs.writeFileSync(path.join(libraryRoot, "agents", "reviewer.md"), `---\nname: reviewer\ndescription: Library reviewer\nskillTemplates: core\n---\nReview from library.`, "utf-8");
+    fs.mkdirSync(path.join(tmpDir, ".pi"), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, ".pi", "settings.json"), JSON.stringify({ piAgentOrchestrator: { libraries: ["./team-library"] } }));
+
+    const reviewer = discoverDefinitions(tmpDir).find((d) => d.name === "reviewer");
+    expect(reviewer?.description).toBe("Library reviewer");
+    expect(reviewer?.filePath).toBe(path.join(libraryRoot, "agents", "reviewer.md"));
+    expect(reviewer?.skillTemplates).toEqual(["core"]);
+  });
+
   it("project definitions override user definitions", async () => {
     const { discoverDefinitions } = await import("../extensions/multi-agent/definitions.js");
 
@@ -126,6 +143,23 @@ describe("definition saving", () => {
     } catch {
       /* ignore */
     }
+  });
+
+  it("saves a new agent definition to the first configured Orchestrator Library", async () => {
+    const { saveAgentDefinition, discoverDefinitions } = await import("../extensions/multi-agent/definitions.js");
+    const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/orchestrator-library.js");
+
+    const libraryRoot = path.join(tmpDir, "team-library");
+    fs.mkdirSync(path.join(libraryRoot, "agents"), { recursive: true });
+    fs.writeFileSync(path.join(libraryRoot, "orchestrator-library.json"), JSON.stringify({ schema: ORCHESTRATOR_LIBRARY_SCHEMA, name: "team", resources: { agents: "agents" } }));
+    fs.mkdirSync(path.join(tmpDir, ".pi"), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, ".pi", "settings.json"), JSON.stringify({ piAgentOrchestrator: { libraries: ["./team-library"] } }));
+
+    const result = saveAgentDefinition({ name: "library-agent", description: "Library agent", systemPrompt: "Prompt.", source: "project", filePath: "" }, tmpDir);
+
+    expect(result.success).toBe(true);
+    expect(result.path).toBe(path.join(libraryRoot, "agents", "library-agent.md"));
+    expect(discoverDefinitions(tmpDir).find((d) => d.name === "library-agent")?.filePath).toBe(result.path);
   });
 
   it("saves a new agent definition to project agents dir", async () => {

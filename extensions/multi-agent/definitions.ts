@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import { type AgentDefinition } from "./state.js";
+import { discoverConfiguredOrchestratorLibraries } from "./orchestrator-library.js";
 
 function isDirectory(p: string): boolean {
   try {
@@ -126,11 +127,16 @@ export function discoverDefinitions(cwd: string): AgentDefinition[] {
   const userDefs = loadDefinitionsFromDir(userDir, "user", cwd);
   const projectDefs = projectDir ? loadDefinitionsFromDir(projectDir, "project", cwd) : [];
   const packageDefs = packageDir ? loadDefinitionsFromDir(packageDir, "package", cwd) : [];
+  const libraryDefs = discoverConfiguredOrchestratorLibraries(cwd).resources
+    .filter((resource) => resource.kind === "agents")
+    .flatMap((resource) => loadDefinitionsFromDir(path.dirname(resource.filePath), "project", cwd).filter((definition) => definition.filePath === resource.filePath))
+    .map((definition) => ({ ...definition, source: "project" as const, readOnly: false }));
 
   const map = new Map<string, AgentDefinition>();
   for (const d of packageDefs) map.set(d.name, d);
   for (const d of userDefs) map.set(d.name, d);
   for (const d of projectDefs) map.set(d.name, d);
+  for (const d of libraryDefs) map.set(d.name, d);
 
   return Array.from(map.values());
 }
@@ -148,8 +154,9 @@ export function saveAgentDefinition(
   cwd: string
 ): { success: boolean; path?: string; error?: string } {
   try {
+    const library = discoverConfiguredOrchestratorLibraries(cwd).libraries.find((candidate) => candidate.valid && candidate.manifest);
     const projectDir = findProjectAgentsDir(cwd);
-    const targetDir = projectDir || path.join(getAgentDir(), "agents");
+    const targetDir = library ? library.resourceDirs.agents.resolvedPath : (projectDir || path.join(getAgentDir(), "agents"));
 
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });

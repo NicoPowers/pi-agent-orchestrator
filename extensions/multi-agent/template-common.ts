@@ -1,19 +1,22 @@
 import { parseFrontmatter } from "@earendil-works/pi-coding-agent";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { discoverConfiguredOrchestratorLibraries } from "./orchestrator-library.js";
 
 export interface TemplateDefinition {
   name: string;
   description: string;
   items: string[];
   applyToAll?: boolean;
-  source: "project";
+  source: "project" | "orchestrator-library";
+  scope?: string;
   filePath: string;
 }
 
 export interface TemplateKindConfig {
   dirName: string;
   itemField: string;
+  libraryKind?: "skillTemplates" | "extensionTemplates";
 }
 
 function safeTemplateName(name: string): boolean {
@@ -44,51 +47,70 @@ export function validateTemplateName(name: unknown): string | undefined {
   return undefined;
 }
 
-export function discoverTemplates(cwd: string, config: TemplateKindConfig): TemplateDefinition[] {
-  const dir = templateDir(cwd, config);
-  if (!fs.existsSync(dir)) return [];
-
-  let entries: fs.Dirent[];
+function readTemplateFile(filePath: string, config: TemplateKindConfig, source: TemplateDefinition["source"], scope?: string): TemplateDefinition | undefined {
+  let content: string;
   try {
-    entries = fs.readdirSync(dir, { withFileTypes: true });
+    content = fs.readFileSync(filePath, "utf-8");
   } catch {
-    return [];
+    return undefined;
   }
+  const { frontmatter } = parseFrontmatter<Record<string, unknown>>(content);
+  const name = typeof frontmatter.name === "string" ? frontmatter.name.trim() : "";
+  const description = typeof frontmatter.description === "string" ? frontmatter.description.trim() : "";
+  if (!name || !description || validateTemplateName(name)) return undefined;
+  return {
+    name,
+    description,
+    items: parseList(frontmatter[config.itemField] ?? frontmatter.items),
+    applyToAll: parseApplyToAll(frontmatter.applyToAll),
+    source,
+    scope,
+    filePath,
+  };
+}
 
+export function discoverTemplates(cwd: string, config: TemplateKindConfig): TemplateDefinition[] {
   const templates: TemplateDefinition[] = [];
-  for (const entry of entries) {
-    if (!entry.name.endsWith(".md")) continue;
-    if (!entry.isFile() && !entry.isSymbolicLink()) continue;
-
-    const filePath = path.join(dir, entry.name);
-    let content: string;
+  const dir = templateDir(cwd, config);
+  if (fs.existsSync(dir)) {
+    let entries: fs.Dirent[] = [];
     try {
-      content = fs.readFileSync(filePath, "utf-8");
+      entries = fs.readdirSync(dir, { withFileTypes: true });
     } catch {
-      continue;
+      entries = [];
     }
-
-    const { frontmatter } = parseFrontmatter<Record<string, unknown>>(content);
-    const name = typeof frontmatter.name === "string" ? frontmatter.name.trim() : "";
-    const description = typeof frontmatter.description === "string" ? frontmatter.description.trim() : "";
-    if (!name || !description || validateTemplateName(name)) continue;
-
-    const items = parseList(frontmatter[config.itemField] ?? frontmatter.items);
-    templates.push({
-      name,
-      description,
-      items,
-      applyToAll: parseApplyToAll(frontmatter.applyToAll),
-      source: "project",
-      filePath,
-    });
+    for (const entry of entries) {
+      if (!entry.name.endsWith(".md")) continue;
+      if (!entry.isFile() && !entry.isSymbolicLink()) continue;
+      const template = readTemplateFile(path.join(dir, entry.name), config, "project");
+      if (template) templates.push(template);
+    }
   }
 
-  return templates.sort((a, b) => a.name.localeCompare(b.name));
+  if (config.libraryKind) {
+    for (const resource of discoverConfiguredOrchestratorLibraries(cwd).resources.filter((resource) => resource.kind === config.libraryKind)) {
+      const template = readTemplateFile(resource.filePath, config, "orchestrator-library", resource.libraryName);
+      if (template) templates.push(template);
+    }
+  }
+
+  const byName = new Map<string, TemplateDefinition>();
+  for (const template of templates.sort((a, b) => a.name.localeCompare(b.name))) {
+    if (!byName.has(template.name) || byName.get(template.name)?.source !== "orchestrator-library") byName.set(template.name, template);
+  }
+  return Array.from(byName.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function getTemplate(name: string, cwd: string, config: TemplateKindConfig): TemplateDefinition | undefined {
   return discoverTemplates(cwd, config).find((template) => template.name === name);
+}
+
+function targetTemplateDir(cwd: string, config: TemplateKindConfig): string {
+  if (config.libraryKind) {
+    const library = discoverConfiguredOrchestratorLibraries(cwd).libraries.find((candidate) => candidate.valid && candidate.manifest);
+    if (library) return library.resourceDirs[config.libraryKind].resolvedPath;
+  }
+  return templateDir(cwd, config);
 }
 
 export function saveTemplate(
@@ -103,7 +125,7 @@ export function saveTemplate(
 
   try {
     const name = template.name.trim();
-    const dir = templateDir(cwd, config);
+    const dir = targetTemplateDir(cwd, config);
     fs.mkdirSync(dir, { recursive: true });
     const filePath = path.join(dir, `${name}.md`);
     const uniqueItems = Array.from(new Set(template.items.map((item) => String(item).trim()).filter(Boolean)));
@@ -126,7 +148,8 @@ export function deleteTemplate(name: string, cwd: string, config: TemplateKindCo
   if (nameError) return { success: false, error: nameError };
 
   try {
-    const filePath = path.join(templateDir(cwd, config), `${name}.md`);
+    const template = getTemplate(name, cwd, config);
+    const filePath = template?.filePath || path.join(templateDir(cwd, config), `${name}.md`);
     if (!fs.existsSync(filePath)) return { success: false, error: "template not found" };
     fs.rmSync(filePath);
     return { success: true };

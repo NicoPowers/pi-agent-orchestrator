@@ -30708,6 +30708,36 @@ function OrchestratorLibrariesPanel({ pushLog, onDisplaySettingsChanged }) {
                   " in global or project settings. Libraries are loaded top to bottom within each scope; earlier libraries influence defaults and diagnostics."
                 ]
               }, undefined, true, undefined, this),
+              loading && !data && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                className: "space-y-3 pt-1",
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                    className: "rounded-md border border-border bg-background/60 p-3",
+                    children: [
+                      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                        className: "mb-2 h-4 w-48 animate-pulse rounded bg-muted"
+                      }, undefined, false, undefined, this),
+                      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                        className: "h-3 w-full max-w-2xl animate-pulse rounded bg-muted/70"
+                      }, undefined, false, undefined, this),
+                      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                        className: "mt-2 h-3 w-3/4 max-w-xl animate-pulse rounded bg-muted/70"
+                      }, undefined, false, undefined, this)
+                    ]
+                  }, undefined, true, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                    className: "rounded-md border border-dashed border-border p-6",
+                    children: [
+                      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                        className: "mx-auto mb-2 h-4 w-64 animate-pulse rounded bg-muted"
+                      }, undefined, false, undefined, this),
+                      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                        className: "mx-auto h-3 w-80 max-w-full animate-pulse rounded bg-muted/70"
+                      }, undefined, false, undefined, this)
+                    ]
+                  }, undefined, true, undefined, this)
+                ]
+              }, undefined, true, undefined, this),
               data?.settings && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
                 className: "flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-background/60 p-3",
                 children: [
