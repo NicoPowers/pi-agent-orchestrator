@@ -30447,6 +30447,7 @@ function Stats({ stats }) {
     ]
   }, undefined, true, undefined, this);
 }
+var spawnableAgentClasses = ["lead", "scout", "implementer", "reviewer"];
 function AgentTypesPanel({ types: types2, onNew, onEdit, large }) {
   return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Card, {
     className: large ? "min-h-[70vh]" : "",
@@ -30484,9 +30485,18 @@ function AgentTypesPanel({ types: types2, onNew, onEdit, large }) {
                   className: "min-w-0",
                   children: [
                     /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
-                      className: "truncate text-sm font-semibold",
-                      children: type.name
-                    }, undefined, false, undefined, this),
+                      className: "flex flex-wrap items-center gap-2",
+                      children: [
+                        /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
+                          className: "truncate text-sm font-semibold",
+                          children: type.name
+                        }, undefined, false, undefined, this),
+                        type.agentClass && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Badge, {
+                          variant: "outline",
+                          children: type.agentClass
+                        }, undefined, false, undefined, this)
+                      ]
+                    }, undefined, true, undefined, this),
                     /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
                       className: "mt-1 line-clamp-3 text-xs text-muted-foreground",
                       children: type.description
@@ -32808,6 +32818,7 @@ function TemplateChips({ templates, selectedText, emptyText, onToggle }) {
 function TypeEditorDialog({ open, typeDef, models, skillTemplates, extensionTemplates, onClose, onSaved }) {
   const [name2, setName] = import_react2.useState("");
   const [description, setDescription] = import_react2.useState("");
+  const [agentClass, setAgentClass] = import_react2.useState("implementer");
   const [model, setModel] = import_react2.useState("");
   const [thinking, setThinking] = import_react2.useState("");
   const [skillTemplatesText, setSkillTemplatesText] = import_react2.useState("");
@@ -32819,6 +32830,7 @@ function TypeEditorDialog({ open, typeDef, models, skillTemplates, extensionTemp
       return;
     setName(typeDef?.name || "");
     setDescription(typeDef?.description || "");
+    setAgentClass(spawnableAgentClasses.includes(typeDef?.agentClass) ? typeDef.agentClass : "implementer");
     setModel(typeDef?.model || "");
     setThinking(typeDef?.thinking || "medium");
     setSkillTemplatesText((typeDef?.skillTemplates || []).join(`
@@ -32838,7 +32850,7 @@ function TypeEditorDialog({ open, typeDef, models, skillTemplates, extensionTemp
     setServerError("");
     if (errors.length)
       return;
-    const payload = { name: name2.trim(), description: description.trim(), model: model || undefined, thinking: selectedModel?.thinking ? thinking : undefined, skillTemplates: splitItems(skillTemplatesText), extensionTemplates: splitItems(extensionTemplatesText), prompt: prompt.trim() || undefined };
+    const payload = { name: name2.trim(), description: description.trim(), agentClass, model: model || undefined, thinking: selectedModel?.thinking ? thinking : undefined, skillTemplates: splitItems(skillTemplatesText), extensionTemplates: splitItems(extensionTemplatesText), prompt: prompt.trim() || undefined };
     const res = await fetch("/api/agent-types", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     if (!res.ok)
       return setServerError("Failed to save: " + await responseErrorText(res));
@@ -32871,6 +32883,21 @@ function TypeEditorDialog({ open, typeDef, models, skillTemplates, extensionTemp
           onChange: (e) => setDescription(e.target.value),
           "aria-invalid": !description.trim(),
           className: !description.trim() ? "border-destructive/60" : undefined
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FieldLabel, {
+          required: true,
+          children: "Agent class"
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Select, {
+          value: agentClass,
+          onChange: (e) => setAgentClass(e.target.value),
+          children: spawnableAgentClasses.map((value) => /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("option", {
+            value,
+            children: value
+          }, value, false, undefined, this))
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FormMessage, {
+          children: "Choose what kind of child agent this type can spawn as. The root orchestrator role is reserved for the interactive /orchestrate session and is not spawnable."
         }, undefined, false, undefined, this),
         /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FieldLabel, {
           optional: true,

@@ -118,8 +118,9 @@ describe("orchestrator display settings API", () => {
     const { startServer } = await import("../extensions/multi-agent/server.js");
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-display-api-"));
     const definitions = [
-      { name: "pio-example-coder", description: "Example", systemPrompt: "", source: "package", filePath: "", readOnly: true, example: true },
-      { name: "team-coder", description: "Team", systemPrompt: "", source: "project", filePath: "" },
+      { name: "pio-example-coder", description: "Example", agentClass: "implementer", systemPrompt: "", source: "package", filePath: "", readOnly: true, example: true },
+      { name: "pio-example-orchestrator", description: "Root profile", agentClass: "orchestrator", systemPrompt: "", source: "package", filePath: "", readOnly: true, example: true },
+      { name: "team-coder", description: "Team", agentClass: "implementer", systemPrompt: "", source: "project", filePath: "" },
     ];
     const handle = await startServer({
       repoCwd: tmpDir,
@@ -134,7 +135,9 @@ describe("orchestrator display settings API", () => {
     try {
       let res = await fetch(`${handle.url}/api/agent-types`);
       expect(res.status).toBe(200);
-      expect((await res.json()).map((item: any) => item.name)).toEqual(["pio-example-coder", "team-coder"]);
+      let agentTypes = await res.json();
+      expect(agentTypes.map((item: any) => item.name)).toEqual(["pio-example-coder", "team-coder"]);
+      expect(agentTypes.find((item: any) => item.name === "team-coder")?.agentClass).toBe("implementer");
 
       res = await fetch(`${handle.url}/api/orchestrator-libraries/display-settings`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ showPackageExamples: false }) });
       expect(res.status).toBe(200);
@@ -142,7 +145,12 @@ describe("orchestrator display settings API", () => {
 
       res = await fetch(`${handle.url}/api/agent-types`);
       expect(res.status).toBe(200);
-      expect((await res.json()).map((item: any) => item.name)).toEqual(["team-coder"]);
+      agentTypes = await res.json();
+      expect(agentTypes.map((item: any) => item.name)).toEqual(["team-coder"]);
+
+      const saveOrchestrator = await fetch(`${handle.url}/api/agent-types`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: "root-orchestrator", description: "Root only", agentClass: "orchestrator" }) });
+      expect(saveOrchestrator.status).toBe(403);
+      expect(await saveOrchestrator.text()).toContain("root /orchestrate session");
     } finally {
       handle.stop();
       fs.rmSync(tmpDir, { recursive: true, force: true });

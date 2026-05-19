@@ -35,9 +35,12 @@ export interface RuntimeToolSnapshot {
   conflicts?: RuntimeToolConflict[];
 }
 
+export type AgentClass = "lead" | "scout" | "implementer" | "reviewer" | "orchestrator";
+
 export interface AgentDefinition {
   name: string;
   description: string;
+  agentClass?: AgentClass;
   model?: string;
   thinking?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
   tools?: string[];

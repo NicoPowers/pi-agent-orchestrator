@@ -1,6 +1,7 @@
 ---
 name: pio-example-coder
 description: Package example - Senior software engineer focused on clean implementation and testing
+class: implementer
 model: kimi-k2.6
 tools: read, bash, edit, write, grep, find, ls
 skills: tdd

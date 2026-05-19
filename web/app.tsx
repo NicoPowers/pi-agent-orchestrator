@@ -366,6 +366,8 @@ function Stats({ stats }: { stats?: StatsEntry }) {
   return <><span>ctx: {pct !== undefined ? `${pct}% ` : ""}{tokenText}</span><span>cost: {cost}</span></>;
 }
 
+const spawnableAgentClasses = ["lead", "scout", "implementer", "reviewer"] as const;
+
 function AgentTypesPanel({ types, onNew, onEdit, large }: { types: AgentTypeInfo[]; onNew: () => void; onEdit: (type: AgentTypeInfo) => void; large?: boolean }) {
   return (
     <Card className={large ? "min-h-[70vh]" : ""}>
@@ -374,7 +376,7 @@ function AgentTypesPanel({ types, onNew, onEdit, large }: { types: AgentTypeInfo
         {!types.length ? <p className="text-sm text-muted-foreground">No agent types found.</p> : <div className="grid gap-3 md:grid-cols-2">
           {types.map((type) => (
             <div key={type.name} className="rounded-md border border-border p-3">
-              <div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="truncate text-sm font-semibold">{type.name}</div><div className="mt-1 line-clamp-3 text-xs text-muted-foreground">{type.description}</div></div><Button variant="secondary" className="shrink-0 px-2 py-1 text-xs" onClick={() => onEdit(type)}>Edit</Button></div>
+              <div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className="truncate text-sm font-semibold">{type.name}</span>{type.agentClass && <Badge variant="outline">{type.agentClass}</Badge>}</div><div className="mt-1 line-clamp-3 text-xs text-muted-foreground">{type.description}</div></div><Button variant="secondary" className="shrink-0 px-2 py-1 text-xs" onClick={() => onEdit(type)}>Edit</Button></div>
             </div>
           ))}
         </div>}
@@ -1151,6 +1153,7 @@ function TemplateChips({ templates, selectedText, emptyText, onToggle }: { templ
 function TypeEditorDialog({ open, typeDef, models, skillTemplates, extensionTemplates, onClose, onSaved }: { open: boolean; typeDef?: AgentTypeInfo; models: ModelInfo[]; skillTemplates: TemplateInfo[]; extensionTemplates: TemplateInfo[]; onClose: () => void; onSaved: () => void }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [agentClass, setAgentClass] = useState<(typeof spawnableAgentClasses)[number]>("implementer");
   const [model, setModel] = useState("");
   const [thinking, setThinking] = useState("");
   const [skillTemplatesText, setSkillTemplatesText] = useState("");
@@ -1161,6 +1164,7 @@ function TypeEditorDialog({ open, typeDef, models, skillTemplates, extensionTemp
     if (!open) return;
     setName(typeDef?.name || "");
     setDescription(typeDef?.description || "");
+    setAgentClass(spawnableAgentClasses.includes(typeDef?.agentClass as any) ? typeDef!.agentClass as (typeof spawnableAgentClasses)[number] : "implementer");
     setModel(typeDef?.model || "");
     setThinking(typeDef?.thinking || "medium");
     setSkillTemplatesText((typeDef?.skillTemplates || []).join("\n"));
@@ -1177,7 +1181,7 @@ function TypeEditorDialog({ open, typeDef, models, skillTemplates, extensionTemp
   const save = async () => {
     setServerError("");
     if (errors.length) return;
-    const payload = { name: name.trim(), description: description.trim(), model: model || undefined, thinking: selectedModel?.thinking ? thinking : undefined, skillTemplates: splitItems(skillTemplatesText), extensionTemplates: splitItems(extensionTemplatesText), prompt: prompt.trim() || undefined };
+    const payload = { name: name.trim(), description: description.trim(), agentClass, model: model || undefined, thinking: selectedModel?.thinking ? thinking : undefined, skillTemplates: splitItems(skillTemplatesText), extensionTemplates: splitItems(extensionTemplatesText), prompt: prompt.trim() || undefined };
     const res = await fetch("/api/agent-types", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     if (!res.ok) return setServerError("Failed to save: " + await responseErrorText(res));
     onSaved();
@@ -1186,6 +1190,8 @@ function TypeEditorDialog({ open, typeDef, models, skillTemplates, extensionTemp
     <div className="space-y-3">
       <FieldLabel required>Name</FieldLabel><Input value={name} onChange={(e) => setName(e.target.value)} readOnly={!!typeDef} aria-invalid={!name.trim()} className={!name.trim() ? "border-destructive/60" : undefined} />
       <FieldLabel required>Description</FieldLabel><Input value={description} onChange={(e) => setDescription(e.target.value)} aria-invalid={!description.trim()} className={!description.trim() ? "border-destructive/60" : undefined} />
+      <FieldLabel required>Agent class</FieldLabel><Select value={agentClass} onChange={(e) => setAgentClass(e.target.value as (typeof spawnableAgentClasses)[number])}>{spawnableAgentClasses.map((value) => <option key={value} value={value}>{value}</option>)}</Select>
+      <FormMessage>Choose what kind of child agent this type can spawn as. The root orchestrator role is reserved for the interactive /orchestrate session and is not spawnable.</FormMessage>
       <FieldLabel optional>Model</FieldLabel><Select value={model} onChange={(e) => setModel(e.target.value)}><option value="">-- default --</option>{models.map((m) => <option key={m.id} value={m.id}>{m.provider ? `${m.provider}/${m.id}` : m.id}</option>)}</Select>
       {selectedModel?.thinking && <><FieldLabel optional>Thinking Level</FieldLabel><Select value={thinking} onChange={(e) => setThinking(e.target.value)}>{levels.map((level) => <option key={level} value={level}>{level}</option>)}</Select></>}
       <FieldLabel optional>Skill Templates</FieldLabel><Textarea rows={3} value={skillTemplatesText} onChange={(e) => setSkillTemplatesText(e.target.value)} placeholder={skillTemplates.map((template) => template.name).join(", ") || "common, frontend"} />

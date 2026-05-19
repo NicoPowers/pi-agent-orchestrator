@@ -2,7 +2,7 @@ import { getAgentDir, parseFrontmatter } from "@earendil-works/pi-coding-agent";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
-import { type AgentDefinition } from "./state.js";
+import { type AgentClass, type AgentDefinition } from "./state.js";
 import { discoverConfiguredOrchestratorLibraries } from "./orchestrator-library.js";
 
 function isDirectory(p: string): boolean {
@@ -50,6 +50,28 @@ export function resolveSkillPath(raw: string, agentFileDir: string, cwd: string)
   const projectSkillAlt = path.join(cwd, ".agents", "skills", raw);
   if (fs.existsSync(projectSkillAlt)) return projectSkillAlt;
   return relativeToCwd;
+}
+
+export const SPAWNABLE_AGENT_CLASSES = ["lead", "scout", "implementer", "reviewer"] as const;
+export const RESERVED_AGENT_CLASS: AgentClass = "orchestrator";
+
+export function normalizeAgentClass(value: unknown, name?: string): AgentClass {
+  const raw = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (raw === "lead" || raw === "scout" || raw === "implementer" || raw === "reviewer" || raw === "orchestrator") return raw;
+  if (name?.toLowerCase().includes("orchestrator")) return "orchestrator";
+  if (name?.toLowerCase().includes("review")) return "reviewer";
+  if (name?.toLowerCase().includes("research") || name?.toLowerCase().includes("scout")) return "scout";
+  if (name?.toLowerCase().includes("lead")) return "lead";
+  return "implementer";
+}
+
+export function isSpawnableAgentDefinition(definition: AgentDefinition): boolean {
+  return definition.agentClass !== RESERVED_AGENT_CLASS;
+}
+
+export function nonSpawnableAgentReason(definition: AgentDefinition): string | undefined {
+  if (definition.agentClass === RESERVED_AGENT_CLASS) return `Agent type '${definition.name}' is reserved for the root /orchestrate session and cannot be spawned as a child agent.`;
+  return undefined;
 }
 
 function loadDefinitionsFromDir(dir: string, source: "user" | "project" | "package", cwd: string): AgentDefinition[] {
@@ -102,6 +124,7 @@ function loadDefinitionsFromDir(dir: string, source: "user" | "project" | "packa
     defs.push({
       name: frontmatter.name,
       description: frontmatter.description,
+      agentClass: normalizeAgentClass((frontmatter as any).class || (frontmatter as any).agentClass, frontmatter.name),
       model: frontmatter.model,
       thinking: (frontmatter.thinking as AgentDefinition["thinking"]) || undefined,
       tools: tools && tools.length > 0 ? tools : undefined,
@@ -152,8 +175,11 @@ export function getDefinition(name: string, cwd: string): AgentDefinition | unde
 export function saveAgentDefinition(
   def: AgentDefinition,
   cwd: string
-): { success: boolean; path?: string; error?: string } {
+): { success: boolean; path?: string; error?: string; status?: number } {
   try {
+    const agentClass = normalizeAgentClass(def.agentClass, def.name);
+    const normalizedDef = { ...def, agentClass };
+    if (!isSpawnableAgentDefinition(normalizedDef)) return { success: false, error: nonSpawnableAgentReason(normalizedDef), status: 403 };
     const library = discoverConfiguredOrchestratorLibraries(cwd).libraries.find((candidate) => candidate.valid && candidate.manifest);
     const projectDir = findProjectAgentsDir(cwd);
     const targetDir = library ? library.resourceDirs.agents.resolvedPath : (projectDir || path.join(getAgentDir(), "agents"));
@@ -168,6 +194,7 @@ export function saveAgentDefinition(
       `name: ${def.name}`,
       `description: ${def.description || ""}`,
     ];
+    frontmatterLines.push(`class: ${agentClass}`);
     if (def.model) frontmatterLines.push(`model: ${def.model}`);
     if (def.thinking) frontmatterLines.push(`thinking: ${def.thinking}`);
     if (def.tools && def.tools.length > 0) frontmatterLines.push(`tools: ${def.tools.join(", ")}`);

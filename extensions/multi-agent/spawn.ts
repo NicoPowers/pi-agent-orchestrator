@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import { type Agent, type AgentDefinition, agents, log } from "./state.js";
+import { isSpawnableAgentDefinition, nonSpawnableAgentReason } from "./definitions.js";
 import { createWorktree, removeWorktree } from "./worktree.js";
 import { sendToAgent } from "./send.js";
 import { broadcast } from "./server.js";
@@ -115,6 +116,10 @@ export async function spawnAgent(
   }
 ): Promise<{ agent: Agent; error?: string }> {
   const { model, repoCwd, definition, parent, worktreePath: reuseWorktree, extensions } = options;
+
+  if (definition && !isSpawnableAgentDefinition(definition)) {
+    return { agent: null as any, error: nonSpawnableAgentReason(definition) || `Agent type '${definition.name}' is not spawnable.` };
+  }
 
   if (!hasBwrap()) {
     return { agent: null as any, error: "bwrap is not installed. Install bubblewrap to use agent sandboxing." };

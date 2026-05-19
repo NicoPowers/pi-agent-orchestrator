@@ -2,7 +2,7 @@ import { type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import * as fs from "node:fs";
 import { agents, pendingTasks, log, LOG_FILE } from "./state.js";
-import { discoverDefinitions, getDefinition } from "./definitions.js";
+import { discoverDefinitions, getDefinition, isSpawnableAgentDefinition, nonSpawnableAgentReason } from "./definitions.js";
 import { discoverExtensions } from "./ext-discovery.js";
 import { spawnAgent } from "./spawn.js";
 import { sendToAgent } from "./send.js";
@@ -90,11 +90,12 @@ export default function (pi: ExtensionAPI) {
     description: "List available agent definitions discovered from ~/.pi/agent/agents and .pi/agents.",
     parameters: Type.Object({}),
     async execute(_toolCallId, _params, _signal, _onUpdate, ctx) {
-      const defs = discoverDefinitions(ctx.cwd);
+      const defs = discoverDefinitions(ctx.cwd).filter(isSpawnableAgentDefinition);
       const lines = defs.map((d) => {
         const skills = d.skills ? ` [skills: ${d.skills.length}]` : "";
         const tools = d.tools ? ` [tools: ${d.tools.join(",")}]` : "";
-        return `- ${d.name} (${d.source}): ${d.description}${tools}${skills}`;
+        const agentClass = d.agentClass ? ` [class: ${d.agentClass}]` : "";
+        return `- ${d.name} (${d.source}): ${d.description}${agentClass}${tools}${skills}`;
       });
       return {
         content: [
@@ -272,13 +273,20 @@ export default function (pi: ExtensionAPI) {
 
       let definition = params.type ? getDefinition(params.type, ctx.cwd) : undefined;
       if (params.type && !definition) {
-        const available = discoverDefinitions(ctx.cwd).map((d) => d.name).join(", ") || "none";
+        const available = discoverDefinitions(ctx.cwd).filter(isSpawnableAgentDefinition).map((d) => d.name).join(", ") || "none";
         return {
           content: [
             { type: "text", text: `Agent type '${params.type}' not found. Available: ${available}` },
           ],
           isError: true,
           details: {},
+        };
+      }
+      if (definition && !isSpawnableAgentDefinition(definition)) {
+        return {
+          content: [{ type: "text", text: nonSpawnableAgentReason(definition) || `Agent type '${definition.name}' is not spawnable.` }],
+          isError: true,
+          details: { definition },
         };
       }
 
@@ -361,7 +369,7 @@ export default function (pi: ExtensionAPI) {
           status: result.agent.status,
           worktree: result.agent.worktreePath,
           definition: definition
-            ? { name: definition.name, model: definition.model, tools: definition.tools }
+            ? { name: definition.name, class: definition.agentClass, model: definition.model, tools: definition.tools }
             : undefined,
         },
       };
@@ -527,6 +535,13 @@ export default function (pi: ExtensionAPI) {
           content: [{ type: "text", text: `Agent type '${params.type}' not found.` }],
           isError: true,
           details: {},
+        };
+      }
+      if (!isSpawnableAgentDefinition(definition)) {
+        return {
+          content: [{ type: "text", text: nonSpawnableAgentReason(definition) || `Agent type '${definition.name}' is not spawnable.` }],
+          isError: true,
+          details: { definition },
         };
       }
 

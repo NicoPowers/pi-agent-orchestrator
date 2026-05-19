@@ -38,6 +38,7 @@ describe("definition discovery", () => {
     expect(reviewer).toBeDefined();
     expect(reviewer!.description).toBe("Test reviewer");
     expect(reviewer!.source).toBe("project");
+    expect(reviewer!.agentClass).toBe("reviewer");
   });
 
   it("discovers package definitions as read-only pio examples", async () => {
@@ -73,11 +74,12 @@ describe("definition discovery", () => {
     fs.mkdirSync(projectAgentsDir, { recursive: true });
     fs.writeFileSync(
       path.join(projectAgentsDir, "templated.md"),
-      `---\nname: templated\ndescription: Uses templates\nskillTemplates: common, frontend\nextensionTemplates: browser\n---\nPrompt.`,
+      `---\nname: templated\ndescription: Uses templates\nclass: lead\nskillTemplates: common, frontend\nextensionTemplates: browser\n---\nPrompt.`,
       "utf-8"
     );
 
     const def = discoverDefinitions(tmpDir).find((d) => d.name === "templated");
+    expect(def?.agentClass).toBe("lead");
     expect(def?.skillTemplates).toEqual(["common", "frontend"]);
     expect(def?.extensionTemplates).toEqual(["browser"]);
   });
@@ -97,6 +99,23 @@ describe("definition discovery", () => {
     expect(reviewer?.description).toBe("Library reviewer");
     expect(reviewer?.filePath).toBe(path.join(libraryRoot, "agents", "reviewer.md"));
     expect(reviewer?.skillTemplates).toEqual(["core"]);
+  });
+
+  it("marks orchestrator definitions as non-spawnable", async () => {
+    const { discoverDefinitions, isSpawnableAgentDefinition, nonSpawnableAgentReason } = await import("../extensions/multi-agent/definitions.js");
+
+    const projectAgentsDir = path.join(tmpDir, ".pi", "agents");
+    fs.mkdirSync(projectAgentsDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(projectAgentsDir, "root.md"),
+      `---\nname: root-orchestrator\ndescription: Root only\nclass: orchestrator\n---\nRoot prompt.`,
+      "utf-8"
+    );
+
+    const def = discoverDefinitions(tmpDir).find((d) => d.name === "root-orchestrator");
+    expect(def?.agentClass).toBe("orchestrator");
+    expect(isSpawnableAgentDefinition(def!)).toBe(false);
+    expect(nonSpawnableAgentReason(def!)).toContain("root /orchestrate session");
   });
 
   it("project definitions override user definitions", async () => {
@@ -155,11 +174,13 @@ describe("definition saving", () => {
     fs.mkdirSync(path.join(tmpDir, ".pi"), { recursive: true });
     fs.writeFileSync(path.join(tmpDir, ".pi", "settings.json"), JSON.stringify({ piAgentOrchestrator: { libraries: ["./team-library"] } }));
 
-    const result = saveAgentDefinition({ name: "library-agent", description: "Library agent", systemPrompt: "Prompt.", source: "project", filePath: "" }, tmpDir);
+    const result = saveAgentDefinition({ name: "library-agent", description: "Library agent", agentClass: "lead", systemPrompt: "Prompt.", source: "project", filePath: "" }, tmpDir);
 
     expect(result.success).toBe(true);
     expect(result.path).toBe(path.join(libraryRoot, "agents", "library-agent.md"));
-    expect(discoverDefinitions(tmpDir).find((d) => d.name === "library-agent")?.filePath).toBe(result.path);
+    const saved = discoverDefinitions(tmpDir).find((d) => d.name === "library-agent");
+    expect(saved?.filePath).toBe(result.path);
+    expect(saved?.agentClass).toBe("lead");
   });
 
   it("saves a new agent definition to project agents dir", async () => {
@@ -169,6 +190,7 @@ describe("definition saving", () => {
       {
         name: "test-researcher",
         description: "A test researcher agent",
+        agentClass: "scout",
         model: "kimi-k2.6",
         tools: ["read", "grep"],
         skills: [],
@@ -187,6 +209,27 @@ describe("definition saving", () => {
     const saved = defs.find((d) => d.name === "test-researcher");
     expect(saved).toBeDefined();
     expect(saved!.description).toBe("A test researcher agent");
+    expect(saved!.agentClass).toBe("scout");
     expect(saved!.model).toBe("kimi-k2.6");
+  });
+
+  it("rejects saving orchestrator as a spawnable agent definition", async () => {
+    const { saveAgentDefinition } = await import("../extensions/multi-agent/definitions.js");
+
+    const result = saveAgentDefinition(
+      {
+        name: "root-orchestrator",
+        description: "Root profile",
+        agentClass: "orchestrator",
+        systemPrompt: "Root only.",
+        source: "project",
+        filePath: "",
+      },
+      tmpDir
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.status).toBe(403);
+    expect(result.error).toContain("root /orchestrate session");
   });
 });

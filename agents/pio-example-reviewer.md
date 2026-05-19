@@ -1,6 +1,7 @@
 ---
 name: pio-example-reviewer
 description: Package example - Code review and quality specialist
+class: reviewer
 model: kimi-k2.6
 tools: read, grep, find, ls
 skills: security-checklist

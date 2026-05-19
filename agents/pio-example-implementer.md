@@ -1,6 +1,7 @@
 ---
 name: pio-example-implementer
 description: Package example - Focused implementation and coding specialist
+class: implementer
 model: kimi-k2.6
 tools: read, write, edit, bash, grep, find, ls
 skills: 

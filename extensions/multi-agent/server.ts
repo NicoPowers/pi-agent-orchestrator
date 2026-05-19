@@ -395,13 +395,16 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
     // GET /api/agent-types
     if (url.pathname === "/api/agent-types" && req.method === "GET") {
       const { readOrchestratorDisplaySettings } = await import("./orchestrator-library.js");
+      const { isSpawnableAgentDefinition } = await import("./definitions.js");
       const displaySettings = readOrchestratorDisplaySettings(deps.repoCwd);
       const defs = deps.discoverDefinitions(deps.repoCwd)
+        .filter(isSpawnableAgentDefinition)
         .filter((d) => displaySettings.showPackageExamples || !(d.source === "package" && d.example));
       send(res, jsonResponse(
         defs.map((d) => ({
           name: d.name,
           description: d.description,
+          agentClass: d.agentClass,
           model: d.model,
           thinking: (d as any).thinking,
           tools: d.tools,
@@ -435,15 +438,18 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
         send(res, errorResponse("name and description are required", 400));
         return;
       }
-      if (body.name.toLowerCase() === "orchestrator") {
-        send(res, errorResponse("The orchestrator type is protected and cannot be overwritten via API", 403));
+      const { normalizeAgentClass, saveAgentDefinition, isSpawnableAgentDefinition, nonSpawnableAgentReason } = await import("./definitions.js");
+      const agentClass = normalizeAgentClass(body.agentClass || body.class, body.name);
+      const candidate = { name: body.name, description: body.description, agentClass } as any;
+      if (!isSpawnableAgentDefinition(candidate)) {
+        send(res, errorResponse(nonSpawnableAgentReason(candidate) || "Agent type is not spawnable", 403));
         return;
       }
-      const { saveAgentDefinition } = await import("./definitions.js");
       const result = saveAgentDefinition(
         {
           name: body.name,
           description: body.description,
+          agentClass,
           model: body.model,
           thinking: body.thinking,
           tools: body.tools,
@@ -459,7 +465,7 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
       if (result.success) {
         send(res, jsonResponse({ success: true, path: result.path }));
       } else {
-        send(res, errorResponse(result.error || "Failed to save", 500));
+        send(res, errorResponse(result.error || "Failed to save", result.status || 500));
       }
       return;
     }
@@ -578,6 +584,13 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
       if (type && !definition) {
         send(res, errorResponse(`Agent type '${type}' not found`, 404));
         return;
+      }
+      if (definition) {
+        const { isSpawnableAgentDefinition, nonSpawnableAgentReason } = await import("./definitions.js");
+        if (!isSpawnableAgentDefinition(definition)) {
+          send(res, errorResponse(nonSpawnableAgentReason(definition) || `Agent type '${definition.name}' is not spawnable`, 403));
+          return;
+        }
       }
 
       let worktreePath: string | undefined;

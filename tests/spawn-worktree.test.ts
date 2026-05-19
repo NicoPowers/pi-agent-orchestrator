@@ -14,6 +14,22 @@ function run(command: string, args: string[], cwd: string) {
 }
 
 describe("spawn planning", () => {
+  it("rejects orchestrator-class definitions before launching a child process", async () => {
+    const { spawnAgent } = await import("../extensions/multi-agent/spawn.js");
+    const result = await spawnAgent("rootish", {
+      repoCwd: process.cwd(),
+      definition: {
+        name: "root-orchestrator",
+        description: "Root only",
+        agentClass: "orchestrator",
+        systemPrompt: "Root only.",
+        source: "project",
+        filePath: "",
+      },
+    });
+    expect(result.error).toContain("root /orchestrate session");
+  });
+
   it("builds Pi args from agent definition without requiring a real Pi process", async () => {
     const { buildPiArgs } = await import("../extensions/multi-agent/spawn.js");
 

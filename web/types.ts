@@ -35,6 +35,7 @@ export interface AgentInfo {
 export interface AgentTypeInfo {
   name: string;
   description: string;
+  agentClass?: "lead" | "scout" | "implementer" | "reviewer" | "orchestrator";
   model?: string;
   thinking?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
   tools?: string[];
