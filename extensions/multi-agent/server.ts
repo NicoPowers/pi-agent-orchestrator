@@ -296,7 +296,7 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
         return;
       }
       const { createSkill } = await import("./skill-discovery.js");
-      const result = await createSkill({ scope: body.scope, name: body.name, description: body.description, body: body.body, scaffold: body.scaffold }, deps.repoCwd);
+      const result = await createSkill({ scope: body.scope, targetLibrary: body.targetLibrary, name: body.name, description: body.description, body: body.body, scaffold: body.scaffold }, deps.repoCwd);
       if (result.success) send(res, jsonResponse(result.detail));
       else send(res, errorResponse(result.error || "Failed to create skill", result.status || 400));
       return;

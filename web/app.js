@@ -31274,6 +31274,7 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
   const [templateError, setTemplateError] = import_react2.useState("");
   const [editableFilter, setEditableFilter] = import_react2.useState("all");
   const [referenceFilter, setReferenceFilter] = import_react2.useState("all");
+  const [orchestratorLibraries, setOrchestratorLibraries] = import_react2.useState(null);
   const [loading, setLoading] = import_react2.useState(false);
   const [error, setError] = import_react2.useState("");
   const scopes = import_react2.useMemo(() => Array.from(new Set(skills.map(skillScopeLabel))).sort(), [skills]);
@@ -31301,6 +31302,19 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
   const templatesUsingSkill = import_react2.useMemo(() => selectedSkill ? skillTemplates.filter((template) => template.items.includes(skillTemplateItemValue(selectedSkill)) || template.items.includes(selectedSkill.name)) : [], [selectedSkill, skillTemplates]);
   const templatesMissingSkill = import_react2.useMemo(() => selectedSkill ? skillTemplates.filter((template) => !template.items.includes(skillTemplateItemValue(selectedSkill)) && !template.items.includes(selectedSkill.name)) : [], [selectedSkill, skillTemplates]);
   const detailMatchesSelected = !!selectedSkill?.id && detail?.skill.id === selectedSkill.id;
+  import_react2.useEffect(() => {
+    let cancelled = false;
+    fetch("/api/orchestrator-libraries").then((res) => res.ok ? res.json() : undefined).then((data) => {
+      if (!cancelled && data)
+        setOrchestratorLibraries(data);
+    }).catch(() => {
+      if (!cancelled)
+        setOrchestratorLibraries(null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [skills.length]);
   import_react2.useEffect(() => {
     setDetail(null);
     setTree([]);
@@ -31860,6 +31874,7 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
       }, undefined, true, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CreateSkillDialog, {
         open: creating,
+        libraries: orchestratorLibraries,
         onClose: () => setCreating(false),
         onCreated: (created) => {
           setCreating(false);
@@ -31887,8 +31902,10 @@ function parseMarkdownBody(content3) {
   const match = content3.match(/^---\s*\n[\s\S]*?\n---\s*\n?/);
   return match ? content3.slice(match[0].length) : content3;
 }
-function CreateSkillDialog({ open, onClose, onCreated }) {
-  const [scope, setScope] = import_react2.useState("project");
+function CreateSkillDialog({ open, libraries, onClose, onCreated }) {
+  const libraryTargets = import_react2.useMemo(() => (libraries?.libraries || []).filter((library) => library.valid && library.manifest?.name), [libraries]);
+  const defaultTarget = libraryTargets[0]?.manifest?.name ? `library:${libraryTargets[0].manifest.name}` : "global";
+  const [target, setTarget] = import_react2.useState(defaultTarget);
   const [name2, setName] = import_react2.useState("");
   const [description, setDescription] = import_react2.useState("");
   const [body, setBody] = import_react2.useState("");
@@ -31896,21 +31913,22 @@ function CreateSkillDialog({ open, onClose, onCreated }) {
   const [serverError, setServerError] = import_react2.useState("");
   import_react2.useEffect(() => {
     if (open) {
-      setScope("project");
+      setTarget(defaultTarget);
       setName("");
       setDescription("");
       setBody("");
       setScaffold("minimal");
       setServerError("");
     }
-  }, [open]);
+  }, [defaultTarget, open]);
   const savedName = normalizeSkillName(name2);
   const errors = [!savedName ? "Name is required." : undefined, !description.trim() ? "Description is required." : undefined].filter(Boolean);
   const create2 = async () => {
     setServerError("");
     if (errors.length)
       return;
-    const res = await fetch("/api/skills", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scope, name: savedName, description: description.trim(), body: body.trim() || undefined, scaffold }) });
+    const payload = target.startsWith("library:") ? { targetLibrary: target.slice("library:".length), name: savedName, description: description.trim(), body: body.trim() || undefined, scaffold } : { scope: "global", name: savedName, description: description.trim(), body: body.trim() || undefined, scaffold };
+    const res = await fetch("/api/skills", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     if (!res.ok)
       return setServerError(await responseErrorText(res));
     onCreated(await res.json());
@@ -31925,22 +31943,29 @@ function CreateSkillDialog({ open, onClose, onCreated }) {
       children: [
         /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FieldLabel, {
           required: true,
-          children: "Scope"
+          children: "Target"
         }, undefined, false, undefined, this),
         /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Select, {
-          value: scope,
-          onChange: (e) => setScope(e.target.value),
+          value: target,
+          onChange: (e) => setTarget(e.target.value),
           children: [
-            /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("option", {
-              value: "project",
-              children: "Project (.pi/skills)"
-            }, undefined, false, undefined, this),
+            libraryTargets.map((library) => /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("option", {
+              value: `library:${library.manifest.name}`,
+              children: [
+                "Orchestrator Library: ",
+                library.manifest.name
+              ]
+            }, library.root, true, undefined, this)),
             /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("option", {
               value: "global",
-              children: "Global / all repos (~/.pi/agent/skills)"
+              children: "Global Pi skills (~/.pi/agent/skills)"
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FormMessage, {
+          tone: libraryTargets.length ? "success" : "muted",
+          children: libraryTargets.length ? "New skills default to the first configured Orchestrator Library by load order." : "No Orchestrator Library is configured; new skills fall back to the global Pi skills folder."
+        }, undefined, false, undefined, this),
         /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(FieldLabel, {
           required: true,
           children: "Name"

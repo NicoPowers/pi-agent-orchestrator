@@ -195,6 +195,21 @@ function targetSkillRoot(scope: "project" | "global" | undefined, cwd: string): 
   return scope === "global" ? path.join(getAgentDir(), "skills") : path.join(cwd, ".pi", "skills");
 }
 
+async function resolveCreateSkillTarget(input: { scope?: "project" | "global"; targetLibrary?: string }, cwd: string): Promise<{ root: string; source?: string; scope?: string; error?: string; status?: number }> {
+  const { discoverConfiguredOrchestratorLibraries } = await import("./orchestrator-library.js");
+  const libraries = discoverConfiguredOrchestratorLibraries(cwd).libraries.filter((library) => library.valid && library.manifest);
+  if (input.targetLibrary) {
+    const library = libraries.find((candidate) => candidate.manifest?.name === input.targetLibrary || candidate.root === input.targetLibrary);
+    if (!library?.manifest) return { root: "", error: `Orchestrator Library '${input.targetLibrary}' not found`, status: 404 };
+    return { root: library.resourceDirs.skills.resolvedPath, source: "orchestrator-library", scope: library.manifest.name };
+  }
+  if (!input.scope && libraries[0]?.manifest) {
+    return { root: libraries[0].resourceDirs.skills.resolvedPath, source: "orchestrator-library", scope: libraries[0].manifest.name };
+  }
+  if (!input.scope) return { root: targetSkillRoot("global", cwd), scope: "global" };
+  return { root: targetSkillRoot(input.scope, cwd), scope: input.scope };
+}
+
 function yamlScalar(value: unknown): string {
   if (typeof value === "string") return /^[a-z0-9][a-z0-9 .,_/'!?()-]*$/i.test(value) ? value : JSON.stringify(value);
   if (typeof value === "number" || typeof value === "boolean") return String(value);
@@ -228,14 +243,15 @@ function copySkillTree(source: DiscoveredSkill, targetDir: string): void {
   }
 }
 
-export async function createSkill(input: { scope?: "project" | "global"; name: string; description: string; body?: string; scaffold?: "minimal" | "rich" }, cwd: string): Promise<{ success: boolean; detail?: SkillDetail; error?: string; status?: number }> {
+export async function createSkill(input: { scope?: "project" | "global"; targetLibrary?: string; name: string; description: string; body?: string; scaffold?: "minimal" | "rich" }, cwd: string): Promise<{ success: boolean; detail?: SkillDetail; error?: string; status?: number }> {
   const name = normalizeSkillName(input.name || "");
   if (!name) return { success: false, error: "name is required", status: 400 };
   if (!input.description?.trim()) return { success: false, error: "description is required", status: 400 };
   if (input.description.length > 1024) return { success: false, error: "description must be at most 1024 characters", status: 400 };
 
-  const root = targetSkillRoot(input.scope, cwd);
-  const dir = path.join(root, name);
+  const target = await resolveCreateSkillTarget(input, cwd);
+  if (target.error) return { success: false, error: target.error, status: target.status || 400 };
+  const dir = path.join(target.root, name);
   const filePath = path.join(dir, "SKILL.md");
   if (fs.existsSync(filePath) || fs.existsSync(dir)) return { success: false, error: "skill already exists", status: 409 };
 

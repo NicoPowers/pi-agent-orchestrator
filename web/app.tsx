@@ -662,6 +662,7 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
   const [templateError, setTemplateError] = useState("");
   const [editableFilter, setEditableFilter] = useState("all");
   const [referenceFilter, setReferenceFilter] = useState("all");
+  const [orchestratorLibraries, setOrchestratorLibraries] = useState<OrchestratorLibrariesInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const scopes = useMemo(() => Array.from(new Set(skills.map(skillScopeLabel))).sort(), [skills]);
@@ -683,6 +684,15 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
   const templatesUsingSkill = useMemo(() => selectedSkill ? skillTemplates.filter((template) => template.items.includes(skillTemplateItemValue(selectedSkill)) || template.items.includes(selectedSkill.name)) : [], [selectedSkill, skillTemplates]);
   const templatesMissingSkill = useMemo(() => selectedSkill ? skillTemplates.filter((template) => !template.items.includes(skillTemplateItemValue(selectedSkill)) && !template.items.includes(selectedSkill.name)) : [], [selectedSkill, skillTemplates]);
   const detailMatchesSelected = !!selectedSkill?.id && detail?.skill.id === selectedSkill.id;
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/orchestrator-libraries")
+      .then((res) => res.ok ? res.json() : undefined)
+      .then((data) => { if (!cancelled && data) setOrchestratorLibraries(data as OrchestratorLibrariesInfo); })
+      .catch(() => { if (!cancelled) setOrchestratorLibraries(null); });
+    return () => { cancelled = true; };
+  }, [skills.length]);
 
   useEffect(() => {
     setDetail(null);
@@ -845,7 +855,7 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
         </>}
       </CardContent>
     </Card>
-    <CreateSkillDialog open={creating} onClose={() => setCreating(false)} onCreated={(created) => { setCreating(false); setSelectedId(created.skill.id); setDetail(created); setEditContent(created.content); onChanged(); }} />
+    <CreateSkillDialog open={creating} libraries={orchestratorLibraries} onClose={() => setCreating(false)} onCreated={(created) => { setCreating(false); setSelectedId(created.skill.id); setDetail(created); setEditContent(created.content); onChanged(); }} />
     <CopySkillDialog source={copying} onClose={() => setCopying(null)} onCopied={(copied) => { setCopying(null); setSelectedId(copied.skill.id); setDetail(copied); setEditContent(copied.content); onChanged(); }} />
   </div>;
 }
@@ -855,26 +865,32 @@ function parseMarkdownBody(content: string): string {
   return match ? content.slice(match[0].length) : content;
 }
 
-function CreateSkillDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (detail: SkillDetailInfo) => void }) {
-  const [scope, setScope] = useState("project");
+function CreateSkillDialog({ open, libraries, onClose, onCreated }: { open: boolean; libraries: OrchestratorLibrariesInfo | null; onClose: () => void; onCreated: (detail: SkillDetailInfo) => void }) {
+  const libraryTargets = useMemo(() => (libraries?.libraries || []).filter((library) => library.valid && library.manifest?.name), [libraries]);
+  const defaultTarget = libraryTargets[0]?.manifest?.name ? `library:${libraryTargets[0].manifest.name}` : "global";
+  const [target, setTarget] = useState(defaultTarget);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [body, setBody] = useState("");
   const [scaffold, setScaffold] = useState("minimal");
   const [serverError, setServerError] = useState("");
-  useEffect(() => { if (open) { setScope("project"); setName(""); setDescription(""); setBody(""); setScaffold("minimal"); setServerError(""); } }, [open]);
+  useEffect(() => { if (open) { setTarget(defaultTarget); setName(""); setDescription(""); setBody(""); setScaffold("minimal"); setServerError(""); } }, [defaultTarget, open]);
   const savedName = normalizeSkillName(name);
   const errors = [!savedName ? "Name is required." : undefined, !description.trim() ? "Description is required." : undefined].filter(Boolean) as string[];
   const create = async () => {
     setServerError("");
     if (errors.length) return;
-    const res = await fetch("/api/skills", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scope, name: savedName, description: description.trim(), body: body.trim() || undefined, scaffold }) });
+    const payload = target.startsWith("library:")
+      ? { targetLibrary: target.slice("library:".length), name: savedName, description: description.trim(), body: body.trim() || undefined, scaffold }
+      : { scope: "global", name: savedName, description: description.trim(), body: body.trim() || undefined, scaffold };
+    const res = await fetch("/api/skills", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     if (!res.ok) return setServerError(await responseErrorText(res));
     onCreated(await res.json());
   };
   return <Dialog open={open} title="New Skill" onOpenChange={onClose} className="max-w-3xl">
     <div className="space-y-3">
-      <FieldLabel required>Scope</FieldLabel><Select value={scope} onChange={(e) => setScope(e.target.value)}><option value="project">Project (.pi/skills)</option><option value="global">Global / all repos (~/.pi/agent/skills)</option></Select>
+      <FieldLabel required>Target</FieldLabel><Select value={target} onChange={(e) => setTarget(e.target.value)}>{libraryTargets.map((library) => <option key={library.root} value={`library:${library.manifest!.name}`}>Orchestrator Library: {library.manifest!.name}</option>)}<option value="global">Global Pi skills (~/.pi/agent/skills)</option></Select>
+      <FormMessage tone={libraryTargets.length ? "success" : "muted"}>{libraryTargets.length ? "New skills default to the first configured Orchestrator Library by load order." : "No Orchestrator Library is configured; new skills fall back to the global Pi skills folder."}</FormMessage>
       <FieldLabel required>Name</FieldLabel><Input value={name} onChange={(e) => setName(e.target.value)} />
       <FormMessage tone={savedName ? "success" : "muted"}>Will be saved as: <code className="rounded bg-muted px-1 py-0.5 text-foreground">{savedName || "—"}</code></FormMessage>
       <FieldLabel required>Description</FieldLabel><Input value={description} onChange={(e) => setDescription(e.target.value)} />

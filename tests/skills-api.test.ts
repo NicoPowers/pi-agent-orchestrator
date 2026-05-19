@@ -63,6 +63,53 @@ describe("skill discovery API", () => {
     }
   });
 
+  it("creates skills in the first configured Orchestrator Library by default", async () => {
+    const { createSkill } = await import("../extensions/multi-agent/skill-discovery.js");
+    const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/orchestrator-library.js");
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-create-library-skill-"));
+    try {
+      const libraryRoot = path.join(tmpDir, "team-library");
+      fs.mkdirSync(path.join(libraryRoot, "skills"), { recursive: true });
+      fs.writeFileSync(path.join(libraryRoot, "orchestrator-library.json"), JSON.stringify({ schema: ORCHESTRATOR_LIBRARY_SCHEMA, name: "team", resources: { skills: "skills" } }));
+      fs.mkdirSync(path.join(tmpDir, ".pi"), { recursive: true });
+      fs.writeFileSync(path.join(tmpDir, ".pi", "settings.json"), JSON.stringify({ piAgentOrchestrator: { libraries: ["./team-library"] } }));
+
+      const result = await createSkill({ name: "Library Skill", description: "Library target" }, tmpDir);
+
+      expect(result.success).toBe(true);
+      expect(result.detail?.skill.source).toBe("orchestrator-library");
+      expect(result.detail?.skill.scope).toBe("team");
+      expect(fs.existsSync(path.join(libraryRoot, "skills", "library-skill", "SKILL.md"))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, ".pi", "skills", "library-skill", "SKILL.md"))).toBe(false);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it("creates skills in an explicitly selected Orchestrator Library", async () => {
+    const { createSkill } = await import("../extensions/multi-agent/skill-discovery.js");
+    const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/orchestrator-library.js");
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-create-selected-library-skill-"));
+    try {
+      for (const name of ["first", "second"]) {
+        const libraryRoot = path.join(tmpDir, `${name}-library`);
+        fs.mkdirSync(path.join(libraryRoot, "skills"), { recursive: true });
+        fs.writeFileSync(path.join(libraryRoot, "orchestrator-library.json"), JSON.stringify({ schema: ORCHESTRATOR_LIBRARY_SCHEMA, name, resources: { skills: "skills" } }));
+      }
+      fs.mkdirSync(path.join(tmpDir, ".pi"), { recursive: true });
+      fs.writeFileSync(path.join(tmpDir, ".pi", "settings.json"), JSON.stringify({ piAgentOrchestrator: { libraries: ["./first-library", "./second-library"] } }));
+
+      const result = await createSkill({ targetLibrary: "second", name: "Selected Skill", description: "Selected target" }, tmpDir);
+
+      expect(result.success).toBe(true);
+      expect(result.detail?.skill.scope).toBe("second");
+      expect(fs.existsSync(path.join(tmpDir, "second-library", "skills", "selected-skill", "SKILL.md"))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, "first-library", "skills", "selected-skill", "SKILL.md"))).toBe(false);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
   it("copies a skill directory into project scope with rewritten frontmatter", async () => {
     const { discoverSkills, copySkill } = await import("../extensions/multi-agent/skill-discovery.js");
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-copy-skill-"));
