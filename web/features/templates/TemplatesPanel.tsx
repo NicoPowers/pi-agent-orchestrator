@@ -128,6 +128,7 @@ export function TemplatesPanel({ kind, templates, onNew, onEdit, onDeleted, push
           {!!template.validationErrors?.length && <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">{template.validationErrors.join("; ")}</div>}
           {result && <div className="mt-3 space-y-2 rounded-md border border-border bg-background/60 p-2 text-xs">
             <div className="font-medium">Runtime diagnostics</div>
+            {result.smokeAgent && <div className="text-muted-foreground">Agent: {result.smokeAgent.id} ({result.smokeAgent.definition}) · model: {result.smokeAgent.model || "default selection"}{result.smokeAgent.worktree ? ` · ${result.smokeAgent.worktree}` : ""}</div>}
             <ul className="space-y-1">{result.diagnostics.map((diagnostic, index) => <li key={index} className={diagnostic.level === "error" ? "text-destructive" : diagnostic.level === "warning" ? "text-amber-300" : "text-muted-foreground"}>{diagnostic.level}: {diagnostic.message}</li>)}</ul>
             {result.runtimeTools && <div className="text-muted-foreground">Tools: {result.runtimeTools.active.map((tool) => tool.name).join(", ") || "none reported"}</div>}
             {result.stderrTail && <details><summary className="cursor-pointer text-muted-foreground">stderr tail</summary><pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap rounded bg-muted p-2 text-muted-foreground">{result.stderrTail}</pre></details>}

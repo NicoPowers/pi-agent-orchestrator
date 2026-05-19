@@ -16,11 +16,20 @@ let serverHandle: { url: string; stop: () => void } | undefined;
 let orchestrationMode = false;
 let activeRootProfileName: string | undefined;
 let activeRootProfile: RootOrchestratorProfile | undefined;
+let currentRootModel: string | undefined;
 const ORCHESTRATION_STATE_ENTRY = "pi-orchestrator-root-profile";
 
 function displaySkillScope(scope?: string): string {
   if (scope === "user") return "global";
   return scope || "unknown";
+}
+
+function modelPattern(model: any): string | undefined {
+  if (!model) return undefined;
+  const provider = typeof model.provider === "string" ? model.provider.trim() : "";
+  const id = typeof model.id === "string" ? model.id.trim() : "";
+  if (provider && id) return `${provider}/${id}`;
+  return id || undefined;
 }
 
 function serializeAgentForDashboard(agent: import("./state.js").Agent) {
@@ -75,6 +84,7 @@ export default function (pi: ExtensionAPI) {
         discoverDefinitions,
         getDefinition,
         discoverExtensions,
+        currentModel: () => currentRootModel,
       });
       log("server", `Dashboard listening at ${serverHandle.url}`);
     } catch (err: any) {
@@ -84,6 +94,7 @@ export default function (pi: ExtensionAPI) {
   }
 
   pi.on("session_start", async (_event, ctx) => {
+    currentRootModel = modelPattern((ctx as any).model) || currentRootModel;
     restoreOrchestrationState(ctx);
     if (serverHandle) {
       serverHandle.stop();
@@ -92,6 +103,11 @@ export default function (pi: ExtensionAPI) {
     await ensureServer(ctx.cwd);
     if (orchestrationMode && activeRootProfileName) ctx.ui.setStatus("orchestrator", `orchestrator: ${activeRootProfileName}`);
     else ctx.ui.setStatus("orchestrator", "");
+  });
+
+  pi.on("model_select", async (event) => {
+    currentRootModel = modelPattern((event as any).model);
+    log("model", "Root model selected", { model: currentRootModel, source: (event as any).source });
   });
 
   pi.on("resources_discover", async (_event, ctx) => {

@@ -103,4 +103,74 @@ describe("root orchestrator profiles", () => {
     expect(chooseRootProfileActivation("", [defaultProfile, planningProfile])).toEqual({ action: "select", profiles: [defaultProfile, planningProfile] });
     expect(chooseRootProfileActivation("missing", [defaultProfile])).toMatchObject({ action: "error" });
   });
+
+  it("creates, edits, and deletes editable Orchestrator Library profiles with hash guards", async () => {
+    const { saveRootProfile, getRootProfileDetail, deleteRootProfile } = await import("../extensions/multi-agent/root-profiles.js");
+    const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/orchestrator-library.js");
+    const libraryRoot = path.join(tmpDir, "team-library");
+    fs.mkdirSync(libraryRoot, { recursive: true });
+    fs.writeFileSync(path.join(libraryRoot, "orchestrator-library.json"), JSON.stringify({
+      schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+      name: "team",
+      resources: { orchestratorProfiles: "profiles" },
+    }));
+    fs.mkdirSync(path.join(tmpDir, ".pi"), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, ".pi", "settings.json"), JSON.stringify({ piAgentOrchestrator: { libraries: ["./team-library"] } }));
+
+    const created = saveRootProfile({
+      targetLibrary: "team",
+      name: "planning",
+      description: "Planning profile",
+      skillTemplates: ["root-planning"],
+      instructions: "Plan before delegating.",
+    }, tmpDir);
+
+    expect(created.success).toBe(true);
+    expect(created.path).toBe(path.join(libraryRoot, "profiles", "planning.md"));
+    let detail = getRootProfileDetail("planning", tmpDir);
+    expect(detail?.profile).toMatchObject({ source: "orchestrator-library", scope: "team", readOnly: false });
+    expect(detail?.frontmatter.skillTemplates).toBe("root-planning");
+    expect(detail?.body).toBe("Plan before delegating.");
+
+    const stale = saveRootProfile({
+      name: "planning",
+      description: "Planning profile",
+      instructions: "Updated.",
+      expectedHash: "stale",
+    }, tmpDir);
+    expect(stale.success).toBe(false);
+    expect(stale.status).toBe(409);
+
+    const updated = saveRootProfile({
+      name: "planning",
+      description: "Updated planning profile",
+      skills: ["team:skills/root/SKILL.md"],
+      instructions: "Updated.",
+      expectedHash: detail!.hash,
+    }, tmpDir);
+    expect(updated.success).toBe(true);
+    detail = getRootProfileDetail("planning", tmpDir);
+    expect(detail?.profile.description).toBe("Updated planning profile");
+    expect(detail?.content).toContain("skills: team:skills/root/SKILL.md");
+    expect(detail?.body).toBe("Updated.");
+
+    const deleted = deleteRootProfile("planning", tmpDir);
+    expect(deleted.success).toBe(true);
+    expect(getRootProfileDetail("planning", tmpDir)).toBeUndefined();
+  });
+
+  it("prevents editing or deleting package root profiles", async () => {
+    const { getRootProfileDetail, saveRootProfile, deleteRootProfile } = await import("../extensions/multi-agent/root-profiles.js");
+
+    const detail = getRootProfileDetail("default", tmpDir);
+    expect(detail?.profile.readOnly).toBe(true);
+
+    const updated = saveRootProfile({ name: "default", description: "Changed", instructions: "nope", expectedHash: detail?.hash }, tmpDir);
+    expect(updated.success).toBe(false);
+    expect(updated.status).toBe(403);
+
+    const deleted = deleteRootProfile("default", tmpDir);
+    expect(deleted.success).toBe(false);
+    expect(deleted.status).toBe(403);
+  });
 });

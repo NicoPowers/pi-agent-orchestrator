@@ -113,6 +113,67 @@ describe("template API", () => {
 });
 
 
+describe("root profile API", () => {
+  it("lists, loads, saves, copies, and deletes root orchestrator profiles", async () => {
+    const { startServer } = await import("../extensions/multi-agent/server.js");
+    const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/orchestrator-library.js");
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-root-profile-api-"));
+    const libraryRoot = path.join(tmpDir, "team-library");
+    fs.mkdirSync(libraryRoot, { recursive: true });
+    fs.writeFileSync(path.join(libraryRoot, "orchestrator-library.json"), JSON.stringify({ schema: ORCHESTRATOR_LIBRARY_SCHEMA, name: "team", resources: { orchestratorProfiles: "profiles" } }));
+    fs.mkdirSync(path.join(tmpDir, ".pi"), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, ".pi", "settings.json"), JSON.stringify({ piAgentOrchestrator: { libraries: ["./team-library"] } }));
+    const handle = await startServer({
+      repoCwd: tmpDir,
+      spawnAgent: async () => ({ agent: undefined as any, error: "disabled in tests" }),
+      sendToAgent: async () => {},
+      removeWorktree: async () => {},
+      discoverDefinitions: () => [],
+      getDefinition: () => undefined,
+      discoverExtensions: () => [],
+    });
+
+    try {
+      let res = await fetch(`${handle.url}/api/root-profiles`);
+      expect(res.status).toBe(200);
+      expect((await res.json()).some((profile: any) => profile.name === "default" && profile.readOnly)).toBe(true);
+
+      res = await fetch(`${handle.url}/api/root-profiles`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ targetLibrary: "team", name: "planning", description: "Planning", skillTemplates: ["root-planning"], instructions: "Plan." }),
+      });
+      expect(res.status).toBe(200);
+      expect((await res.json()).path).toBe(path.join(libraryRoot, "profiles", "planning.md"));
+
+      res = await fetch(`${handle.url}/api/root-profiles/planning`);
+      expect(res.status).toBe(200);
+      const detail = await res.json();
+      expect(detail.profile.scope).toBe("team");
+      expect(detail.frontmatter.skillTemplates).toBe("root-planning");
+      expect(detail.body).toBe("Plan.");
+
+      res = await fetch(`${handle.url}/api/root-profiles/planning/copy`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ targetLibrary: "team", name: "planning-copy", description: "Copy" }),
+      });
+      expect(res.status).toBe(200);
+      expect(fs.existsSync(path.join(libraryRoot, "profiles", "planning-copy.md"))).toBe(true);
+
+      res = await fetch(`${handle.url}/api/root-profiles/default`, { method: "DELETE" });
+      expect(res.status).toBe(403);
+
+      res = await fetch(`${handle.url}/api/root-profiles/planning-copy`, { method: "DELETE" });
+      expect(res.status).toBe(200);
+      expect(fs.existsSync(path.join(libraryRoot, "profiles", "planning-copy.md"))).toBe(false);
+    } finally {
+      handle.stop();
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("orchestrator display settings API", () => {
   it("hides package example agent types when the project toggle is off", async () => {
     const { startServer } = await import("../extensions/multi-agent/server.js");
@@ -166,10 +227,12 @@ describe("extension template smoke-test API", () => {
     const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ext-smoke-worktree-"));
     let removedWorktree: string | undefined;
     let spawnedExtensions: any[] = [];
+    let spawnedModel: string | undefined;
     const handle = await startServer({
       repoCwd: tmpDir,
       spawnAgent: async (_id, options) => {
         spawnedExtensions = options.extensions;
+        spawnedModel = options.model;
         const snapshotPath = runtimeToolsPath(worktreeDir);
         fs.mkdirSync(path.dirname(snapshotPath), { recursive: true });
         fs.writeFileSync(snapshotPath, JSON.stringify({
@@ -201,6 +264,7 @@ describe("extension template smoke-test API", () => {
       discoverDefinitions: () => [],
       getDefinition: () => undefined,
       discoverExtensions: () => [{ name: "foo", path: "/tmp/foo.ts", scope: "project" }, { name: "bar", path: "/tmp/bar.ts", scope: "project" }],
+      currentModel: () => "anthropic/claude-sonnet-4-5",
     });
 
     try {
@@ -215,10 +279,142 @@ describe("extension template smoke-test API", () => {
       expect(smokeRes.status).toBe(200);
       const result = await smokeRes.json();
       expect(spawnedExtensions.map((extension) => extension.name)).toEqual(["foo", "bar"]);
+      expect(spawnedModel).toBe("anthropic/claude-sonnet-4-5");
+      expect(result.smokeAgent.model).toBe("anthropic/claude-sonnet-4-5");
       expect(result.success).toBe(false);
       expect(result.runtimeTools.active.map((tool: any) => tool.name)).toEqual(["delegate", "foo_tool"]);
       expect(result.runtimeTools.conflicts[0].name).toBe("foo_tool");
       expect(removedWorktree).toBe(worktreeDir);
+    } finally {
+      handle.stop();
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+      fs.rmSync(worktreeDir, { recursive: true, force: true });
+    }
+  });
+
+  it("runs a minimal activation turn and rereads runtime tools when the startup snapshot has no active tools", async () => {
+    const { startServer } = await import("../extensions/multi-agent/server.js");
+    const { runtimeToolsPath } = await import("../extensions/multi-agent/runtime-tools.js");
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ext-smoke-activation-api-"));
+    const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ext-smoke-activation-worktree-"));
+    const snapshotPath = runtimeToolsPath(worktreeDir);
+    let sentMessage = "";
+    const handle = await startServer({
+      repoCwd: tmpDir,
+      spawnAgent: async (id) => {
+        fs.mkdirSync(path.dirname(snapshotPath), { recursive: true });
+        fs.writeFileSync(snapshotPath, JSON.stringify({
+          active: [],
+          all: [{ name: "web_search", sourceInfo: { source: "pi-web-access" } }],
+          reportedAt: 100,
+          source: "child-agent",
+        }), "utf-8");
+        return { agent: {
+          id,
+          proc: { killed: false, kill() { this.killed = true; } },
+          stdin: new PassThrough(),
+          status: "idle",
+          accumulatedText: "",
+          history: [],
+          events: [],
+          buffer: "",
+          worktreePath: worktreeDir,
+          children: [],
+          _rpcRequests: new Map(),
+        } as any };
+      },
+      sendToAgent: async (_agent, message) => {
+        sentMessage = message;
+        fs.writeFileSync(snapshotPath, JSON.stringify({
+          active: ["web_search"],
+          all: [{ name: "web_search", sourceInfo: { source: "pi-web-access" } }],
+          reportedAt: 200,
+          source: "child-agent",
+        }), "utf-8");
+      },
+      removeWorktree: async () => {},
+      discoverDefinitions: () => [],
+      getDefinition: () => undefined,
+      discoverExtensions: () => [{ name: "web-access", path: "/tmp/web-access.ts", scope: "project" }],
+    });
+
+    try {
+      await fetch(`${handle.url}/api/extension-templates`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "web-activation", description: "Web", extensions: ["web-access"] }),
+      });
+      const smokeRes = await fetch(`${handle.url}/api/extension-templates/web-activation/smoke-test`, { method: "POST" });
+      expect(smokeRes.status).toBe(200);
+      const result = await smokeRes.json();
+      expect(result.success).toBe(true);
+      expect(sentMessage).toContain("Smoke test ping");
+      expect(result.runtimeTools.active.map((tool: any) => tool.name)).toEqual(["web_search"]);
+      expect(result.diagnostics.some((diagnostic: any) => diagnostic.message.includes("minimal activation turn"))).toBe(true);
+    } finally {
+      handle.stop();
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+      fs.rmSync(worktreeDir, { recursive: true, force: true });
+    }
+  });
+
+  it("fails when requested extensions report zero active runtime tools", async () => {
+    const { startServer } = await import("../extensions/multi-agent/server.js");
+    const { runtimeToolsPath } = await import("../extensions/multi-agent/runtime-tools.js");
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ext-smoke-zero-tools-api-"));
+    const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-ext-smoke-zero-tools-worktree-"));
+    let spawnedId = "";
+    const handle = await startServer({
+      repoCwd: tmpDir,
+      spawnAgent: async (id) => {
+        spawnedId = id;
+        const snapshotPath = runtimeToolsPath(worktreeDir);
+        fs.mkdirSync(path.dirname(snapshotPath), { recursive: true });
+        fs.writeFileSync(snapshotPath, JSON.stringify({
+          active: [],
+          all: Array.from({ length: 19 }, (_, index) => ({ name: `known_tool_${index}` })),
+          reportedAt: 456,
+          source: "child-agent",
+        }), "utf-8");
+        return { agent: {
+          id,
+          proc: { killed: false, kill() { this.killed = true; } },
+          stdin: new PassThrough(),
+          status: "idle",
+          accumulatedText: "",
+          history: [],
+          events: [],
+          buffer: "",
+          worktreePath: worktreeDir,
+          children: [],
+          _rpcRequests: new Map(),
+        } as any };
+      },
+      sendToAgent: async () => {},
+      removeWorktree: async () => {},
+      discoverDefinitions: () => [],
+      getDefinition: () => undefined,
+      discoverExtensions: () => [{ name: "web-access", path: "/tmp/web-access.ts", scope: "project" }],
+      currentModel: () => undefined,
+    });
+
+    try {
+      await fetch(`${handle.url}/api/extension-templates`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "webby", description: "Web", extensions: ["web-access"] }),
+      });
+      const smokeRes = await fetch(`${handle.url}/api/extension-templates/webby/smoke-test`, { method: "POST" });
+      expect(smokeRes.status).toBe(200);
+      const result = await smokeRes.json();
+      expect(result.success).toBe(false);
+      expect(result.runtimeTools.active).toEqual([]);
+      expect(result.smokeAgent.id).toBe(spawnedId);
+      expect(result.smokeAgent.definition).toBe("extension-smoke-test");
+      expect(result.smokeAgent.model).toBeUndefined();
+      expect(result.diagnostics.some((diagnostic: any) => diagnostic.message.includes("default model selection"))).toBe(true);
+      expect(result.diagnostics.some((diagnostic: any) => diagnostic.message.includes("No active tools were available"))).toBe(true);
+      expect(result.diagnostics.some((diagnostic: any) => diagnostic.message.includes("Spawned temporary smoke-test agent"))).toBe(true);
     } finally {
       handle.stop();
       fs.rmSync(tmpDir, { recursive: true, force: true });

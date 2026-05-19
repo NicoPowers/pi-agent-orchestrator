@@ -129,6 +129,7 @@ The dashboard can currently:
 - monitor hierarchy, worktrees, context/token usage, and cost stats
 - emergency-stop all spawned agents
 - create/edit agent type definitions
+- list, preview, copy, create, edit, and delete Root Orchestrator Profiles where allowed
 - browse Orchestrator Libraries and package example visibility
 - bootstrap/register Orchestrator Libraries from an explicit path
 - browse, preview, edit, copy, create, and delete skills where allowed

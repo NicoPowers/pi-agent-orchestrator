@@ -18119,7 +18119,7 @@ var require_extend = __commonJS((exports, module) => {
 });
 
 // web/app.tsx
-var import_react7 = __toESM(require_react(), 1);
+var import_react8 = __toESM(require_react(), 1);
 var import_client = __toESM(require_client(), 1);
 
 // web/features/live-agents/LiveAgentsPanel.tsx
@@ -31855,63 +31855,65 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
                 }, undefined, false, undefined, this),
                 selectedSkill && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
                   className: "flex flex-wrap items-center gap-2",
-                  children: [
-                    !editing && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button, {
-                      variant: "secondary",
-                      className: "px-2 py-1 text-xs",
-                      onClick: () => setCopying(selectedSkill),
-                      children: "Copy"
-                    }, undefined, false, undefined, this),
-                    detailMatchesSelected && detail?.skill.editable && !editing && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(jsx_dev_runtime10.Fragment, {
-                      children: [
-                        /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button, {
-                          variant: "secondary",
-                          className: "px-2 py-1 text-xs",
-                          onClick: () => {
-                            setEditContent(fileDetail?.content ?? detail.content);
-                            setEditing(true);
-                            setDetailView("preview");
-                          },
-                          children: "Edit"
-                        }, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button, {
-                          variant: "destructive",
-                          className: "px-2 py-1 text-xs",
-                          onClick: deleteSelected,
-                          children: "Delete"
-                        }, undefined, false, undefined, this)
-                      ]
-                    }, undefined, true, undefined, this),
-                    detailMatchesSelected && editing && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(jsx_dev_runtime10.Fragment, {
-                      children: [
-                        /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button, {
-                          variant: "secondary",
-                          className: "px-2 py-1 text-xs",
-                          onClick: () => {
-                            setEditing(false);
-                            setEditContent(fileDetail?.content ?? detail?.content ?? "");
-                            setSaveError("");
-                          },
-                          children: "Cancel"
-                        }, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button, {
-                          className: "px-2 py-1 text-xs",
-                          onClick: saveEdit,
-                          children: "Save"
-                        }, undefined, false, undefined, this)
-                      ]
-                    }, undefined, true, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
-                      className: "flex rounded-md border border-border bg-background p-1",
-                      children: ["preview", "raw", "metadata"].map((view) => /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
-                        type: "button",
-                        className: `rounded px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${detailView === view ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-white/5 hover:text-foreground"}`,
-                        onClick: () => setDetailView(view),
-                        children: view === "preview" ? "Preview" : view === "raw" ? "Raw" : "Metadata"
-                      }, view, false, undefined, this))
-                    }, undefined, false, undefined, this)
-                  ]
-                }, undefined, true, undefined, this)
+                  children: !detailMatchesSelected ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(SkillActionSkeleton, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(jsx_dev_runtime10.Fragment, {
+                    children: [
+                      !editing && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button, {
+                        variant: "secondary",
+                        className: "px-2 py-1 text-xs",
+                        onClick: () => setCopying(detail.skill),
+                        children: "Copy"
+                      }, undefined, false, undefined, this),
+                      detail.skill.editable && !editing && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(jsx_dev_runtime10.Fragment, {
+                        children: [
+                          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button, {
+                            variant: "secondary",
+                            className: "px-2 py-1 text-xs",
+                            onClick: () => {
+                              setEditContent(fileDetail?.content ?? detail.content);
+                              setEditing(true);
+                              setDetailView("preview");
+                            },
+                            children: "Edit"
+                          }, undefined, false, undefined, this),
+                          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button, {
+                            variant: "destructive",
+                            className: "px-2 py-1 text-xs",
+                            onClick: deleteSelected,
+                            children: "Delete"
+                          }, undefined, false, undefined, this)
+                        ]
+                      }, undefined, true, undefined, this),
+                      editing && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(jsx_dev_runtime10.Fragment, {
+                        children: [
+                          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button, {
+                            variant: "secondary",
+                            className: "px-2 py-1 text-xs",
+                            onClick: () => {
+                              setEditing(false);
+                              setEditContent(fileDetail?.content ?? detail?.content ?? "");
+                              setSaveError("");
+                            },
+                            children: "Cancel"
+                          }, undefined, false, undefined, this),
+                          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button, {
+                            className: "px-2 py-1 text-xs",
+                            onClick: saveEdit,
+                            children: "Save"
+                          }, undefined, false, undefined, this)
+                        ]
+                      }, undefined, true, undefined, this),
+                      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+                        className: "flex rounded-md border border-border bg-background p-1",
+                        children: ["preview", "raw", "metadata"].map((view) => /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
+                          type: "button",
+                          className: `rounded px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${detailView === view ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-white/5 hover:text-foreground"}`,
+                          onClick: () => setDetailView(view),
+                          children: view === "preview" ? "Preview" : view === "raw" ? "Raw" : "Metadata"
+                        }, view, false, undefined, this))
+                      }, undefined, false, undefined, this)
+                    ]
+                  }, undefined, true, undefined, this)
+                }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this)
           }, undefined, false, undefined, this),
@@ -32138,6 +32140,27 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
           setEditContent(copied.content);
           onChanged();
         }
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function SkillActionSkeleton() {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+    className: "flex items-center gap-2",
+    "aria-label": "Loading skill actions",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+        className: "text-xs text-muted-foreground",
+        children: "Loading skill actions…"
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+        className: "h-7 w-16 animate-pulse rounded-md bg-muted"
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+        className: "h-7 w-14 animate-pulse rounded-md bg-muted"
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+        className: "h-7 w-20 animate-pulse rounded-md bg-muted"
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
@@ -32761,6 +32784,18 @@ function TemplatesPanel({ kind, templates, onNew, onEdit, onDeleted, pushLog }) 
                       className: "font-medium",
                       children: "Runtime diagnostics"
                     }, undefined, false, undefined, this),
+                    result.smokeAgent && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
+                      className: "text-muted-foreground",
+                      children: [
+                        "Agent: ",
+                        result.smokeAgent.id,
+                        " (",
+                        result.smokeAgent.definition,
+                        ") · model: ",
+                        result.smokeAgent.model || "default selection",
+                        result.smokeAgent.worktree ? ` · ${result.smokeAgent.worktree}` : ""
+                      ]
+                    }, undefined, true, undefined, this),
                     /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("ul", {
                       className: "space-y-1",
                       children: result.diagnostics.map((diagnostic, index2) => /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("li", {
@@ -33053,11 +33088,505 @@ ${ext.name}`).join(`
   }, undefined, false, undefined, this);
 }
 
-// web/app.tsx
+// web/features/root-orchestrator-profiles/RootOrchestratorProfilesPanel.tsx
+var import_react7 = __toESM(require_react(), 1);
 var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
+function splitItems3(text7) {
+  return Array.from(new Set(text7.split(/[\n,]/).map((item) => item.trim()).filter(Boolean)));
+}
+function sourceLabel(profile) {
+  if (profile.source === "orchestrator-library")
+    return `library: ${profile.scope || "unknown"}`;
+  return profile.source;
+}
+async function responseErrorText5(res) {
+  const text7 = await res.text();
+  try {
+    const data = JSON.parse(text7);
+    return data?.error || text7;
+  } catch {
+    return text7;
+  }
+}
+function FieldLabel5({ children, required, optional }) {
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("label", {
+    className: "block text-xs uppercase tracking-wide text-muted-foreground",
+    children: [
+      children,
+      " ",
+      required && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+        className: "text-destructive",
+        children: "*"
+      }, undefined, false, undefined, this),
+      optional && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+        className: "normal-case text-muted-foreground/70",
+        children: "(optional)"
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function FormMessage5({ children, tone = "muted" }) {
+  const className = tone === "error" ? "text-destructive" : tone === "success" ? "text-emerald-400" : "text-muted-foreground";
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("p", {
+    className: `text-xs ${className}`,
+    children
+  }, undefined, false, undefined, this);
+}
+function RootProfileEditorDialog({ open, mode, sourceProfile, detail, onClose, onSaved }) {
+  const [libraries, setLibraries] = import_react7.useState(null);
+  const [targetLibrary, setTargetLibrary] = import_react7.useState("");
+  const [name2, setName] = import_react7.useState("");
+  const [description, setDescription] = import_react7.useState("");
+  const [skillsText, setSkillsText] = import_react7.useState("");
+  const [skillTemplatesText, setSkillTemplatesText] = import_react7.useState("");
+  const [instructions, setInstructions] = import_react7.useState("");
+  const [serverError, setServerError] = import_react7.useState("");
+  import_react7.useEffect(() => {
+    if (!open)
+      return;
+    setServerError("");
+    fetch("/api/orchestrator-libraries").then((res) => res.ok ? res.json() : null).then((data) => setLibraries(data)).catch(() => setLibraries(null));
+    const profile = detail?.profile || sourceProfile;
+    setTargetLibrary(mode === "edit" ? "" : profile?.source === "orchestrator-library" ? profile.scope || "" : "");
+    setName(mode === "new" ? "" : mode === "copy" ? `${sourceProfile?.name || "profile"}-copy` : profile?.name || "");
+    setDescription(mode === "new" ? "" : mode === "copy" ? `${sourceProfile?.description || "Root orchestrator profile"} copy` : profile?.description || "");
+    setSkillsText((detail?.profile.skills || sourceProfile?.skills || []).join(`
+`));
+    setSkillTemplatesText((detail?.profile.skillTemplates || sourceProfile?.skillTemplates || []).join(`
+`));
+    setInstructions(detail?.body || sourceProfile?.instructions || "");
+  }, [open, mode, sourceProfile, detail]);
+  const validLibraries = (libraries?.libraries || []).filter((library) => library.valid && library.manifest);
+  const errors = [
+    !name2.trim() ? "Name is required." : undefined,
+    !description.trim() ? "Description is required." : undefined,
+    mode !== "edit" && !targetLibrary && validLibraries.length ? "Choose an Orchestrator Library target." : undefined
+  ].filter(Boolean);
+  const save = async () => {
+    setServerError("");
+    if (errors.length)
+      return;
+    const payload = { targetLibrary: targetLibrary || undefined, name: name2.trim(), description: description.trim(), skills: splitItems3(skillsText), skillTemplates: splitItems3(skillTemplatesText), instructions, expectedHash: detail?.hash };
+    const url = mode === "copy" && sourceProfile ? `/api/root-profiles/${encodeURIComponent(sourceProfile.name)}/copy` : "/api/root-profiles";
+    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    if (!res.ok)
+      return setServerError(await responseErrorText5(res));
+    onSaved();
+  };
+  const title = mode === "new" ? "New Root Orchestrator Profile" : mode === "copy" ? `Copy ${sourceProfile?.name || "Profile"}` : `Edit ${detail?.profile.name || "Profile"}`;
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Dialog, {
+    open,
+    title,
+    onOpenChange: onClose,
+    className: "max-w-4xl",
+    children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+      className: "space-y-3",
+      children: [
+        mode !== "edit" && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(jsx_dev_runtime12.Fragment, {
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FieldLabel5, {
+              required: true,
+              children: "Target Orchestrator Library"
+            }, undefined, false, undefined, this),
+            validLibraries.length ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Select, {
+              value: targetLibrary,
+              onChange: (e) => setTargetLibrary(e.target.value),
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("option", {
+                  value: "",
+                  children: "-- choose library --"
+                }, undefined, false, undefined, this),
+                validLibraries.map((library) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("option", {
+                  value: library.manifest.name,
+                  children: [
+                    library.manifest.name,
+                    " (",
+                    library.root,
+                    ")"
+                  ]
+                }, library.manifest.name, true, undefined, this))
+              ]
+            }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+              className: "rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground",
+              children: "No valid Orchestrator Libraries are configured. This profile will be saved to the project .pi/orchestrator-profiles fallback."
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FieldLabel5, {
+          required: true,
+          children: "Name"
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Input, {
+          value: name2,
+          readOnly: mode === "edit",
+          onChange: (e) => setName(e.target.value)
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FieldLabel5, {
+          required: true,
+          children: "Description"
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Input, {
+          value: description,
+          onChange: (e) => setDescription(e.target.value)
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FieldLabel5, {
+          optional: true,
+          children: "Skills"
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Textarea, {
+          rows: 3,
+          value: skillsText,
+          onChange: (e) => setSkillsText(e.target.value),
+          placeholder: "Skill names, paths, or library refs"
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FieldLabel5, {
+          optional: true,
+          children: "Skill Templates"
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Textarea, {
+          rows: 3,
+          value: skillTemplatesText,
+          onChange: (e) => setSkillTemplatesText(e.target.value),
+          placeholder: "Root-eligible skill template names"
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FieldLabel5, {
+          optional: true,
+          children: "Root Instructions"
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Textarea, {
+          rows: 10,
+          value: instructions,
+          onChange: (e) => setInstructions(e.target.value),
+          placeholder: "Instructions appended when /orchestrate activates this profile"
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FormMessage5, {
+          children: "Root Orchestrator Profiles are root-only instructions/skills for /orchestrate. They are not Agent Types and do not load arbitrary extensions."
+        }, undefined, false, undefined, this),
+        (!!errors.length || serverError) && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+          className: "rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive",
+          children: [
+            serverError && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+              children: serverError
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("ul", {
+              className: "list-disc pl-5",
+              children: errors.map((error) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("li", {
+                children: error
+              }, error, false, undefined, this))
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+          className: "flex justify-end gap-2",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button, {
+              variant: "secondary",
+              onClick: onClose,
+              children: "Cancel"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button, {
+              onClick: save,
+              disabled: !!errors.length,
+              children: mode === "copy" ? "Copy Profile" : "Save Profile"
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
+      ]
+    }, undefined, true, undefined, this)
+  }, undefined, false, undefined, this);
+}
+function RootOrchestratorProfilesPanel({ profiles, onChanged, pushLog }) {
+  const [selectedName, setSelectedName] = import_react7.useState(profiles[0]?.name || "");
+  const [detail, setDetail] = import_react7.useState();
+  const [dialog, setDialog] = import_react7.useState(null);
+  const selected = profiles.find((profile) => profile.name === selectedName) || profiles[0];
+  import_react7.useEffect(() => {
+    if (!selectedName && profiles[0])
+      setSelectedName(profiles[0].name);
+  }, [profiles, selectedName]);
+  import_react7.useEffect(() => {
+    let cancelled = false;
+    if (!selected?.name) {
+      setDetail(undefined);
+      return;
+    }
+    setDetail(undefined);
+    fetch(`/api/root-profiles/${encodeURIComponent(selected.name)}`).then(async (res) => {
+      if (!res.ok)
+        throw new Error(await responseErrorText5(res));
+      return res.json();
+    }).then((data) => {
+      if (!cancelled)
+        setDetail(data);
+    }).catch((e) => {
+      if (!cancelled)
+        pushLog(`Failed to load root profile '${selected.name}': ${e.message}`, "error");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selected?.name, pushLog]);
+  const deleteProfile = async (profile) => {
+    if (!confirm(`Delete Root Orchestrator Profile '${profile.name}'?`))
+      return;
+    const res = await fetch(`/api/root-profiles/${encodeURIComponent(profile.name)}`, { method: "DELETE" });
+    if (!res.ok)
+      return pushLog(`Delete failed: ${await responseErrorText5(res)}`, "error");
+    pushLog(`Deleted Root Orchestrator Profile '${profile.name}'`, "warn");
+    setSelectedName("");
+    onChanged();
+  };
+  const sorted = [...profiles].sort((a, b) => a.readOnly === b.readOnly ? a.name.localeCompare(b.name) : a.readOnly ? 1 : -1);
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+    className: "grid min-h-[70vh] gap-4 lg:grid-cols-[360px_minmax(0,1fr)]",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Card, {
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(CardHeader, {
+            className: "border-b border-border",
+            children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+              className: "flex items-center justify-between gap-3",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(CardTitle, {
+                  children: "Root Orchestrator Profiles"
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button, {
+                  variant: "secondary",
+                  className: "px-2 py-1 text-xs",
+                  onClick: () => setDialog({ mode: "new" }),
+                  children: "+ New Profile"
+                }, undefined, false, undefined, this)
+              ]
+            }, undefined, true, undefined, this)
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(CardContent, {
+            className: "space-y-3 pt-4",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FormMessage5, {
+                children: "Profiles configure the interactive root /orchestrate session with instructions and root-eligible skills. They are not spawnable Agent Types."
+              }, undefined, false, undefined, this),
+              !sorted.length ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("p", {
+                className: "text-sm text-muted-foreground",
+                children: "No root profiles found."
+              }, undefined, false, undefined, this) : sorted.map((profile) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("button", {
+                className: `w-full rounded-md border p-3 text-left transition ${selected?.name === profile.name ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"}`,
+                onClick: () => setSelectedName(profile.name),
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                    className: "flex items-center justify-between gap-2",
+                    children: [
+                      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                        className: "truncate text-sm font-semibold",
+                        children: profile.name
+                      }, undefined, false, undefined, this),
+                      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                        className: "flex shrink-0 gap-1",
+                        children: [
+                          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Badge, {
+                            variant: "outline",
+                            children: sourceLabel(profile)
+                          }, undefined, false, undefined, this),
+                          profile.readOnly && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Badge, {
+                            variant: "outline",
+                            children: "read-only"
+                          }, undefined, false, undefined, this)
+                        ]
+                      }, undefined, true, undefined, this)
+                    ]
+                  }, undefined, true, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                    className: "mt-1 line-clamp-2 text-xs text-muted-foreground",
+                    children: profile.description
+                  }, undefined, false, undefined, this)
+                ]
+              }, `${profile.source}:${profile.scope || ""}:${profile.name}`, true, undefined, this))
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Card, {
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(CardHeader, {
+            className: "border-b border-border",
+            children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+              className: "flex items-center justify-between gap-3",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(CardTitle, {
+                  children: selected?.name || "Select a profile"
+                }, undefined, false, undefined, this),
+                selected && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                  className: "flex gap-2",
+                  children: [
+                    /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button, {
+                      variant: "secondary",
+                      className: "px-2 py-1 text-xs",
+                      onClick: () => setDialog({ mode: "copy", profile: selected }),
+                      children: "Copy"
+                    }, undefined, false, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button, {
+                      variant: "secondary",
+                      className: "px-2 py-1 text-xs",
+                      disabled: selected.readOnly || !detail,
+                      onClick: () => setDialog({ mode: "edit", profile: selected }),
+                      children: "Edit"
+                    }, undefined, false, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button, {
+                      variant: "destructive",
+                      className: "px-2 py-1 text-xs",
+                      disabled: selected.readOnly,
+                      onClick: () => deleteProfile(selected),
+                      children: "Delete"
+                    }, undefined, false, undefined, this)
+                  ]
+                }, undefined, true, undefined, this)
+              ]
+            }, undefined, true, undefined, this)
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(CardContent, {
+            className: "space-y-4 pt-4",
+            children: !selected ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("p", {
+              className: "text-sm text-muted-foreground",
+              children: "Select a Root Orchestrator Profile."
+            }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(jsx_dev_runtime12.Fragment, {
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                  className: "flex flex-wrap gap-2",
+                  children: [
+                    /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Badge, {
+                      variant: "outline",
+                      children: sourceLabel(selected)
+                    }, undefined, false, undefined, this),
+                    selected.readOnly ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Badge, {
+                      variant: "outline",
+                      children: "read-only"
+                    }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Badge, {
+                      variant: "success",
+                      children: "editable"
+                    }, undefined, false, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Badge, {
+                      variant: "outline",
+                      children: [
+                        "skills: ",
+                        selected.skills?.length || 0
+                      ]
+                    }, undefined, true, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Badge, {
+                      variant: "outline",
+                      children: [
+                        "skill templates: ",
+                        selected.skillTemplates?.length || 0
+                      ]
+                    }, undefined, true, undefined, this)
+                  ]
+                }, undefined, true, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("p", {
+                  className: "text-sm text-muted-foreground",
+                  children: selected.description
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                  className: "rounded-md border border-border bg-background/60 p-3 text-xs text-muted-foreground",
+                  children: [
+                    /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                      children: [
+                        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                          className: "font-medium text-foreground",
+                          children: "Path:"
+                        }, undefined, false, undefined, this),
+                        " ",
+                        selected.filePath
+                      ]
+                    }, undefined, true, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                      children: [
+                        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                          className: "font-medium text-foreground",
+                          children: "/orchestrate:"
+                        }, undefined, false, undefined, this),
+                        " running without an argument auto-activates the only profile, but prompts for selection when multiple profiles exist."
+                      ]
+                    }, undefined, true, undefined, this)
+                  ]
+                }, undefined, true, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                  className: "grid gap-3 md:grid-cols-2",
+                  children: [
+                    /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                      children: [
+                        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                          className: "mb-1 text-xs uppercase tracking-wide text-muted-foreground",
+                          children: "Skills"
+                        }, undefined, false, undefined, this),
+                        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                          className: "flex flex-wrap gap-1",
+                          children: selected.skills?.length ? selected.skills.map((skill) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Badge, {
+                            variant: "outline",
+                            children: skill
+                          }, skill, false, undefined, this)) : /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                            className: "text-xs text-muted-foreground",
+                            children: "No direct skills."
+                          }, undefined, false, undefined, this)
+                        }, undefined, false, undefined, this)
+                      ]
+                    }, undefined, true, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                      children: [
+                        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                          className: "mb-1 text-xs uppercase tracking-wide text-muted-foreground",
+                          children: "Skill Templates"
+                        }, undefined, false, undefined, this),
+                        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                          className: "flex flex-wrap gap-1",
+                          children: selected.skillTemplates?.length ? selected.skillTemplates.map((template) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Badge, {
+                            variant: "outline",
+                            children: template
+                          }, template, false, undefined, this)) : /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                            className: "text-xs text-muted-foreground",
+                            children: "No skill templates."
+                          }, undefined, false, undefined, this)
+                        }, undefined, false, undefined, this)
+                      ]
+                    }, undefined, true, undefined, this)
+                  ]
+                }, undefined, true, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                  children: [
+                    /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+                      className: "mb-1 text-xs uppercase tracking-wide text-muted-foreground",
+                      children: "Instructions"
+                    }, undefined, false, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("pre", {
+                      className: "max-h-[45vh] overflow-auto whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-3 text-sm leading-6",
+                      children: detail?.body ?? selected.instructions ?? "Loading…"
+                    }, undefined, false, undefined, this)
+                  ]
+                }, undefined, true, undefined, this)
+              ]
+            }, undefined, true, undefined, this)
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(RootProfileEditorDialog, {
+        open: !!dialog,
+        mode: dialog?.mode || "new",
+        sourceProfile: dialog?.profile,
+        detail: dialog?.mode === "edit" ? detail : undefined,
+        onClose: () => setDialog(null),
+        onSaved: () => {
+          setDialog(null);
+          onChanged();
+          pushLog("Saved Root Orchestrator Profile", "success");
+        }
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// web/app.tsx
+var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
 var tabs = [
   { id: "agents", label: "Live Agents" },
   { id: "types", label: "Agent Types" },
+  { id: "rootProfiles", label: "Root Profiles" },
   { id: "skills", label: "Skill Library" },
   { id: "orchestratorLibraries", label: "Orchestrator Libraries" },
   { id: "skillTemplates", label: "Skill Templates" },
@@ -33066,26 +33595,27 @@ var tabs = [
   { id: "log", label: "Event Log" }
 ];
 function App() {
-  const [activeTab, setActiveTab] = import_react7.useState("agents");
-  const [connected, setConnected] = import_react7.useState(false);
-  const [agents, setAgents] = import_react7.useState({});
-  const [agentStats, setAgentStats] = import_react7.useState({});
-  const [logs, setLogs] = import_react7.useState([]);
-  const [types2, setTypes] = import_react7.useState([]);
-  const [models, setModels] = import_react7.useState([]);
-  const [skillTemplates, setSkillTemplates] = import_react7.useState([]);
-  const [extensionTemplates, setExtensionTemplates] = import_react7.useState([]);
-  const [skills, setSkills] = import_react7.useState([]);
-  const [skillDiagnostics, setSkillDiagnostics] = import_react7.useState([]);
-  const [extensions, setExtensions] = import_react7.useState([]);
-  const [editingTemplate, setEditingTemplate] = import_react7.useState(null);
-  const [editingType, setEditingType] = import_react7.useState(undefined);
-  const [inspectAgentName, setInspectAgentName] = import_react7.useState(null);
-  const [inspectText, setInspectText] = import_react7.useState("Loading…");
-  const pushLog = import_react7.useCallback((text7, level = "info") => {
+  const [activeTab, setActiveTab] = import_react8.useState("agents");
+  const [connected, setConnected] = import_react8.useState(false);
+  const [agents, setAgents] = import_react8.useState({});
+  const [agentStats, setAgentStats] = import_react8.useState({});
+  const [logs, setLogs] = import_react8.useState([]);
+  const [types2, setTypes] = import_react8.useState([]);
+  const [rootProfiles, setRootProfiles] = import_react8.useState([]);
+  const [models, setModels] = import_react8.useState([]);
+  const [skillTemplates, setSkillTemplates] = import_react8.useState([]);
+  const [extensionTemplates, setExtensionTemplates] = import_react8.useState([]);
+  const [skills, setSkills] = import_react8.useState([]);
+  const [skillDiagnostics, setSkillDiagnostics] = import_react8.useState([]);
+  const [extensions, setExtensions] = import_react8.useState([]);
+  const [editingTemplate, setEditingTemplate] = import_react8.useState(null);
+  const [editingType, setEditingType] = import_react8.useState(undefined);
+  const [inspectAgentName, setInspectAgentName] = import_react8.useState(null);
+  const [inspectText, setInspectText] = import_react8.useState("Loading…");
+  const pushLog = import_react8.useCallback((text7, level = "info") => {
     setLogs((prev) => [{ id: Date.now() + Math.random(), level, text: `${new Date().toLocaleTimeString()}  ${text7}` }, ...prev].slice(0, 100));
   }, []);
-  const refreshTypes = import_react7.useCallback(async () => {
+  const refreshTypes = import_react8.useCallback(async () => {
     try {
       const res = await fetch("/api/agent-types");
       if (!res.ok)
@@ -33095,7 +33625,18 @@ function App() {
       pushLog(`Failed to load agent types: ${e.message}`, "error");
     }
   }, [pushLog]);
-  const refreshModels = import_react7.useCallback(async () => {
+  const refreshRootProfiles = import_react8.useCallback(async () => {
+    try {
+      const res = await fetch("/api/root-profiles");
+      if (!res.ok)
+        throw new Error(await res.text());
+      const data = await res.json();
+      setRootProfiles(Array.isArray(data) ? data : []);
+    } catch (e) {
+      pushLog(`Failed to load root profiles: ${e.message}`, "error");
+    }
+  }, [pushLog]);
+  const refreshModels = import_react8.useCallback(async () => {
     try {
       const res = await fetch("/api/models");
       if (!res.ok)
@@ -33106,14 +33647,14 @@ function App() {
       setModels([]);
     }
   }, []);
-  const refreshStats = import_react7.useCallback(async () => {
+  const refreshStats = import_react8.useCallback(async () => {
     try {
       const res = await fetch("/api/agent-stats");
       if (res.ok)
         setAgentStats(await res.json());
     } catch {}
   }, []);
-  const refreshTemplates = import_react7.useCallback(async () => {
+  const refreshTemplates = import_react8.useCallback(async () => {
     try {
       const [skillTemplatesRes, extsRes, availableExtsRes, skillsRes] = await Promise.all([
         fetch("/api/skill-templates"),
@@ -33146,7 +33687,7 @@ function App() {
       pushLog(`Failed to load templates: ${e.message}`, "error");
     }
   }, [pushLog]);
-  const handleEvent = import_react7.useCallback((ev) => {
+  const handleEvent = import_react8.useCallback((ev) => {
     switch (ev.type) {
       case "init":
         setAgents(Object.fromEntries(Object.entries(ev.data.agents || {}).map(([k, v]) => [k, { ...v }])));
@@ -33189,7 +33730,7 @@ function App() {
         break;
     }
   }, [pushLog]);
-  import_react7.useEffect(() => {
+  import_react8.useEffect(() => {
     let stopped = false;
     let es = null;
     let retry;
@@ -33213,14 +33754,15 @@ function App() {
         clearTimeout(retry);
     };
   }, [handleEvent]);
-  import_react7.useEffect(() => {
+  import_react8.useEffect(() => {
     refreshTypes();
+    refreshRootProfiles();
     refreshModels();
     refreshTemplates();
     refreshStats();
     const interval = setInterval(refreshStats, 5000);
     return () => clearInterval(interval);
-  }, [refreshModels, refreshStats, refreshTemplates, refreshTypes]);
+  }, [refreshModels, refreshRootProfiles, refreshStats, refreshTemplates, refreshTypes]);
   const emergencyStop = async () => {
     if (!confirm("Emergency Stop: Kill all agents and clean up worktrees?"))
       return;
@@ -33248,25 +33790,25 @@ function App() {
       setInspectText(`Inspect failed: ${e.message}`);
     }
   };
-  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
     className: "flex min-h-screen flex-col bg-background text-foreground",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("header", {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("header", {
         className: "sticky top-0 z-10 border-b border-border bg-background/85 px-4 py-3 backdrop-blur",
-        children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+        children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
           className: "flex flex-wrap items-center justify-between gap-3",
           children: [
-            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
               className: "flex min-w-0 flex-1 flex-wrap items-center gap-3",
               children: [
-                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("h1", {
+                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("h1", {
                   className: "whitespace-nowrap text-xl font-semibold tracking-tight",
                   children: "\uD83E\uDDE0 Pi Orchestrator"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("nav", {
+                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("nav", {
                   className: "flex min-w-0 flex-1 gap-1 overflow-x-auto rounded-md border border-border bg-card/50 p-1",
                   "aria-label": "Dashboard sections",
-                  children: tabs.map((tab2) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("button", {
+                  children: tabs.map((tab2) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
                     type: "button",
                     className: `whitespace-nowrap rounded px-3 py-1.5 text-sm font-medium transition ${activeTab === tab2.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-white/5 hover:text-foreground"}`,
                     onClick: () => setActiveTab(tab2.id),
@@ -33275,20 +33817,20 @@ function App() {
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
               className: "flex shrink-0 items-center gap-3",
               children: [
-                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
                   className: "flex items-center gap-2 text-sm text-muted-foreground",
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                    /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
                       className: `h-2 w-2 rounded-full ${connected ? "bg-emerald-400 shadow-[0_0_8px_#34d399]" : "bg-muted-foreground"}`
                     }, undefined, false, undefined, this),
                     " ",
                     connected ? "Connected" : "Disconnected"
                   ]
                 }, undefined, true, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Button, {
                   variant: "destructive",
                   onClick: emergencyStop,
                   children: "\uD83D\uDED1 Emergency Stop"
@@ -33298,42 +33840,50 @@ function App() {
           ]
         }, undefined, true, undefined, this)
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("main", {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("main", {
         className: "flex-1 overflow-hidden p-4",
         children: [
-          activeTab === "agents" && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(AgentsPanel, {
+          activeTab === "agents" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(AgentsPanel, {
             agents,
             stats: agentStats,
             onInspect: inspect,
             pushLog
           }, undefined, false, undefined, this),
-          activeTab === "types" && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(PageFrame, {
+          activeTab === "types" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(PageFrame, {
             mode: "centered",
-            children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(AgentTypesPanel, {
+            children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(AgentTypesPanel, {
               types: types2,
               onNew: () => setEditingType(null),
               onEdit: (type) => setEditingType(type),
               large: true
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          activeTab === "skills" && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(SkillLibraryPanel, {
+          activeTab === "rootProfiles" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(PageFrame, {
+            mode: "wide",
+            children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(RootOrchestratorProfilesPanel, {
+              profiles: rootProfiles,
+              onChanged: refreshRootProfiles,
+              pushLog
+            }, undefined, false, undefined, this)
+          }, undefined, false, undefined, this),
+          activeTab === "skills" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(SkillLibraryPanel, {
             skills,
             diagnostics: skillDiagnostics,
             skillTemplates,
             onEditTemplate: (template) => setEditingTemplate({ kind: "skill", template }),
             onChanged: refreshTemplates
           }, undefined, false, undefined, this),
-          activeTab === "orchestratorLibraries" && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(PageFrame, {
+          activeTab === "orchestratorLibraries" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(PageFrame, {
             mode: "wide",
-            children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(OrchestratorLibrariesPanel, {
+            children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(OrchestratorLibrariesPanel, {
               pushLog,
               onDisplaySettingsChanged: refreshTypes,
               onNativeSettingsSaved: refreshTemplates
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          activeTab === "skillTemplates" && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(PageFrame, {
+          activeTab === "skillTemplates" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(PageFrame, {
             mode: "centered",
-            children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(TemplatesPanel, {
+            children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(TemplatesPanel, {
               kind: "skill",
               templates: skillTemplates,
               onNew: () => setEditingTemplate({ kind: "skill" }),
@@ -33342,9 +33892,9 @@ function App() {
               pushLog
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          activeTab === "extensionTemplates" && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(PageFrame, {
+          activeTab === "extensionTemplates" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(PageFrame, {
             mode: "centered",
-            children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(TemplatesPanel, {
+            children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(TemplatesPanel, {
               kind: "extension",
               templates: extensionTemplates,
               onNew: () => setEditingTemplate({ kind: "extension" }),
@@ -33353,21 +33903,21 @@ function App() {
               pushLog
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          activeTab === "hierarchy" && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(PageFrame, {
+          activeTab === "hierarchy" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(PageFrame, {
             mode: "wide",
-            children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(HierarchyPanel, {
+            children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(HierarchyPanel, {
               agents
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          activeTab === "log" && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(PageFrame, {
+          activeTab === "log" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(PageFrame, {
             mode: "wide",
-            children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(EventLog, {
+            children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EventLog, {
               logs
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(TypeEditorDialog, {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(TypeEditorDialog, {
         open: editingType !== undefined,
         typeDef: editingType ?? undefined,
         models,
@@ -33380,7 +33930,7 @@ function App() {
           pushLog("Saved agent type", "success");
         }
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(TemplateEditorDialog, {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(TemplateEditorDialog, {
         open: !!editingTemplate,
         kind: editingTemplate?.kind || "skill",
         template: editingTemplate?.template,
@@ -33393,12 +33943,12 @@ function App() {
           pushLog("Saved template", "success");
         }
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Dialog, {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Dialog, {
         open: !!inspectAgentName,
         title: `Inspect ${inspectAgentName || "Agent"}`,
         onOpenChange: () => setInspectAgentName(null),
         className: "max-w-5xl",
-        children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("pre", {
+        children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("pre", {
           className: "max-h-[70vh] overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-background p-3 text-sm leading-6",
           children: inspectText
         }, undefined, false, undefined, this)
@@ -33408,23 +33958,23 @@ function App() {
 }
 function PageFrame({ mode, children }) {
   const className = mode === "centered" ? "mx-auto w-full max-w-5xl" : "mx-auto w-full max-w-7xl";
-  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
     className,
     children
   }, undefined, false, undefined, this);
 }
 function EventLog({ logs }) {
-  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Card, {
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Card, {
     className: "min-h-[70vh]",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(CardHeader, {
-        children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(CardTitle, {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(CardHeader, {
+        children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(CardTitle, {
           children: "Event Log"
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(CardContent, {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(CardContent, {
         className: "max-h-[70vh] space-y-1 overflow-auto font-mono text-xs text-muted-foreground",
-        children: logs.length ? logs.map((line) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+        children: logs.length ? logs.map((line) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
           className: `border-l-2 pl-2 ${line.level === "error" ? "border-destructive" : line.level === "success" ? "border-emerald-400" : line.level === "warn" ? "border-amber-400" : "border-primary"}`,
           children: line.text
         }, line.id, false, undefined, this)) : "Waiting for events…"
@@ -33480,6 +34030,6 @@ function formatInspectData(data) {
   return lines.join(`
 `);
 }
-import_client.createRoot(document.getElementById("root")).render(/* @__PURE__ */ jsx_dev_runtime12.jsxDEV(import_react7.StrictMode, {
-  children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(App, {}, undefined, false, undefined, this)
+import_client.createRoot(document.getElementById("root")).render(/* @__PURE__ */ jsx_dev_runtime13.jsxDEV(import_react8.StrictMode, {
+  children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(App, {}, undefined, false, undefined, this)
 }, undefined, false, undefined, this));

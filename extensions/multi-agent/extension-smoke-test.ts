@@ -4,7 +4,7 @@ import * as path from "node:path";
 import { resolveCapabilities, type ExtensionRef } from "./capability-resolution.js";
 import { getExtensionTemplate, type ExtensionTemplate } from "./extension-templates.js";
 import { readRuntimeToolSnapshot } from "./runtime-tools.js";
-import type { Agent, RuntimeToolSnapshot } from "./state.js";
+import { log, type Agent, type RuntimeToolSnapshot } from "./state.js";
 
 export interface ExtensionTemplateSmokeTestResult {
   success: boolean;
@@ -14,27 +14,36 @@ export interface ExtensionTemplateSmokeTestResult {
   runtimeTools?: RuntimeToolSnapshot;
   diagnostics: Array<{ level: "error" | "warning" | "info"; message: string }>;
   stderrTail?: string;
+  smokeAgent?: { id: string; definition: string; model?: string; worktree?: string };
 }
 
 export interface ExtensionTemplateSmokeTestDeps {
   repoCwd: string;
   discoverExtensions: (cwd: string) => ExtensionRef[];
   spawnAgent: (id: string, options: any) => Promise<{ agent: Agent; error?: string }>;
+  sendToAgent?: (agent: Agent, message: string, timeoutMs: number) => Promise<void>;
   removeWorktree: (worktreePath: string) => Promise<void>;
+  currentModel?: () => string | undefined;
 }
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForRuntimeTools(worktreePath: string, timeoutMs = 3_000): Promise<RuntimeToolSnapshot | undefined> {
+async function waitForRuntimeTools(worktreePath: string, timeoutMs = 3_000, options: { afterReportedAt?: number; preferActive?: boolean } = {}): Promise<RuntimeToolSnapshot | undefined> {
   const deadline = Date.now() + timeoutMs;
+  let latest: RuntimeToolSnapshot | undefined;
   while (Date.now() < deadline) {
     const snapshot = readRuntimeToolSnapshot(worktreePath);
-    if (snapshot) return snapshot;
+    if (snapshot) {
+      latest = snapshot;
+      const isNewEnough = options.afterReportedAt === undefined || snapshot.reportedAt > options.afterReportedAt;
+      const isActiveEnough = !options.preferActive || snapshot.active.length > 0;
+      if (isNewEnough && isActiveEnough) return snapshot;
+    }
     await sleep(100);
   }
-  return readRuntimeToolSnapshot(worktreePath);
+  return latest;
 }
 
 function readStderrTail(worktreePath: string): string | undefined {
@@ -48,13 +57,19 @@ function readStderrTail(worktreePath: string): string | undefined {
   }
 }
 
-function diagnosticsForSnapshot(snapshot: RuntimeToolSnapshot | undefined): ExtensionTemplateSmokeTestResult["diagnostics"] {
+function diagnosticsForSnapshot(snapshot: RuntimeToolSnapshot | undefined, requestedExtensions: ExtensionRef[]): ExtensionTemplateSmokeTestResult["diagnostics"] {
   if (!snapshot) {
-    return [{ level: "warning", message: "No runtime tool snapshot was reported before the smoke-test timeout." }];
+    return [{ level: "error", message: "No runtime tool snapshot was reported before the smoke-test timeout." }];
   }
   const diagnostics: ExtensionTemplateSmokeTestResult["diagnostics"] = [
     { level: "info", message: `Runtime reported ${snapshot.active.length} active tools and ${snapshot.all.length} total tools.` },
   ];
+  if (!snapshot.active.length) {
+    diagnostics.push({
+      level: "error",
+      message: `No active tools were available after loading requested extensions (${requestedExtensions.map((extension) => extension.name).join(", ") || "none"}). Extension template smoke tests require at least one active runtime tool.`,
+    });
+  }
   for (const conflict of snapshot.conflicts || []) {
     diagnostics.push({
       level: "error",
@@ -90,12 +105,16 @@ export async function smokeTestExtensionTemplate(name: string, deps: ExtensionTe
   }
 
   const agentId = `smoke-${template.name.replace(/[^a-zA-Z0-9_-]/g, "-")}-${Date.now()}`;
+  const smokeDefinitionName = "extension-smoke-test";
+  const smokeModel = deps.currentModel?.();
+  log("extension-smoke-test", `Spawning temporary smoke-test agent '${agentId}'`, { template: template.name, model: smokeModel || "default", extensions: capabilities.extensions.map((extension) => extension.name) });
   let agent: Agent | undefined;
   try {
     const result = await deps.spawnAgent(agentId, {
+      model: smokeModel,
       repoCwd: deps.repoCwd,
       definition: {
-        name: "extension-smoke-test",
+        name: smokeDefinitionName,
         description: "Temporary extension template smoke-test agent",
         tools: [],
         systemPrompt: "You are a temporary smoke-test agent. Do not perform any task.",
@@ -105,13 +124,36 @@ export async function smokeTestExtensionTemplate(name: string, deps: ExtensionTe
       extensions: capabilities.extensions,
     });
     agent = result.agent;
+    const smokeAgent = { id: agentId, definition: smokeDefinitionName, model: smokeModel, worktree: agent?.worktreePath };
     if (result.error || !agent) {
-      return { ...base, success: false, diagnostics: [{ level: "error", message: result.error || "Smoke-test agent failed to spawn." }] };
+      return { ...base, success: false, smokeAgent, diagnostics: [{ level: "error", message: result.error || "Smoke-test agent failed to spawn." }] };
     }
 
-    const snapshot = await waitForRuntimeTools(agent.worktreePath);
+    let snapshot = await waitForRuntimeTools(agent.worktreePath, 1_250, { preferActive: true });
+    const activationDiagnostics: ExtensionTemplateSmokeTestResult["diagnostics"] = [];
+    if (snapshot && snapshot.active.length === 0 && deps.sendToAgent) {
+      const previousReportedAt = snapshot.reportedAt;
+      activationDiagnostics.push({ level: "info", message: "Startup snapshot reported no active tools; sending a minimal activation turn before rereading runtime tools." });
+      try {
+        await deps.sendToAgent(agent, "Smoke test ping: reply exactly OK.", 30_000);
+        const updatedSnapshot = await waitForRuntimeTools(agent.worktreePath, 1_000, { afterReportedAt: previousReportedAt });
+        if (updatedSnapshot && updatedSnapshot.reportedAt > previousReportedAt) {
+          snapshot = updatedSnapshot;
+          activationDiagnostics.push({ level: "info", message: "Completed minimal activation turn and reread runtime tool snapshot." });
+        } else {
+          activationDiagnostics.push({ level: "warning", message: "Minimal activation turn completed but no newer runtime tool snapshot was reported." });
+        }
+      } catch (err: any) {
+        activationDiagnostics.push({ level: "warning", message: `Minimal activation turn failed: ${err?.message || String(err)}` });
+      }
+    }
     const stderrTail = readStderrTail(agent.worktreePath);
-    const diagnostics = diagnosticsForSnapshot(snapshot);
+    const diagnostics = [
+      { level: "info" as const, message: `Spawned temporary smoke-test agent '${agentId}' using definition '${smokeDefinitionName}'${smokeModel ? ` and model '${smokeModel}'` : " with default model selection"} in worktree ${agent.worktreePath}.` },
+      ...activationDiagnostics,
+      ...diagnosticsForSnapshot(snapshot, capabilities.extensions),
+    ];
+    log("extension-smoke-test", `Runtime tool snapshot for '${agentId}'`, { active: snapshot?.active.length || 0, total: snapshot?.all.length || 0, worktree: agent.worktreePath });
     if (agent.status === "error" || agent.status === "exited") {
       diagnostics.push({ level: "error", message: `Smoke-test agent ended with status '${agent.status}'.` });
     }
@@ -123,6 +165,7 @@ export async function smokeTestExtensionTemplate(name: string, deps: ExtensionTe
       runtimeTools: snapshot,
       diagnostics,
       stderrTail,
+      smokeAgent,
     };
   } finally {
     if (agent) {

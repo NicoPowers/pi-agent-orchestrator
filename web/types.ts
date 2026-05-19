@@ -99,6 +99,28 @@ export interface ExtensionTemplateSmokeTestResult {
   runtimeTools?: RuntimeToolSnapshot;
   diagnostics: Array<{ level: "error" | "warning" | "info"; message: string }>;
   stderrTail?: string;
+  smokeAgent?: { id: string; definition: string; model?: string; worktree?: string };
+}
+
+export interface RootProfileInfo {
+  name: string;
+  description: string;
+  skills?: string[];
+  skillTemplates?: string[];
+  instructions: string;
+  source: "user" | "project" | "package" | "orchestrator-library";
+  scope?: string;
+  filePath: string;
+  readOnly?: boolean;
+}
+
+export interface RootProfileDetailInfo {
+  profile: RootProfileInfo;
+  content: string;
+  frontmatter: Record<string, unknown>;
+  body: string;
+  mtimeMs: number;
+  hash: string;
 }
 
 export interface ResourcePathValidation {

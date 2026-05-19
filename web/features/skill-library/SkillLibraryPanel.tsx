@@ -273,7 +273,7 @@ export function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditT
       </CardContent>
     </Card>
     <Card className="min-h-0 overflow-hidden">
-      <CardHeader className="border-b border-border"><div className="flex flex-wrap items-center justify-between gap-3"><CardTitle>{selectedSkill?.name || "Select a skill"}</CardTitle>{selectedSkill && <div className="flex flex-wrap items-center gap-2">{!editing && <Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => setCopying(selectedSkill)}>Copy</Button>}{detailMatchesSelected && detail?.skill.editable && !editing && <><Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => { setEditContent(fileDetail?.content ?? detail.content); setEditing(true); setDetailView("preview"); }}>Edit</Button><Button variant="destructive" className="px-2 py-1 text-xs" onClick={deleteSelected}>Delete</Button></>}{detailMatchesSelected && editing && <><Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => { setEditing(false); setEditContent(fileDetail?.content ?? detail?.content ?? ""); setSaveError(""); }}>Cancel</Button><Button className="px-2 py-1 text-xs" onClick={saveEdit}>Save</Button></>}<div className="flex rounded-md border border-border bg-background p-1">{(["preview", "raw", "metadata"] as const).map((view) => <button key={view} type="button" className={`rounded px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${detailView === view ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-white/5 hover:text-foreground"}`} onClick={() => setDetailView(view)}>{view === "preview" ? "Preview" : view === "raw" ? "Raw" : "Metadata"}</button>)}</div></div>}</div></CardHeader>
+      <CardHeader className="border-b border-border"><div className="flex flex-wrap items-center justify-between gap-3"><CardTitle>{selectedSkill?.name || "Select a skill"}</CardTitle>{selectedSkill && <div className="flex flex-wrap items-center gap-2">{!detailMatchesSelected ? <SkillActionSkeleton /> : <>{!editing && <Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => setCopying(detail.skill)}>Copy</Button>}{detail.skill.editable && !editing && <><Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => { setEditContent(fileDetail?.content ?? detail.content); setEditing(true); setDetailView("preview"); }}>Edit</Button><Button variant="destructive" className="px-2 py-1 text-xs" onClick={deleteSelected}>Delete</Button></>}{editing && <><Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => { setEditing(false); setEditContent(fileDetail?.content ?? detail?.content ?? ""); setSaveError(""); }}>Cancel</Button><Button className="px-2 py-1 text-xs" onClick={saveEdit}>Save</Button></>}<div className="flex rounded-md border border-border bg-background p-1">{(["preview", "raw", "metadata"] as const).map((view) => <button key={view} type="button" className={`rounded px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${detailView === view ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-white/5 hover:text-foreground"}`} onClick={() => setDetailView(view)}>{view === "preview" ? "Preview" : view === "raw" ? "Raw" : "Metadata"}</button>)}</div></>}</div>}</div></CardHeader>
       <CardContent className="flex h-[calc(100%-4.5rem)] flex-col gap-3 pt-4">
         {!selectedSkill ? <div className="rounded-md border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No skills discovered.</div> : <>
           <div className="flex flex-wrap gap-2"><SkillSourceBadges skill={selectedSkill} /><Badge variant="outline">{selectedSkill.kind || "skill"}</Badge>{selectedSkill.editable ? <Badge variant="success">editable</Badge> : <Badge variant="warning">read-only</Badge>}</div>
@@ -308,6 +308,15 @@ export function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditT
     </Card>
     <CreateSkillDialog open={creating} libraries={orchestratorLibraries} onClose={() => setCreating(false)} onCreated={(created) => { setCreating(false); setSelectedId(created.skill.id); setDetail(created); setEditContent(created.content); onChanged(); }} />
     <CopySkillDialog source={copying} onClose={() => setCopying(null)} onCopied={(copied) => { setCopying(null); setSelectedId(copied.skill.id); setDetail(copied); setEditContent(copied.content); onChanged(); }} />
+  </div>;
+}
+
+function SkillActionSkeleton() {
+  return <div className="flex items-center gap-2" aria-label="Loading skill actions">
+    <span className="text-xs text-muted-foreground">Loading skill actions…</span>
+    <span className="h-7 w-16 animate-pulse rounded-md bg-muted" />
+    <span className="h-7 w-14 animate-pulse rounded-md bg-muted" />
+    <span className="h-7 w-20 animate-pulse rounded-md bg-muted" />
   </div>;
 }
 

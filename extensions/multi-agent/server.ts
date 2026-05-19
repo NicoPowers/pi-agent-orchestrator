@@ -15,6 +15,7 @@ export interface ServerDeps {
   discoverDefinitions: (cwd: string) => AgentDefinition[];
   getDefinition: (name: string, cwd: string) => AgentDefinition | undefined;
   discoverExtensions: (cwd: string) => Array<{ name: string; path: string; scope: string; description?: string; expectedTools?: string[]; metadataStatus?: string; metadataSource?: string }>;
+  currentModel?: () => string | undefined;
 }
 
 interface ServerHandle {
@@ -389,6 +390,69 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
           metadataSource: (e as any).metadataSource,
         }))
       ));
+      return;
+    }
+
+    // Root Orchestrator Profile API
+    if (url.pathname === "/api/root-profiles" && req.method === "GET") {
+      const { discoverRootProfiles } = await import("./root-profiles.js");
+      send(res, jsonResponse(discoverRootProfiles(deps.repoCwd)));
+      return;
+    }
+    if (url.pathname === "/api/root-profiles" && req.method === "POST") {
+      let body: any;
+      try {
+        body = JSON.parse(await readBody(req));
+      } catch {
+        send(res, errorResponse("Invalid JSON", 400));
+        return;
+      }
+      const { saveRootProfile } = await import("./root-profiles.js");
+      const result = saveRootProfile({
+        targetLibrary: body.targetLibrary,
+        name: body.name,
+        description: body.description,
+        skills: body.skills || [],
+        skillTemplates: body.skillTemplates || [],
+        instructions: body.instructions || body.prompt || "",
+        expectedHash: body.expectedHash,
+      }, deps.repoCwd);
+      if (result.success) send(res, jsonResponse({ success: true, path: result.path, detail: result.detail }));
+      else send(res, errorResponse(result.error || "Failed to save root profile", result.status || 400));
+      return;
+    }
+    const rootProfileCopyMatch = url.pathname.match(/^\/api\/root-profiles\/([^/]+)\/copy$/);
+    if (rootProfileCopyMatch && req.method === "POST") {
+      let body: any;
+      try {
+        body = JSON.parse(await readBody(req));
+      } catch {
+        send(res, errorResponse("Invalid JSON", 400));
+        return;
+      }
+      const { copyRootProfile } = await import("./root-profiles.js");
+      const result = copyRootProfile(decodeURIComponent(rootProfileCopyMatch[1]), {
+        targetLibrary: body.targetLibrary,
+        name: body.name,
+        description: body.description,
+      }, deps.repoCwd);
+      if (result.success) send(res, jsonResponse({ success: true, path: result.path, detail: result.detail }));
+      else send(res, errorResponse(result.error || "Failed to copy root profile", result.status || 400));
+      return;
+    }
+    const rootProfileMatch = url.pathname.match(/^\/api\/root-profiles\/([^/]+)$/);
+    if (rootProfileMatch && req.method === "GET") {
+      const { getRootProfileDetail } = await import("./root-profiles.js");
+      const detail = getRootProfileDetail(decodeURIComponent(rootProfileMatch[1]), deps.repoCwd);
+      if (detail) send(res, jsonResponse(detail));
+      else send(res, errorResponse("Root profile not found", 404));
+      return;
+    }
+    if (rootProfileMatch && req.method === "DELETE") {
+      const { deleteRootProfile } = await import("./root-profiles.js");
+      const result = deleteRootProfile(decodeURIComponent(rootProfileMatch[1]), deps.repoCwd);
+      if (result.success) send(res, jsonResponse({ success: true }));
+      else send(res, errorResponse(result.error || "Failed to delete root profile", result.status || 400));
       return;
     }
 

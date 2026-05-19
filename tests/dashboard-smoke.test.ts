@@ -56,6 +56,8 @@ describe("dashboard bundle smoke test", () => {
         fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
           const url = String(input);
           if (url.includes("/api/agent-types")) return Response.json([]);
+          if (url.includes("/api/root-profiles/default")) return Response.json({ profile: { name: "default", description: "Default root profile", instructions: "Coordinate spawned agents.", source: "package", filePath: "/pkg/orchestrator-profiles/default.md", readOnly: true }, content: "---\nname: default\ndescription: Default root profile\n---\n\nCoordinate spawned agents.", frontmatter: { name: "default", description: "Default root profile" }, body: "Coordinate spawned agents.", mtimeMs: 1, hash: "hash" });
+          if (url.includes("/api/root-profiles")) return Response.json([{ name: "default", description: "Default root profile", instructions: "Coordinate spawned agents.", source: "package", filePath: "/pkg/orchestrator-profiles/default.md", readOnly: true }]);
           if (url.includes("/api/models")) return Response.json([]);
           if (url.includes("/api/agent-stats")) return Response.json({});
           if (url.includes("/api/skill-templates")) return Response.json([]);
@@ -67,6 +69,7 @@ describe("dashboard bundle smoke test", () => {
           }
           if (url.includes("/api/orchestrator-libraries")) return Response.json({ libraries: [], resources: [], diagnostics: [], valid: true, settings: { showPackageExamples: true, settingsPath: "/tmp/.pi/settings.json", exists: false } });
           if (url.endsWith("/api/skills/demo-id")) return Response.json({ skill: { id: "demo-id", name: "demo", description: "Demo skill", path: "/tmp/demo/SKILL.md", scope: "project", kind: "directory", editable: true, packageProvided: false }, content: "---\nname: demo\ndescription: Demo skill\n---\n# Demo Skill\n\nSkill body.", frontmatter: { name: "demo", description: "Demo skill" }, body: "# Demo Skill\n\nSkill body.", mtimeMs: 1, hash: "hash" });
+          if (url.endsWith("/api/skills/librarian-id")) return new Promise((resolve) => setTimeout(() => resolve(Response.json({ skill: { id: "librarian-id", name: "librarian", description: "Package skill", path: "/home/ubuntu/.pi/agent/npm/node_modules/pi-web-access/skills/librarian/SKILL.md", scope: "global", kind: "directory", editable: false, packageProvided: true }, content: "---\nname: librarian\ndescription: Package skill\n---\n# Librarian", frontmatter: { name: "librarian", description: "Package skill" }, body: "# Librarian", mtimeMs: 1, hash: "package-hash" })), 75));
           if (url.endsWith("/api/skills")) return Response.json([{ id: "demo-id", name: "demo", description: "Demo skill", path: "/tmp/demo/SKILL.md", scope: "project", kind: "directory", editable: true, packageProvided: false }, { id: "librarian-id", name: "librarian", description: "Package skill", path: "/home/ubuntu/.pi/agent/npm/node_modules/pi-web-access/skills/librarian/SKILL.md", scope: "global", kind: "directory", editable: false, packageProvided: true }]);
           return Response.json({});
         },
@@ -85,6 +88,15 @@ describe("dashboard bundle smoke test", () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
       expect(window.document.getElementById("root")?.textContent).toContain("No agents yet.");
 
+      const rootProfilesNav = Array.from(window.document.getElementsByTagName("button")).find((button) => button.textContent?.includes("Root Profiles"));
+      rootProfilesNav?.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+      await window.happyDOM.waitUntilComplete();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const rootProfilesText = window.document.getElementById("root")?.textContent || "";
+      expect(rootProfilesText).toContain("Root Orchestrator Profiles");
+      expect(rootProfilesText).toContain("not spawnable Agent Types");
+      expect(rootProfilesText).toContain("read-only");
+
       const skillNav = Array.from(window.document.getElementsByTagName("button")).find((button) => button.textContent?.includes("Skill Library"));
       skillNav?.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
       await window.happyDOM.waitUntilComplete();
@@ -96,6 +108,14 @@ describe("dashboard bundle smoke test", () => {
       expect(text).toContain("Metadata");
       expect(text).toContain("package");
       expect(text).not.toContain("Skill & Extension Paths");
+
+      const librarianSkillButton = Array.from(window.document.getElementsByTagName("button")).find((button) => button.textContent?.includes("librarian") && button.textContent?.includes("Package skill"));
+      librarianSkillButton?.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+      await window.happyDOM.waitUntilComplete();
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      const loadingSkillText = window.document.getElementById("root")?.textContent || "";
+      expect(loadingSkillText).toContain("Loading skill actions");
+      expect(loadingSkillText).not.toContain("Delete");
 
       const libraryNav = Array.from(window.document.getElementsByTagName("button")).find((button) => button.textContent?.includes("Orchestrator Libraries"));
       libraryNav?.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));

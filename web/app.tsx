@@ -1,6 +1,6 @@
 import { StrictMode, useCallback, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import type { AgentTypeInfo, ExtensionInfo, ModelInfo, ServerEvent, SkillInfo } from "./types.js";
+import type { AgentTypeInfo, ExtensionInfo, ModelInfo, RootProfileInfo, ServerEvent, SkillInfo } from "./types.js";
 import type { AgentState, LogLine, StatsEntry } from "./shared/dashboard-types.js";
 import { AgentsPanel, HierarchyPanel } from "./features/live-agents/LiveAgentsPanel.js";
 import { OrchestratorLibrariesPanel } from "./features/orchestrator-libraries/OrchestratorLibrariesPanel.js";
@@ -8,19 +8,18 @@ import { AgentTypesPanel, TypeEditorDialog } from "./features/agent-types/AgentT
 import type { TemplateInfo } from "./features/agent-types/AgentTypesPanel.js";
 import { SkillLibraryPanel } from "./features/skill-library/SkillLibraryPanel.js";
 import { TemplatesPanel, TemplateEditorDialog } from "./features/templates/TemplatesPanel.js";
-import { Badge } from "./components/ui/badge.js";
+import { RootOrchestratorProfilesPanel } from "./features/root-orchestrator-profiles/RootOrchestratorProfilesPanel.js";
 import { Button } from "./components/ui/button.js";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card.js";
 import { Dialog } from "./components/ui/dialog.js";
-import { Input, Textarea } from "./components/ui/input.js";
-import { Select } from "./components/ui/select.js";
 
-type Tab = "agents" | "types" | "skills" | "orchestratorLibraries" | "skillTemplates" | "extensionTemplates" | "hierarchy" | "log";
+type Tab = "agents" | "types" | "rootProfiles" | "skills" | "orchestratorLibraries" | "skillTemplates" | "extensionTemplates" | "hierarchy" | "log";
 type SkillDiagnostic = { type: string; message: string; path?: string };
 
 const tabs: Array<{ id: Tab; label: string }> = [
   { id: "agents", label: "Live Agents" },
   { id: "types", label: "Agent Types" },
+  { id: "rootProfiles", label: "Root Profiles" },
   { id: "skills", label: "Skill Library" },
   { id: "orchestratorLibraries", label: "Orchestrator Libraries" },
   { id: "skillTemplates", label: "Skill Templates" },
@@ -41,6 +40,7 @@ function App() {
   const [agentStats, setAgentStats] = useState<Record<string, StatsEntry>>({});
   const [logs, setLogs] = useState<LogLine[]>([]);
   const [types, setTypes] = useState<AgentTypeInfo[]>([]);
+  const [rootProfiles, setRootProfiles] = useState<RootProfileInfo[]>([]);
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [skillTemplates, setSkillTemplates] = useState<TemplateInfo[]>([]);
   const [extensionTemplates, setExtensionTemplates] = useState<TemplateInfo[]>([]);
@@ -63,6 +63,17 @@ function App() {
       setTypes(await res.json());
     } catch (e: any) {
       pushLog(`Failed to load agent types: ${e.message}`, "error");
+    }
+  }, [pushLog]);
+
+  const refreshRootProfiles = useCallback(async () => {
+    try {
+      const res = await fetch("/api/root-profiles");
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      setRootProfiles(Array.isArray(data) ? data : []);
+    } catch (e: any) {
+      pushLog(`Failed to load root profiles: ${e.message}`, "error");
     }
   }, [pushLog]);
 
@@ -189,12 +200,13 @@ function App() {
 
   useEffect(() => {
     refreshTypes();
+    refreshRootProfiles();
     refreshModels();
     refreshTemplates();
     refreshStats();
     const interval = setInterval(refreshStats, 5_000);
     return () => clearInterval(interval);
-  }, [refreshModels, refreshStats, refreshTemplates, refreshTypes]);
+  }, [refreshModels, refreshRootProfiles, refreshStats, refreshTemplates, refreshTypes]);
 
   const emergencyStop = async () => {
     if (!confirm("Emergency Stop: Kill all agents and clean up worktrees?")) return;
@@ -242,6 +254,7 @@ function App() {
       <main className="flex-1 overflow-hidden p-4">
         {activeTab === "agents" && <AgentsPanel agents={agents} stats={agentStats} onInspect={inspect} pushLog={pushLog} />}
         {activeTab === "types" && <PageFrame mode="centered"><AgentTypesPanel types={types} onNew={() => setEditingType(null)} onEdit={(type) => setEditingType(type)} large /></PageFrame>}
+        {activeTab === "rootProfiles" && <PageFrame mode="wide"><RootOrchestratorProfilesPanel profiles={rootProfiles} onChanged={refreshRootProfiles} pushLog={pushLog} /></PageFrame>}
         {activeTab === "skills" && <SkillLibraryPanel skills={skills} diagnostics={skillDiagnostics} skillTemplates={skillTemplates} onEditTemplate={(template) => setEditingTemplate({ kind: "skill", template })} onChanged={refreshTemplates} />}
         {activeTab === "orchestratorLibraries" && <PageFrame mode="wide"><OrchestratorLibrariesPanel pushLog={pushLog} onDisplaySettingsChanged={refreshTypes} onNativeSettingsSaved={refreshTemplates} /></PageFrame>}
         {activeTab === "skillTemplates" && <PageFrame mode="centered"><TemplatesPanel kind="skill" templates={skillTemplates} onNew={() => setEditingTemplate({ kind: "skill" })} onEdit={(template) => setEditingTemplate({ kind: "skill", template })} onDeleted={refreshTemplates} pushLog={pushLog} /></PageFrame>}

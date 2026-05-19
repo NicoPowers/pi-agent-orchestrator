@@ -36,6 +36,27 @@ describe("runtime tool snapshots", () => {
     expect(snapshot?.reportedAt).toBe(123);
   });
 
+  it("preserves active tool names reported as strings", async () => {
+    const { readRuntimeToolSnapshot, runtimeToolsPath } = await import("../extensions/multi-agent/runtime-tools.js");
+    const filePath = runtimeToolsPath(tmpDir);
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, JSON.stringify({
+      active: ["web_search", "sd_create", "web_search"],
+      all: [
+        { name: "web_search", description: "Search the web", sourceInfo: { source: "pi-web-access" } },
+        { name: "sd_create", description: "Create a seed", sourceInfo: { source: "@os-eco/seeds-cli" } },
+      ],
+      reportedAt: 234,
+      source: "child-agent",
+    }), "utf-8");
+
+    const snapshot = readRuntimeToolSnapshot(tmpDir);
+    expect(snapshot?.active).toEqual([
+      { name: "web_search", description: "Search the web", sourceInfo: { source: "pi-web-access" } },
+      { name: "sd_create", description: "Create a seed", sourceInfo: { source: "@os-eco/seeds-cli" } },
+    ]);
+  });
+
   it("tolerates malformed snapshots", async () => {
     const { readRuntimeToolSnapshot, runtimeToolsPath } = await import("../extensions/multi-agent/runtime-tools.js");
     const filePath = runtimeToolsPath(tmpDir);

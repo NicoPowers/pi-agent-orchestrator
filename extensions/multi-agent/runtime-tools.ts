@@ -31,6 +31,21 @@ function normalizeList(value: unknown): RuntimeToolInfo[] {
   return result;
 }
 
+function normalizeActiveList(value: unknown, allTools: RuntimeToolInfo[]): RuntimeToolInfo[] {
+  if (!Array.isArray(value)) return [];
+  const allByName = new Map(allTools.map((tool) => [tool.name, tool]));
+  const seen = new Set<string>();
+  const result: RuntimeToolInfo[] = [];
+  for (const item of value) {
+    const name = typeof item === "string" ? item.trim() : undefined;
+    const tool = name ? (allByName.get(name) || { name }) : normalizeTool(item);
+    if (!tool || seen.has(tool.name)) continue;
+    seen.add(tool.name);
+    result.push(tool);
+  }
+  return result;
+}
+
 function sourceLabel(tool: RuntimeToolInfo): string {
   const info = tool.sourceInfo as any;
   if (info && typeof info === "object") {
@@ -80,9 +95,10 @@ export function readRuntimeToolSnapshot(worktreePath: string): RuntimeToolSnapsh
     const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"));
     const reportedAt = typeof raw.reportedAt === "number" && Number.isFinite(raw.reportedAt) ? raw.reportedAt : 0;
     const conflicts = detectRuntimeToolConflicts(raw.all);
+    const all = normalizeList(raw.all);
     return {
-      active: normalizeList(raw.active),
-      all: normalizeList(raw.all),
+      active: normalizeActiveList(raw.active, all),
+      all,
       reportedAt,
       source: "child-agent",
       ...(conflicts.length ? { conflicts } : {}),

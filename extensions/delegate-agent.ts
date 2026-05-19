@@ -20,12 +20,20 @@ function serializeTool(tool: any) {
   };
 }
 
+function activeToolDetails(pi: ExtensionAPI) {
+  const all = pi.getAllTools().map(serializeTool);
+  const allByName = new Map(all.map((tool) => [tool.name, tool]));
+  const active = pi.getActiveTools().map((name) => allByName.get(name) || { name });
+  return { active, all };
+}
+
 function reportRuntimeTools(pi: ExtensionAPI) {
   try {
     fs.mkdirSync(COMMS_DIR, { recursive: true });
+    const { active, all } = activeToolDetails(pi);
     const snapshot = {
-      active: pi.getActiveTools().map(serializeTool),
-      all: pi.getAllTools().map(serializeTool),
+      active,
+      all,
       reportedAt: Date.now(),
       source: "child-agent",
     };
@@ -39,7 +47,10 @@ export default function (pi: ExtensionAPI) {
   pi.on("session_start", () => {
     reportRuntimeTools(pi);
     setTimeout(() => reportRuntimeTools(pi), 250);
+    setTimeout(() => reportRuntimeTools(pi), 1_000);
   });
+  pi.on("agent_start", () => reportRuntimeTools(pi));
+  pi.on("agent_end", () => reportRuntimeTools(pi));
 
   pi.registerTool({
     name: "delegate",
