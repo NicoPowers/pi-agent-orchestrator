@@ -2,273 +2,212 @@
 
 Multi-agent orchestration extension for [Pi](https://pi.dev).
 
-When you explicitly enter orchestration mode with `/orchestrate`, your interactive Pi session becomes the **orchestrator**. You define agent types and prompts via the dashboard; the orchestrator decides when to spawn specialists (researcher, implementer, reviewer, etc.) and routes work to them.
+> **Status:** this package is in heavy development and is not recommended for general use yet. APIs, dashboard flows, and storage conventions are still changing quickly.
 
-Key features:
-- Explicit orchestration mode (`/orchestrate`, `/orchestrate off`)
-- Orchestrator-driven spawning (`create_sub_agent` tool)
-- Real models from your Pi environment (`pi --list-models`)
-- Agent Type Library editor in the dashboard
-- Emergency Stop for safety
-- bwrap isolation + shared git worktrees
-- No TUI modifications — terminal stays clean
+`pi-agent-orchestrator` lets an interactive Pi session become an explicit **orchestrator**. When you enable orchestration mode, Pi gets tools for creating isolated sub-agents, delegating work to them, inspecting progress, and managing the whole team from a browser dashboard.
 
-## Architecture
+## Core ideas
 
-The extension runs inside your interactive Pi session. It spawns child `pi --mode rpc` processes, each sandboxed with `bwrap` inside a dedicated git worktree. A headless HTTP server provides a REST API and SSE event stream for the web dashboard. The terminal stays 100% vanilla Pi — no widgets, no spinners, no panel flooding.
+### Explicit orchestration mode
 
-```
-┌─────────────────────────────┐
-│  Terminal: vanilla Pi       │
-│  You chat with orchestrator │
-└─────────────┬───────────────┘
-              │ tools: agent_spawn, agent_send...
-              ▼
-┌─────────────────────────────┐
-│  Extension (multi-agent/)   │
-│  - Spawns bwrap'd agents    │
-│  - HTTP server + SSE        │
-│  - Delegation routing       │
-└─────────────┬───────────────┘
-              │ HTTP + SSE
-              ▼
-┌─────────────────────────────┐
-│  Browser: localhost:18765   │
-│  - Agent cards + terminals  │
-│  - Spawn / send / kill      │
-│  - Live event log           │
-└─────────────────────────────┘
-```
+Orchestration is opt-in. Use `/orchestrate` to enable the orchestrator toolset and `/orchestrate off` to return to normal single-agent Pi behavior.
 
-## Features
+The dashboard does not replace the Pi terminal. The terminal stays vanilla Pi; the browser dashboard is a companion view for agents, libraries, skills, templates, logs, and diagnostics.
 
-- **Typed agent definitions** via YAML frontmatter markdown files
-- **Process isolation** — each agent runs in its own `bwrap` sandbox with a git worktree
-- **Skill scoping** — agents load only the skills they need
-- **Async delegation** — `agent_send` returns immediately; results delivered as steering messages
-- **Real-time web dashboard** — manage agents via browser without touching the TUI
-- **No TUI modifications** — terminal stays responsive; dashboard is optional
+### Agent types are user-defined
 
-## Project Structure
+Agent types are markdown definitions with YAML frontmatter plus prompt instructions. Package examples exist to demonstrate the shape, but users can create and edit as many agent types as they want.
 
-```
-pi-agent-orchestrator/
-├── package.json                    # Pi manifest + devDependencies
-├── extensions/
-│   ├── multi-agent/                # Extension entry point (directory-based)
-│   │   ├── index.ts                # Registers tools, commands, session hooks
-│   │   ├── state.ts                # Shared types, agents Map, file logging
-│   │   ├── definitions.ts          # Agent definition discovery from .md files
-│   │   ├── worktree.ts             # Git worktree create/remove/cleanup
-│   │   ├── spawn.ts                # spawnAgent(), bwrap invocation, delegate routing
-│   │   └── send.ts                 # sendToAgent() blocking RPC helper
-│   └── delegate-agent.ts           # `delegate` tool loaded inside each sub-agent
-├── skills/
-│   ├── tdd/SKILL.md
-│   └── security-checklist/SKILL.md
-├── agents/
-│   ├── coder.md
-│   └── reviewer.md
-├── .pi/
-│   ├── skill-templates/            # Optional project-local skill template files
-│   └── extension-templates/        # Optional project-local extension template files
-├── web/
-│   ├── index.html                  # Static React dashboard shell
-│   ├── app.tsx                     # React dashboard entrypoint
-│   ├── tailwind.css                # Tailwind input
-│   └── components/ui/              # Local shadcn-style UI primitives
-└── tests/
-    ├── definitions.test.ts         # Unit tests for agent discovery
-    ├── server.test.ts              # Unit tests for port probing + SSE
-    └── README.md                   # Test strategy & manual verification checklist
-```
-
-### Module Reference
-
-| File | Responsibility |
-|---|---|
-| `index.ts` | Extension factory. Registers 4 tools + 5 slash commands. Starts HTTP server (Issue 7). |
-| `state.ts` | `Agent` and `AgentDefinition` interfaces. Shared `agents` Map, `pendingTasks` Map, `log()` helper. |
-| `definitions.ts` | Discovers `.md` agent definitions from `~/.pi/agent/agents/`, `.pi/agents/`, and package `agents/`. Parses YAML frontmatter via `parseFrontmatter`. Resolves skill paths. |
-| `worktree.ts` | `createWorktree()`, `removeWorktree()`, `cleanupOrphanedWorktrees()`. Serializes git worktree ops with a mutex. |
-| `spawn.ts` | `spawnAgent()`: writes prompts into worktree, copies `delegate-agent.ts`, builds `bwrap` command, launches `pi --mode rpc`, parses JSONL stdout, routes `delegate` tool calls between agents. |
-| `send.ts` | `sendToAgent()`: queues messages, writes JSON to agent stdin, awaits `agent_end` event with timeout. |
-| `delegate-agent.ts` | Loaded inside each sub-agent. Registers a `delegate` tool that writes request files and polls for broker responses. |
-
-## Agent Types
-
-| Agent | Purpose | Tools | Skills |
-|-------|---------|-------|--------|
-| `coder` | Write and edit code | read, bash, edit, write, grep, find, ls | tdd |
-| `reviewer` | Review code for bugs/security | read, grep, find, ls | security-checklist |
-
-## Usage
-
-### Terminal Commands
-
-```
-/spawn <name> <parent|'self'> [type|model]    Spawn a named agent instance
-/ask <name> <message>                         Send a message and show reply
-/agents                                        List active agents
-/kill <name>                                   Terminate an agent
-/agent-types                                   List available definitions
-/dashboard                                     Print dashboard URL & open browser
-```
-
-### Tools (broker LLM)
-
-```
-agent_spawn(name="my_coder", type="coder", parent="self")
-agent_send(name="my_coder", message="Write a hello function")
-agent_status(name="my_coder")
-agent_kill(name="my_coder")
-agent_types()
-```
-
-### Template Backend
-
-Project-local template files can be stored under:
-
-```text
-.pi/skill-templates/*.md
-.pi/extension-templates/*.md
-```
-
-They use markdown frontmatter:
+Example:
 
 ```markdown
 ---
-name: common
-description: Common skills for most agents
-applyToAll: true
-skills: tdd, security-checklist
+name: frontend-implementer
+description: Implements focused frontend changes with tests
+model: kimi-k2.6
+tools: read, bash, edit, write, grep, find, ls
+skillTemplates: common, frontend
+extensionTemplates: browser-tools
 ---
+
+You are {{name}}, a focused frontend implementation agent.
+
+Make small, tested, reviewable changes. Ask for clarification when requirements are ambiguous.
 ```
 
-Extension templates use `extensions:` instead of `skills:`. Phase 2 only adds backend storage and CRUD APIs; template resolution is applied to newly spawned agents in a later phase.
+Definitions can reference direct skills, skill templates, and extension templates. New and edited definitions should generally live in an **Orchestrator Library** rather than in this package.
 
-Extensions may optionally advertise static, best-effort metadata without being executed. Add a source comment near the top of an extension file:
+### Orchestrator Libraries are the primary resource model
+
+An Orchestrator Library is a user- or team-owned folder that contains version-controlled orchestration resources:
+
+- agent definitions
+- skill templates
+- extension templates
+- curated skills
+- curated extensions
+
+Libraries are configured through `piAgentOrchestrator.libraries` in Pi settings and discovered by the dashboard. They are the preferred place to create and share orchestrator-managed resources.
+
+A starter library contains an `orchestrator-library.json` manifest like:
+
+```json
+{
+  "schema": "pi-orchestrator-library/v1",
+  "name": "team-ai",
+  "description": "Team orchestration resources",
+  "resources": {
+    "agents": "agents",
+    "skillTemplates": "skill-templates",
+    "extensionTemplates": "extension-templates",
+    "skills": "skills",
+    "extensions": "extensions"
+  }
+}
+```
+
+Resource references use the library namespace, for example:
+
+```text
+team-ai:skills/example-analysis/SKILL.md
+team-ai:extensions/browser-tools
+```
+
+Native Pi skill/extension source paths still exist as an advanced escape hatch, but the dashboard intentionally de-emphasizes them in favor of Orchestrator Libraries.
+
+### Skills and templates
+
+Skills are Pi instruction bundles. The Skill Library dashboard can browse discovered skills, preview markdown, inspect metadata, edit editable skills, copy package/global skills into an editable scope, and show when a skill came from an installed package.
+
+Skill templates and extension templates are reusable bundles assigned to agent types. When a new agent is spawned, the orchestrator resolves:
+
+- direct `skills:` from the agent definition
+- selected `skillTemplates:`
+- `applyToAll` skill templates
+- directly requested extensions
+- selected `extensionTemplates:`
+- `applyToAll` extension templates
+
+Existing running agents are unchanged when templates are edited; template resolution applies to newly spawned agents.
+
+Extensions can optionally advertise static metadata without executing code:
 
 ```ts
 // pi-orchestrator: { "description": "Browser helpers", "expectedTools": ["open_page", "click"] }
 ```
 
-Missing or invalid extension metadata is tolerated and reported as `metadataStatus: "unknown"` or `"invalid"`; it is advisory only.
+The dashboard can also smoke-test extension templates by spawning a temporary agent, reading its runtime tool snapshot, and reporting missing extensions or tool diagnostics.
 
-Spawned child agents also report their actual runtime tools from inside their own Pi session. The delegate extension writes a best-effort `.pi/comms/runtime-tools.json` snapshot containing `pi.getActiveTools()` and `pi.getAllTools()` results. The dashboard/API treats missing snapshots as unknown rather than an error.
-
-REST endpoints:
-
-```text
-GET    /api/skill-templates
-POST   /api/skill-templates
-GET    /api/skill-templates/:name
-DELETE /api/skill-templates/:name
-
-GET    /api/extension-templates
-POST   /api/extension-templates
-GET    /api/extension-templates/:name
-DELETE /api/extension-templates/:name
-```
-
-### Web Dashboard
+## Dashboard
 
 When Pi starts, the extension prints a URL like:
 
-```
+```text
 🌐 Dashboard: http://localhost:18765
 ```
 
-Open it in any browser. You can:
-- **View** active agents and live assistant output streamed via SSE
-- **Inspect** lifecycle/tool events with text deltas coalesced into readable blocks
-- **Send** messages to any agent
-- **Kill** agents and their children
-- **Copy** agent worktree paths
-- **Monitor** hierarchy, context/token usage, and cost stats
-- **Create/edit** Agent Type Library definitions
-- **Create/edit/delete** skill and extension templates
-- **Assign** skill and extension templates from the Agent Type editor
-- **Watch** the global event log (spawns, kills, delegations)
-- **Emergency Stop** all agents and clear dashboard state
+The dashboard can currently:
 
-The dashboard is a static React + TypeScript + Tailwind bundle served by the extension HTTP server; no runtime dev server or framework is required.
+- view active agents and streamed assistant output
+- send messages, steering instructions, and kill requests
+- inspect recent agent lifecycle/tool events
+- monitor hierarchy, worktrees, context/token usage, and cost stats
+- emergency-stop all spawned agents
+- create/edit agent type definitions
+- browse Orchestrator Libraries and package example visibility
+- bootstrap/register Orchestrator Libraries from an explicit path
+- browse, preview, edit, copy, create, and delete skills where allowed
+- label package-provided skills separately from project/global/library skills
+- create/edit/delete skill and extension templates
+- assign templates from the Agent Type editor
+- discover extensions from native paths, packages, and Orchestrator Libraries
+- smoke-test extension templates and inspect runtime tool diagnostics
+- access native Pi skill/extension paths only as an advanced settings escape hatch
 
-## Customizing Agents
+The dashboard is a static React + TypeScript + Tailwind bundle served by the extension HTTP server; no runtime dashboard dev server is required.
 
-Override any agent type by creating a markdown file in `~/.pi/agent/agents/` or `.pi/agents/`:
+## Terminal commands
 
-```markdown
----
-name: coder
-description: My custom coder
-model: claude-sonnet-4
-tools: read, bash, edit, write
-skills: tdd, my-custom-skill
----
-
-You are {{name}}, a {{type}} agent. ...
+```text
+/orchestrate [on|off|status]                  Enable/disable orchestration mode
+/agent-types                                  List available agent definitions
+/spawn <name> <parent|'self'> [type|model]    Spawn a named agent instance
+/ask <name> <message>                         Send a message and show reply
+/agents                                       List active agents
+/worktrees                                    List active agent worktrees and VS Code commands
+/kill <name|all>                              Terminate one agent or all agents
+/dashboard                                    Print dashboard URL and open browser
+/logs [lines=20]                              Show recent multi-agent logs
 ```
 
-Agent definitions can also opt into saved templates:
+## Tools available to the orchestrator
 
-```markdown
----
-name: frontend-coder
-description: Frontend implementation agent
-skillTemplates: common, frontend
-extensionTemplates: browser-tools
----
+Agent orchestration:
+
+```text
+agent_types()
+agent_spawn(name, parent, type?, model?, extensions?)
+create_sub_agent(name, type, reason, model?)
+agent_send(name, message, timeout_seconds?)
+agent_steer(name, message)
+agent_status(name?)
+agent_kill(name)
 ```
 
-When a new agent is spawned, the backend resolves direct `skills:` plus all `applyToAll` skill templates plus selected `skillTemplates:`. Extension resolution similarly combines directly requested extensions, all `applyToAll` extension templates, and selected `extensionTemplates:`. This resolution applies only to newly spawned agents; existing running agents are unchanged.
+Skill management:
 
-User and project definitions override the package defaults.
+```text
+skill_list(scope?, editableOnly?, search?)
+skill_read(id?, name?)
+skill_create(scope?, name, description, body?)
+skill_update(id, content, expectedHash?)
+```
 
-## Installation
+Advanced native Pi resource settings:
+
+```text
+resource_settings_read()
+resource_settings_update(scope, skills?, extensions?)
+```
+
+`create_sub_agent` is the main orchestration-mode tool. It requires a reason so the root orchestrator remains explicit about why a specialist is being created.
+
+## Development install
+
+This project is currently intended for development and experimentation.
 
 ```bash
 # From git
-pi install git:github.com/yourname/pi-agent-orchestrator
+pi install git:github.com/NicoPowers/pi-agent-orchestrator
 
-# From local path (for development)
+# From local path
 pi install /path/to/pi-agent-orchestrator
 ```
 
-### Development
+Typical development loop:
 
 ```bash
-# Install dependencies (for tests)
 bun install
-
-# Run typecheck, build, and tests
 bun run check
 
-# Or run unit tests only
-bun test
-
-# Test inside a git repo (not ~/.pi/)
-cd ~/my-project
+# From a separate git repo where you want to test orchestration:
 pi
 /reload
-/spawn lead self coder
+/orchestrate
+/dashboard
 ```
+
+`bun run check` runs TypeScript checking, builds the dashboard bundle, and runs the test suite.
 
 ## Requirements
 
-- **Linux** (or WSL2) — `bwrap` (bubblewrap) is required for agent sandboxing
-- **Git repo** — spawn commands must be run inside a git repository
-- **Bun** — used by Pi for TypeScript execution; tests run with `bun:test`
+- **Linux or WSL2** — `bwrap`/bubblewrap is required for spawned-agent sandboxing
+- **Git repository** — root spawned agents get isolated git worktrees
+- **Bun** — used for development, tests, and dashboard builds
 
 ## Why bwrap, not Docker?
 
-We evaluated Docker sandboxes but stuck with `bwrap` because:
-- Single static binary, no daemon, no root required
-- No image builds or volume mount complexity
-- Already working and tested end-to-end
-- Users don't need a Docker subscription or `sbx` CLI
-
-The whole Pi session can still be wrapped in a container if you prefer — the extension itself is container-agnostic.
+Spawned agents use `bwrap` because it provides lightweight process/filesystem isolation without a daemon, image build, or Docker-specific workflow. The whole Pi session can still run inside a container if you prefer; the extension itself is container-agnostic.
 
 ## License
 
