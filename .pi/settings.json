@@ -1,0 +1,6 @@
+{
+  "packages": [
+    "@os-eco/mulch-cli",
+    "@os-eco/seeds-cli"
+  ]
+}

@@ -39,6 +39,8 @@ export interface AgentDefinition {
   extensionTemplates?: string[];
   systemPrompt: string;
   source: "user" | "project" | "package";
+  readOnly?: boolean;
+  example?: boolean;
   filePath: string;
 }
 

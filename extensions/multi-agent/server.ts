@@ -205,6 +205,41 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
       return;
     }
 
+    // Orchestrator Library API
+    if (url.pathname === "/api/orchestrator-libraries" && req.method === "GET") {
+      const { discoverConfiguredOrchestratorLibraries } = await import("./orchestrator-library.js");
+      send(res, jsonResponse(discoverConfiguredOrchestratorLibraries(deps.repoCwd)));
+      return;
+    }
+    if (url.pathname === "/api/orchestrator-libraries/settings" && req.method === "PUT") {
+      let body: any;
+      try {
+        body = JSON.parse(await readBody(req));
+      } catch {
+        send(res, errorResponse("Invalid JSON", 400));
+        return;
+      }
+      const { updateOrchestratorLibrarySettings } = await import("./orchestrator-library.js");
+      const result = updateOrchestratorLibrarySettings({ scope: body.scope, libraries: body.libraries }, deps.repoCwd);
+      if (result.success) send(res, jsonResponse(result.settings));
+      else send(res, errorResponse(result.error || "Failed to update Orchestrator Library settings", result.status || 400));
+      return;
+    }
+    if (url.pathname === "/api/orchestrator-libraries/bootstrap" && req.method === "POST") {
+      let body: any;
+      try {
+        body = JSON.parse(await readBody(req));
+      } catch {
+        send(res, errorResponse("Invalid JSON", 400));
+        return;
+      }
+      const { bootstrapOrchestratorLibrary } = await import("./orchestrator-library.js");
+      const result = bootstrapOrchestratorLibrary({ targetPath: body.targetPath, name: body.name, description: body.description }, deps.repoCwd);
+      if (result.success) send(res, jsonResponse(result));
+      else send(res, errorResponse(result.error || "Failed to bootstrap Orchestrator Library", result.status || 400));
+      return;
+    }
+
     // Resource source settings API
     if (url.pathname === "/api/resource-settings" && req.method === "GET") {
       const { readResourceSettings } = await import("./resource-settings.js");

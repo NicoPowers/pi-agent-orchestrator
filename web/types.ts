@@ -35,6 +35,8 @@ export interface AgentTypeInfo {
   skillTemplates?: string[];
   extensionTemplates?: string[];
   source: string;
+  readOnly?: boolean;
+  example?: boolean;
 }
 
 export interface ModelInfo {
@@ -106,6 +108,47 @@ export interface ResourceScopeSettings {
 export interface ResourceSettingsInfo {
   global: ResourceScopeSettings;
   project: ResourceScopeSettings;
+}
+
+export interface OrchestratorLibraryDiagnosticInfo {
+  level: "error" | "warning";
+  message: string;
+  path?: string;
+}
+
+export interface OrchestratorLibraryInfo {
+  root: string;
+  manifestPath: string;
+  manifest?: {
+    schema: string;
+    name: string;
+    description?: string;
+    compatibility?: Record<string, unknown>;
+    resources: Record<string, string>;
+  };
+  diagnostics: OrchestratorLibraryDiagnosticInfo[];
+  valid: boolean;
+}
+
+export interface OrchestratorLibraryResourceInfo {
+  id: string;
+  kind: "agents" | "skillTemplates" | "extensionTemplates" | "skills" | "extensions";
+  name: string;
+  description?: string;
+  libraryName: string;
+  libraryPath: string;
+  filePath: string;
+  relativePath: string;
+  editable: boolean;
+  readOnly: boolean;
+  diagnostics: OrchestratorLibraryDiagnosticInfo[];
+}
+
+export interface OrchestratorLibrariesInfo {
+  libraries: OrchestratorLibraryInfo[];
+  resources: OrchestratorLibraryResourceInfo[];
+  diagnostics: OrchestratorLibraryDiagnosticInfo[];
+  valid: boolean;
 }
 
 export type ServerEvent =

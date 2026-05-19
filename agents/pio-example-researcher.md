@@ -1,6 +1,6 @@
 ---
-name: researcher
-description: Deep research and codebase exploration specialist
+name: pio-example-researcher
+description: Package example - Deep research and codebase exploration specialist
 model: kimi-k2.6
 tools: read, grep, find, ls
 skills: 

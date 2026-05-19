@@ -29853,6 +29853,7 @@ var tabs = [
   { id: "agents", label: "Live Agents" },
   { id: "types", label: "Agent Types" },
   { id: "skills", label: "Skill Library" },
+  { id: "orchestratorLibraries", label: "Orchestrator Libraries" },
   { id: "resourceSettings", label: "Skill & Extension Paths" },
   { id: "skillTemplates", label: "Skill Templates" },
   { id: "extensionTemplates", label: "Extension Templates" },
@@ -30139,6 +30140,12 @@ function App() {
             skillTemplates,
             onEditTemplate: (template) => setEditingTemplate({ kind: "skill", template }),
             onChanged: refreshTemplates
+          }, undefined, false, undefined, this),
+          activeTab === "orchestratorLibraries" && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(PageFrame, {
+            mode: "wide",
+            children: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(OrchestratorLibrariesPanel, {
+              pushLog
+            }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
           activeTab === "resourceSettings" && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(PageFrame, {
             mode: "wide",
@@ -30574,6 +30581,271 @@ function EventLog({ logs }) {
           children: line.text
         }, line.id, false, undefined, this)) : "Waiting for events…"
       }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function OrchestratorLibrariesPanel({ pushLog }) {
+  const [data, setData] = import_react2.useState(null);
+  const [loading, setLoading] = import_react2.useState(false);
+  const [savingScope, setSavingScope] = import_react2.useState(null);
+  const [error, setError] = import_react2.useState("");
+  const load = import_react2.useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/orchestrator-libraries");
+      if (!res.ok)
+        throw new Error(await res.text());
+      setData(await res.json());
+    } catch (e) {
+      setError(e.message || "Failed to load Orchestrator Libraries");
+      pushLog(`Failed to load Orchestrator Libraries: ${e.message}`, "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [pushLog]);
+  import_react2.useEffect(() => {
+    load();
+  }, [load]);
+  const moveLibrary = async (root4, direction) => {
+    if (!data)
+      return;
+    const library = data.libraries.find((candidate) => candidate.root === root4);
+    if (!library)
+      return;
+    const scope = root4.includes("/.pi/") ? "project" : "global";
+    const scoped = data.libraries.filter((candidate) => (candidate.root.includes("/.pi/") ? "project" : "global") === scope);
+    const index2 = scoped.findIndex((candidate) => candidate.root === root4);
+    const nextIndex = index2 + direction;
+    if (index2 < 0 || nextIndex < 0 || nextIndex >= scoped.length)
+      return;
+    const reordered = [...scoped];
+    [reordered[index2], reordered[nextIndex]] = [reordered[nextIndex], reordered[index2]];
+    setSavingScope(scope);
+    try {
+      const res = await fetch("/api/orchestrator-libraries/settings", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ scope, libraries: reordered.map((item) => item.root) }) });
+      if (!res.ok)
+        throw new Error(await res.text());
+      pushLog(`Reordered ${scope} Orchestrator Libraries`, "success");
+      await load();
+    } catch (e) {
+      setError(e.message || "Failed to reorder Orchestrator Libraries");
+      pushLog(`Failed to reorder Orchestrator Libraries: ${e.message}`, "error");
+    } finally {
+      setSavingScope(null);
+    }
+  };
+  const counts = import_react2.useMemo(() => {
+    const result = {};
+    for (const resource of data?.resources || []) {
+      result[resource.libraryName] ||= {};
+      result[resource.libraryName][resource.kind] = (result[resource.libraryName][resource.kind] || 0) + 1;
+    }
+    return result;
+  }, [data]);
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+    className: "space-y-4",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Card, {
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardHeader, {
+            className: "border-b border-border",
+            children: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+              className: "flex items-center justify-between gap-3",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardTitle, {
+                  children: "Orchestrator Libraries"
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Button, {
+                  variant: "secondary",
+                  onClick: load,
+                  disabled: loading,
+                  children: "Refresh"
+                }, undefined, false, undefined, this)
+              ]
+            }, undefined, true, undefined, this)
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardContent, {
+            className: "space-y-2 pt-4 text-sm text-muted-foreground",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("p", {
+                children: "Orchestrator Libraries are user-owned, version-controlled folders for agent types, skill templates, extension templates, and curated skills/extensions."
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("p", {
+                children: [
+                  "Configure libraries under ",
+                  /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("code", {
+                    children: "piAgentOrchestrator.libraries"
+                  }, undefined, false, undefined, this),
+                  " in global or project settings. Libraries are loaded top to bottom within each scope; earlier libraries influence defaults and diagnostics."
+                ]
+              }, undefined, true, undefined, this),
+              error && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                className: "rounded-md border border-destructive/50 bg-destructive/10 p-2 text-destructive",
+                children: error
+              }, undefined, false, undefined, this),
+              data && !data.libraries.length && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                className: "rounded-md border border-dashed border-border p-6 text-center",
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                    className: "font-medium text-foreground",
+                    children: "No Orchestrator Library configured yet."
+                  }, undefined, false, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                    className: "mt-1",
+                    children: "Set up a library to version-control your agent types and templates."
+                  }, undefined, false, undefined, this)
+                ]
+              }, undefined, true, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      data?.diagnostics.length ? /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Card, {
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardHeader, {
+            children: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardTitle, {
+              children: "Diagnostics"
+            }, undefined, false, undefined, this)
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardContent, {
+            className: "space-y-2",
+            children: data.diagnostics.map((diagnostic, index2) => /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+              className: `rounded-md border p-2 text-sm ${diagnostic.level === "error" ? "border-destructive/50 bg-destructive/10 text-destructive" : "border-amber-400/40 bg-amber-400/10 text-amber-200"}`,
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("strong", {
+                  children: [
+                    diagnostic.level,
+                    ":"
+                  ]
+                }, undefined, true, undefined, this),
+                " ",
+                diagnostic.message,
+                diagnostic.path ? /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                  className: "mt-1 font-mono text-xs opacity-80",
+                  children: diagnostic.path
+                }, undefined, false, undefined, this) : null
+              ]
+            }, index2, true, undefined, this))
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this) : null,
+      data?.libraries.length ? /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+        className: "grid gap-4 xl:grid-cols-2",
+        children: data.libraries.map((library) => {
+          const name2 = library.manifest?.name || shortPath(library.root);
+          const libraryCounts = counts[name2] || {};
+          const scope = library.root.includes("/.pi/") ? "project" : "global";
+          const scoped = data.libraries.filter((candidate) => (candidate.root.includes("/.pi/") ? "project" : "global") === scope);
+          const scopeIndex = scoped.findIndex((candidate) => candidate.root === library.root);
+          return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Card, {
+            className: !library.valid ? "border-destructive/50" : "",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardHeader, {
+                className: "border-b border-border",
+                children: /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                  className: "flex items-start justify-between gap-3",
+                  children: [
+                    /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                      children: [
+                        /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardTitle, {
+                          children: name2
+                        }, undefined, false, undefined, this),
+                        /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                          className: "mt-1 font-mono text-xs text-muted-foreground",
+                          children: library.root
+                        }, undefined, false, undefined, this)
+                      ]
+                    }, undefined, true, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                      className: "flex shrink-0 items-center gap-2",
+                      children: [
+                        /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Badge, {
+                          variant: "outline",
+                          children: scope
+                        }, undefined, false, undefined, this),
+                        /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Button, {
+                          variant: "secondary",
+                          className: "px-2 py-1 text-xs",
+                          disabled: scopeIndex <= 0 || savingScope === scope,
+                          onClick: () => moveLibrary(library.root, -1),
+                          children: "↑"
+                        }, undefined, false, undefined, this),
+                        /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Button, {
+                          variant: "secondary",
+                          className: "px-2 py-1 text-xs",
+                          disabled: scopeIndex < 0 || scopeIndex >= scoped.length - 1 || savingScope === scope,
+                          onClick: () => moveLibrary(library.root, 1),
+                          children: "↓"
+                        }, undefined, false, undefined, this),
+                        /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Badge, {
+                          variant: library.valid ? "success" : "destructive",
+                          children: library.valid ? "valid" : "invalid"
+                        }, undefined, false, undefined, this)
+                      ]
+                    }, undefined, true, undefined, this)
+                  ]
+                }, undefined, true, undefined, this)
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(CardContent, {
+                className: "space-y-3 pt-4 text-sm",
+                children: [
+                  library.manifest?.description && /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("p", {
+                    className: "text-muted-foreground",
+                    children: library.manifest.description
+                  }, undefined, false, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                    className: "grid grid-cols-2 gap-2 text-xs text-muted-foreground md:grid-cols-3",
+                    children: [
+                      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                        children: [
+                          "Agents: ",
+                          libraryCounts.agents || 0
+                        ]
+                      }, undefined, true, undefined, this),
+                      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                        children: [
+                          "Skill templates: ",
+                          libraryCounts.skillTemplates || 0
+                        ]
+                      }, undefined, true, undefined, this),
+                      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                        children: [
+                          "Extension templates: ",
+                          libraryCounts.extensionTemplates || 0
+                        ]
+                      }, undefined, true, undefined, this),
+                      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                        children: [
+                          "Skills: ",
+                          libraryCounts.skills || 0
+                        ]
+                      }, undefined, true, undefined, this),
+                      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                        children: [
+                          "Extensions: ",
+                          libraryCounts.extensions || 0
+                        ]
+                      }, undefined, true, undefined, this)
+                    ]
+                  }, undefined, true, undefined, this),
+                  library.diagnostics.length ? /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                    className: "space-y-1",
+                    children: library.diagnostics.map((diagnostic, index2) => /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+                      className: "text-xs text-muted-foreground",
+                      children: [
+                        diagnostic.level,
+                        ": ",
+                        diagnostic.message
+                      ]
+                    }, index2, true, undefined, this))
+                  }, undefined, false, undefined, this) : null
+                ]
+              }, undefined, true, undefined, this)
+            ]
+          }, library.root, true, undefined, this);
+        })
+      }, undefined, false, undefined, this) : null
     ]
   }, undefined, true, undefined, this);
 }

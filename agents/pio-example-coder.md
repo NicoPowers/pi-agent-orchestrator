@@ -1,6 +1,6 @@
 ---
-name: coder
-description: Senior software engineer focused on clean implementation and testing
+name: pio-example-coder
+description: Package example - Senior software engineer focused on clean implementation and testing
 model: kimi-k2.6
 tools: read, bash, edit, write, grep, find, ls
 skills: tdd

@@ -40,6 +40,16 @@ describe("definition discovery", () => {
     expect(reviewer!.source).toBe("project");
   });
 
+  it("discovers package definitions as read-only pio examples", async () => {
+    const { discoverDefinitions } = await import("../extensions/multi-agent/definitions.js");
+
+    const defs = discoverDefinitions(tmpDir);
+    const packageDefs = defs.filter((d) => d.source === "package");
+    expect(packageDefs.length).toBeGreaterThan(0);
+    expect(packageDefs.every((d) => d.name.startsWith("pio-example-"))).toBe(true);
+    expect(packageDefs.every((d) => d.readOnly && d.example)).toBe(true);
+  });
+
   it("skips definitions missing required frontmatter", async () => {
     const { discoverDefinitions } = await import("../extensions/multi-agent/definitions.js");
 

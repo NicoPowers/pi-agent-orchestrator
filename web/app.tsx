@@ -2,7 +2,7 @@ import { StrictMode, useCallback, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { AgentInfo, AgentTypeInfo, ExtensionInfo, ModelInfo, ResourcePathValidation, ResourceScopeSettings, ResourceSettingsInfo, ServerEvent, SkillDetailInfo, SkillInfo } from "./types.js";
+import type { AgentInfo, AgentTypeInfo, ExtensionInfo, ModelInfo, OrchestratorLibrariesInfo, ResourcePathValidation, ResourceScopeSettings, ResourceSettingsInfo, ServerEvent, SkillDetailInfo, SkillInfo } from "./types.js";
 import { Badge } from "./components/ui/badge.js";
 import { Button } from "./components/ui/button.js";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card.js";
@@ -12,7 +12,7 @@ import { Select } from "./components/ui/select.js";
 
 type AgentState = AgentInfo & { text?: string };
 type LogLine = { id: number; text: string; level: "info" | "success" | "warn" | "error" };
-type Tab = "agents" | "types" | "skills" | "resourceSettings" | "skillTemplates" | "extensionTemplates" | "hierarchy" | "log";
+type Tab = "agents" | "types" | "skills" | "orchestratorLibraries" | "resourceSettings" | "skillTemplates" | "extensionTemplates" | "hierarchy" | "log";
 type TemplateInfo = { name: string; description: string; items: string[]; applyToAll?: boolean; source: string; filePath: string };
 type SkillDiagnostic = { type: string; message: string; path?: string };
 type SkillFileEntry = { path: string; name: string; type: "file" | "directory"; size?: number; markdown?: boolean; editable: boolean };
@@ -24,6 +24,7 @@ const tabs: Array<{ id: Tab; label: string }> = [
   { id: "agents", label: "Live Agents" },
   { id: "types", label: "Agent Types" },
   { id: "skills", label: "Skill Library" },
+  { id: "orchestratorLibraries", label: "Orchestrator Libraries" },
   { id: "resourceSettings", label: "Skill & Extension Paths" },
   { id: "skillTemplates", label: "Skill Templates" },
   { id: "extensionTemplates", label: "Extension Templates" },
@@ -259,6 +260,7 @@ function App() {
         {activeTab === "agents" && <AgentsPanel agents={agents} stats={agentStats} onInspect={inspect} pushLog={pushLog} />}
         {activeTab === "types" && <PageFrame mode="centered"><AgentTypesPanel types={types} onNew={() => setEditingType(null)} onEdit={(type) => setEditingType(type)} large /></PageFrame>}
         {activeTab === "skills" && <SkillLibraryPanel skills={skills} diagnostics={skillDiagnostics} skillTemplates={skillTemplates} onEditTemplate={(template) => setEditingTemplate({ kind: "skill", template })} onChanged={refreshTemplates} />}
+        {activeTab === "orchestratorLibraries" && <PageFrame mode="wide"><OrchestratorLibrariesPanel pushLog={pushLog} /></PageFrame>}
         {activeTab === "resourceSettings" && <PageFrame mode="wide"><ResourceSettingsPanel onSaved={refreshTemplates} pushLog={pushLog} /></PageFrame>}
         {activeTab === "skillTemplates" && <PageFrame mode="centered"><TemplatesPanel kind="skill" templates={skillTemplates} onNew={() => setEditingTemplate({ kind: "skill" })} onEdit={(template) => setEditingTemplate({ kind: "skill", template })} onDeleted={refreshTemplates} pushLog={pushLog} /></PageFrame>}
         {activeTab === "extensionTemplates" && <PageFrame mode="centered"><TemplatesPanel kind="extension" templates={extensionTemplates} onNew={() => setEditingTemplate({ kind: "extension" })} onEdit={(template) => setEditingTemplate({ kind: "extension", template })} onDeleted={refreshTemplates} pushLog={pushLog} /></PageFrame>}
@@ -403,6 +405,101 @@ function HierarchyPanel({ agents }: { agents: Record<string, AgentState> }) {
 
 function EventLog({ logs }: { logs: LogLine[] }) {
   return <Card className="min-h-[70vh]"><CardHeader><CardTitle>Event Log</CardTitle></CardHeader><CardContent className="max-h-[70vh] space-y-1 overflow-auto font-mono text-xs text-muted-foreground">{logs.length ? logs.map((line) => <div key={line.id} className={`border-l-2 pl-2 ${line.level === "error" ? "border-destructive" : line.level === "success" ? "border-emerald-400" : line.level === "warn" ? "border-amber-400" : "border-primary"}`}>{line.text}</div>) : "Waiting for events…"}</CardContent></Card>;
+}
+
+
+function OrchestratorLibrariesPanel({ pushLog }: { pushLog: (text: string, level?: LogLine["level"]) => void }) {
+  const [data, setData] = useState<OrchestratorLibrariesInfo | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [savingScope, setSavingScope] = useState<"global" | "project" | null>(null);
+  const [error, setError] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/orchestrator-libraries");
+      if (!res.ok) throw new Error(await res.text());
+      setData(await res.json() as OrchestratorLibrariesInfo);
+    } catch (e: any) {
+      setError(e.message || "Failed to load Orchestrator Libraries");
+      pushLog(`Failed to load Orchestrator Libraries: ${e.message}`, "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [pushLog]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const moveLibrary = async (root: string, direction: -1 | 1) => {
+    if (!data) return;
+    const library = data.libraries.find((candidate) => candidate.root === root);
+    if (!library) return;
+    const scope = root.includes("/.pi/") ? "project" : "global";
+    const scoped = data.libraries.filter((candidate) => (candidate.root.includes("/.pi/") ? "project" : "global") === scope);
+    const index = scoped.findIndex((candidate) => candidate.root === root);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= scoped.length) return;
+    const reordered = [...scoped];
+    [reordered[index], reordered[nextIndex]] = [reordered[nextIndex], reordered[index]];
+    setSavingScope(scope);
+    try {
+      const res = await fetch("/api/orchestrator-libraries/settings", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ scope, libraries: reordered.map((item) => item.root) }) });
+      if (!res.ok) throw new Error(await res.text());
+      pushLog(`Reordered ${scope} Orchestrator Libraries`, "success");
+      await load();
+    } catch (e: any) {
+      setError(e.message || "Failed to reorder Orchestrator Libraries");
+      pushLog(`Failed to reorder Orchestrator Libraries: ${e.message}`, "error");
+    } finally {
+      setSavingScope(null);
+    }
+  };
+
+  const counts = useMemo(() => {
+    const result: Record<string, Record<string, number>> = {};
+    for (const resource of data?.resources || []) {
+      result[resource.libraryName] ||= {};
+      result[resource.libraryName][resource.kind] = (result[resource.libraryName][resource.kind] || 0) + 1;
+    }
+    return result;
+  }, [data]);
+
+  return <div className="space-y-4">
+    <Card>
+      <CardHeader className="border-b border-border"><div className="flex items-center justify-between gap-3"><CardTitle>Orchestrator Libraries</CardTitle><Button variant="secondary" onClick={load} disabled={loading}>Refresh</Button></div></CardHeader>
+      <CardContent className="space-y-2 pt-4 text-sm text-muted-foreground">
+        <p>Orchestrator Libraries are user-owned, version-controlled folders for agent types, skill templates, extension templates, and curated skills/extensions.</p>
+        <p>Configure libraries under <code>piAgentOrchestrator.libraries</code> in global or project settings. Libraries are loaded top to bottom within each scope; earlier libraries influence defaults and diagnostics.</p>
+        {error && <div className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-destructive">{error}</div>}
+        {data && !data.libraries.length && <div className="rounded-md border border-dashed border-border p-6 text-center"><div className="font-medium text-foreground">No Orchestrator Library configured yet.</div><div className="mt-1">Set up a library to version-control your agent types and templates.</div></div>}
+      </CardContent>
+    </Card>
+    {data?.diagnostics.length ? <Card><CardHeader><CardTitle>Diagnostics</CardTitle></CardHeader><CardContent className="space-y-2">{data.diagnostics.map((diagnostic, index) => <div key={index} className={`rounded-md border p-2 text-sm ${diagnostic.level === "error" ? "border-destructive/50 bg-destructive/10 text-destructive" : "border-amber-400/40 bg-amber-400/10 text-amber-200"}`}><strong>{diagnostic.level}:</strong> {diagnostic.message}{diagnostic.path ? <div className="mt-1 font-mono text-xs opacity-80">{diagnostic.path}</div> : null}</div>)}</CardContent></Card> : null}
+    {data?.libraries.length ? <div className="grid gap-4 xl:grid-cols-2">
+      {data.libraries.map((library) => {
+        const name = library.manifest?.name || shortPath(library.root);
+        const libraryCounts = counts[name] || {};
+        const scope = library.root.includes("/.pi/") ? "project" : "global";
+        const scoped = data.libraries.filter((candidate) => (candidate.root.includes("/.pi/") ? "project" : "global") === scope);
+        const scopeIndex = scoped.findIndex((candidate) => candidate.root === library.root);
+        return <Card key={library.root} className={!library.valid ? "border-destructive/50" : ""}>
+          <CardHeader className="border-b border-border"><div className="flex items-start justify-between gap-3"><div><CardTitle>{name}</CardTitle><div className="mt-1 font-mono text-xs text-muted-foreground">{library.root}</div></div><div className="flex shrink-0 items-center gap-2"><Badge variant="outline">{scope}</Badge><Button variant="secondary" className="px-2 py-1 text-xs" disabled={scopeIndex <= 0 || savingScope === scope} onClick={() => moveLibrary(library.root, -1)}>↑</Button><Button variant="secondary" className="px-2 py-1 text-xs" disabled={scopeIndex < 0 || scopeIndex >= scoped.length - 1 || savingScope === scope} onClick={() => moveLibrary(library.root, 1)}>↓</Button><Badge variant={library.valid ? "success" : "destructive"}>{library.valid ? "valid" : "invalid"}</Badge></div></div></CardHeader>
+          <CardContent className="space-y-3 pt-4 text-sm">
+            {library.manifest?.description && <p className="text-muted-foreground">{library.manifest.description}</p>}
+            <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground md:grid-cols-3">
+              <div>Agents: {libraryCounts.agents || 0}</div>
+              <div>Skill templates: {libraryCounts.skillTemplates || 0}</div>
+              <div>Extension templates: {libraryCounts.extensionTemplates || 0}</div>
+              <div>Skills: {libraryCounts.skills || 0}</div>
+              <div>Extensions: {libraryCounts.extensions || 0}</div>
+            </div>
+            {library.diagnostics.length ? <div className="space-y-1">{library.diagnostics.map((diagnostic, index) => <div key={index} className="text-xs text-muted-foreground">{diagnostic.level}: {diagnostic.message}</div>)}</div> : null}
+          </CardContent>
+        </Card>;
+      })}
+    </div> : null}
+  </div>;
 }
 
 function ResourceSettingsPanel({ onSaved, pushLog }: { onSaved: () => void; pushLog: (text: string, level?: LogLine["level"]) => void }) {

@@ -1,6 +1,6 @@
 ---
-name: orchestrator
-description: Root orchestrator that manages the multi-agent system
+name: pio-example-orchestrator
+description: Package example - Root orchestrator that manages the multi-agent system
 tools: agent_types, create_sub_agent, agent_send, agent_status, agent_kill
 ---
 

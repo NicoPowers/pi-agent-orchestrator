@@ -110,6 +110,8 @@ function loadDefinitionsFromDir(dir: string, source: "user" | "project" | "packa
       systemPrompt: body,
       source,
       filePath,
+      readOnly: source === "package",
+      example: source === "package" && frontmatter.name.startsWith("pio-example-"),
     });
   }
 
