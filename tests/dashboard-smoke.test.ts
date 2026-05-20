@@ -105,12 +105,12 @@ describe("dashboard bundle smoke test", () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
       const roadmapText = window.document.getElementById("root")?.textContent || "";
       expect(roadmapText).toContain("Project Roadmap");
-      expect(roadmapText).toContain("Next Up");
-      expect(roadmapText).toContain("Blocked");
+      expect(roadmapText).toContain("Focus epic");
       expect(roadmapText).toContain("Epic Roadmap");
-      expect(roadmapText).toContain("Ungrouped");
+      expect(roadmapText).toContain("Ready & blocked queues");
       expect(roadmapText).toContain("9 total");
       expect(roadmapText).toContain("Roadmap tracer 4");
+      expect(roadmapText).not.toContain("In Progress11Next Up22Blocked33Backlog / Open44Closed11");
       const tracerButton = Array.from(window.document.getElementsByTagName("button")).find((button) => button.textContent?.includes("Roadmap tracer 4"));
       tracerButton?.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
       await window.happyDOM.waitUntilComplete();
@@ -120,6 +120,11 @@ describe("dashboard bundle smoke test", () => {
       expect(detailText).toContain("Detail panel should show long issue context.");
       expect(detailText).toContain("Dependents");
       expect(detailText).toContain("tracer-5");
+      const dialog = window.document.querySelector('[role="dialog"]');
+      dialog?.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+      await window.happyDOM.waitUntilComplete();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(window.document.getElementById("root")?.textContent || "").not.toContain("Issue Details");
       const closedFilter = Array.from(window.document.getElementsByTagName("button")).find((button) => button.textContent?.includes("Closed") && button.textContent?.includes("Off"));
       closedFilter?.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
       await window.happyDOM.waitUntilComplete();

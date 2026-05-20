@@ -18119,7 +18119,7 @@ var require_extend = __commonJS((exports, module) => {
 });
 
 // web/app.tsx
-var import_react9 = __toESM(require_react(), 1);
+var import_react10 = __toESM(require_react(), 1);
 var import_client = __toESM(require_client(), 1);
 
 // web/features/live-agents/LiveAgentsPanel.tsx
@@ -18508,17 +18508,32 @@ function HierarchyPanel({ agents }) {
 }
 
 // web/features/orchestrator-libraries/OrchestratorLibrariesPanel.tsx
-var import_react2 = __toESM(require_react(), 1);
+var import_react3 = __toESM(require_react(), 1);
 
 // web/components/ui/dialog.tsx
+var import_react2 = __toESM(require_react(), 1);
 var jsx_dev_runtime6 = __toESM(require_jsx_dev_runtime(), 1);
 function Dialog({ open, title, onOpenChange, className, children, ...props }) {
+  import_react2.useEffect(() => {
+    if (!open)
+      return;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape")
+        onOpenChange?.(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, onOpenChange]);
   if (!open)
     return null;
   return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
     className: "fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4",
     role: "dialog",
     "aria-modal": "true",
+    onClick: (event) => {
+      if (event.target === event.currentTarget)
+        onOpenChange?.(false);
+    },
     children: /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
       className: cn("max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg border border-border bg-card p-4 shadow-xl", className),
       ...props,
@@ -18586,19 +18601,19 @@ function FormMessage({ children, tone = "muted" }) {
   }, undefined, false, undefined, this);
 }
 function OrchestratorLibrariesPanel({ pushLog, onDisplaySettingsChanged, onNativeSettingsSaved }) {
-  const [data, setData] = import_react2.useState(null);
-  const [loading, setLoading] = import_react2.useState(false);
-  const [savingScope, setSavingScope] = import_react2.useState(null);
-  const [savingDisplay, setSavingDisplay] = import_react2.useState(false);
-  const [showNativeSettings, setShowNativeSettings] = import_react2.useState(false);
-  const [creatingLibrary, setCreatingLibrary] = import_react2.useState(false);
-  const [bootstrapTargetPath, setBootstrapTargetPath] = import_react2.useState("./.pi/orchestrator-library");
-  const [bootstrapName, setBootstrapName] = import_react2.useState("");
-  const [bootstrapDescription, setBootstrapDescription] = import_react2.useState("");
-  const [bootstrapSaving, setBootstrapSaving] = import_react2.useState(false);
-  const [bootstrapError, setBootstrapError] = import_react2.useState("");
-  const [error, setError] = import_react2.useState("");
-  const load = import_react2.useCallback(async () => {
+  const [data, setData] = import_react3.useState(null);
+  const [loading, setLoading] = import_react3.useState(false);
+  const [savingScope, setSavingScope] = import_react3.useState(null);
+  const [savingDisplay, setSavingDisplay] = import_react3.useState(false);
+  const [showNativeSettings, setShowNativeSettings] = import_react3.useState(false);
+  const [creatingLibrary, setCreatingLibrary] = import_react3.useState(false);
+  const [bootstrapTargetPath, setBootstrapTargetPath] = import_react3.useState("./.pi/orchestrator-library");
+  const [bootstrapName, setBootstrapName] = import_react3.useState("");
+  const [bootstrapDescription, setBootstrapDescription] = import_react3.useState("");
+  const [bootstrapSaving, setBootstrapSaving] = import_react3.useState(false);
+  const [bootstrapError, setBootstrapError] = import_react3.useState("");
+  const [error, setError] = import_react3.useState("");
+  const load = import_react3.useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -18613,7 +18628,7 @@ function OrchestratorLibrariesPanel({ pushLog, onDisplaySettingsChanged, onNativ
       setLoading(false);
     }
   }, [pushLog]);
-  import_react2.useEffect(() => {
+  import_react3.useEffect(() => {
     load();
   }, [load]);
   const moveLibrary = async (root, direction) => {
@@ -18694,7 +18709,7 @@ function OrchestratorLibrariesPanel({ pushLog, onDisplaySettingsChanged, onNativ
     setBootstrapError("");
     setCreatingLibrary(true);
   };
-  const counts = import_react2.useMemo(() => {
+  const counts = import_react3.useMemo(() => {
     const result = {};
     for (const resource of data?.resources || []) {
       result[resource.libraryName] ||= {};
@@ -19112,12 +19127,12 @@ function OrchestratorLibrariesPanel({ pushLog, onDisplaySettingsChanged, onNativ
   }, undefined, true, undefined, this);
 }
 function ResourceSettingsPanel({ onSaved, pushLog }) {
-  const [settings, setSettings] = import_react2.useState(null);
-  const [drafts, setDrafts] = import_react2.useState({ global: { skills: [], extensions: [] }, project: { skills: [], extensions: [] } });
-  const [loading, setLoading] = import_react2.useState(false);
-  const [saving, setSaving] = import_react2.useState(null);
-  const [error, setError] = import_react2.useState("");
-  const load = import_react2.useCallback(async () => {
+  const [settings, setSettings] = import_react3.useState(null);
+  const [drafts, setDrafts] = import_react3.useState({ global: { skills: [], extensions: [] }, project: { skills: [], extensions: [] } });
+  const [loading, setLoading] = import_react3.useState(false);
+  const [saving, setSaving] = import_react3.useState(null);
+  const [error, setError] = import_react3.useState("");
+  const load = import_react3.useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -19133,7 +19148,7 @@ function ResourceSettingsPanel({ onSaved, pushLog }) {
       setLoading(false);
     }
   }, []);
-  import_react2.useEffect(() => {
+  import_react3.useEffect(() => {
     load();
   }, [load]);
   const save = async (scope) => {
@@ -19435,7 +19450,7 @@ function ResourcePathRow({ value, validation, onChange, onRemove }) {
 }
 
 // web/features/agent-types/AgentTypesPanel.tsx
-var import_react3 = __toESM(require_react(), 1);
+var import_react4 = __toESM(require_react(), 1);
 
 // web/components/ui/select.tsx
 var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
@@ -19618,16 +19633,16 @@ function TemplateChips({ templates, selectedText, emptyText, onToggle }) {
   }, undefined, true, undefined, this);
 }
 function TypeEditorDialog({ open, typeDef, models, skillTemplates, extensionTemplates, onClose, onSaved }) {
-  const [name, setName] = import_react3.useState("");
-  const [description, setDescription] = import_react3.useState("");
-  const [agentClass, setAgentClass] = import_react3.useState("implementer");
-  const [model, setModel] = import_react3.useState("");
-  const [thinking, setThinking] = import_react3.useState("");
-  const [skillTemplatesText, setSkillTemplatesText] = import_react3.useState("");
-  const [extensionTemplatesText, setExtensionTemplatesText] = import_react3.useState("");
-  const [prompt, setPrompt] = import_react3.useState("");
-  const [serverError, setServerError] = import_react3.useState("");
-  import_react3.useEffect(() => {
+  const [name, setName] = import_react4.useState("");
+  const [description, setDescription] = import_react4.useState("");
+  const [agentClass, setAgentClass] = import_react4.useState("implementer");
+  const [model, setModel] = import_react4.useState("");
+  const [thinking, setThinking] = import_react4.useState("");
+  const [skillTemplatesText, setSkillTemplatesText] = import_react4.useState("");
+  const [extensionTemplatesText, setExtensionTemplatesText] = import_react4.useState("");
+  const [prompt, setPrompt] = import_react4.useState("");
+  const [serverError, setServerError] = import_react4.useState("");
+  import_react4.useEffect(() => {
     if (!open)
       return;
     setName(typeDef?.name || "");
@@ -19803,7 +19818,7 @@ function TypeEditorDialog({ open, typeDef, models, skillTemplates, extensionTemp
 }
 
 // web/features/skill-library/SkillLibraryPanel.tsx
-var import_react5 = __toESM(require_react(), 1);
+var import_react6 = __toESM(require_react(), 1);
 
 // node_modules/devlop/lib/development.js
 var codesWarned = new Set;
@@ -21502,7 +21517,7 @@ var urlAttributes = {
 };
 // node_modules/react-markdown/lib/index.js
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
-var import_react4 = __toESM(require_react(), 1);
+var import_react5 = __toESM(require_react(), 1);
 
 // node_modules/mdast-util-to-string/lib/index.js
 var emptyOptions2 = {};
@@ -31503,29 +31518,29 @@ function normalizeSkillName(value) {
   return value.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 64).replace(/-$/g, "");
 }
 function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate, onChanged }) {
-  const [query, setQuery] = import_react5.useState("");
-  const [scope, setScope] = import_react5.useState("all");
-  const [selectedId, setSelectedId] = import_react5.useState();
-  const [detail, setDetail] = import_react5.useState(null);
-  const [detailView, setDetailView] = import_react5.useState("preview");
-  const [tree, setTree] = import_react5.useState([]);
-  const [selectedFile, setSelectedFile] = import_react5.useState("SKILL.md");
-  const [fileDetail, setFileDetail] = import_react5.useState(null);
-  const [editing, setEditing] = import_react5.useState(false);
-  const [editContent, setEditContent] = import_react5.useState("");
-  const [saveError, setSaveError] = import_react5.useState("");
-  const [creating, setCreating] = import_react5.useState(false);
-  const [copying, setCopying] = import_react5.useState(null);
-  const [addTemplateName, setAddTemplateName] = import_react5.useState("");
-  const [templateError, setTemplateError] = import_react5.useState("");
-  const [editableFilter, setEditableFilter] = import_react5.useState("all");
-  const [referenceFilter, setReferenceFilter] = import_react5.useState("all");
-  const [orchestratorLibraries, setOrchestratorLibraries] = import_react5.useState(null);
-  const [loading, setLoading] = import_react5.useState(false);
-  const [error, setError] = import_react5.useState("");
-  const scopes = import_react5.useMemo(() => Array.from(new Set(skills.map(skillScopeLabel))).sort(), [skills]);
-  const selectedSkill = import_react5.useMemo(() => skills.find((skill) => skill.id === selectedId) || skills[0], [selectedId, skills]);
-  const filtered = import_react5.useMemo(() => {
+  const [query, setQuery] = import_react6.useState("");
+  const [scope, setScope] = import_react6.useState("all");
+  const [selectedId, setSelectedId] = import_react6.useState();
+  const [detail, setDetail] = import_react6.useState(null);
+  const [detailView, setDetailView] = import_react6.useState("preview");
+  const [tree, setTree] = import_react6.useState([]);
+  const [selectedFile, setSelectedFile] = import_react6.useState("SKILL.md");
+  const [fileDetail, setFileDetail] = import_react6.useState(null);
+  const [editing, setEditing] = import_react6.useState(false);
+  const [editContent, setEditContent] = import_react6.useState("");
+  const [saveError, setSaveError] = import_react6.useState("");
+  const [creating, setCreating] = import_react6.useState(false);
+  const [copying, setCopying] = import_react6.useState(null);
+  const [addTemplateName, setAddTemplateName] = import_react6.useState("");
+  const [templateError, setTemplateError] = import_react6.useState("");
+  const [editableFilter, setEditableFilter] = import_react6.useState("all");
+  const [referenceFilter, setReferenceFilter] = import_react6.useState("all");
+  const [orchestratorLibraries, setOrchestratorLibraries] = import_react6.useState(null);
+  const [loading, setLoading] = import_react6.useState(false);
+  const [error, setError] = import_react6.useState("");
+  const scopes = import_react6.useMemo(() => Array.from(new Set(skills.map(skillScopeLabel))).sort(), [skills]);
+  const selectedSkill = import_react6.useMemo(() => skills.find((skill) => skill.id === selectedId) || skills[0], [selectedId, skills]);
+  const filtered = import_react6.useMemo(() => {
     const q = query.trim().toLowerCase();
     return skills.filter((skill) => {
       if (scope !== "all" && skillScopeLabel(skill) !== scope)
@@ -31545,10 +31560,10 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
       return [skill.name, skill.description, skill.path, skill.source, skill.scope].some((value) => (value || "").toLowerCase().includes(q));
     });
   }, [editableFilter, query, referenceFilter, scope, skills, skillTemplates]);
-  const templatesUsingSkill = import_react5.useMemo(() => selectedSkill ? skillTemplates.filter((template) => template.items.includes(skillTemplateItemValue(selectedSkill)) || template.items.includes(selectedSkill.name)) : [], [selectedSkill, skillTemplates]);
-  const templatesMissingSkill = import_react5.useMemo(() => selectedSkill ? skillTemplates.filter((template) => !template.items.includes(skillTemplateItemValue(selectedSkill)) && !template.items.includes(selectedSkill.name)) : [], [selectedSkill, skillTemplates]);
+  const templatesUsingSkill = import_react6.useMemo(() => selectedSkill ? skillTemplates.filter((template) => template.items.includes(skillTemplateItemValue(selectedSkill)) || template.items.includes(selectedSkill.name)) : [], [selectedSkill, skillTemplates]);
+  const templatesMissingSkill = import_react6.useMemo(() => selectedSkill ? skillTemplates.filter((template) => !template.items.includes(skillTemplateItemValue(selectedSkill)) && !template.items.includes(selectedSkill.name)) : [], [selectedSkill, skillTemplates]);
   const detailMatchesSelected = !!selectedSkill?.id && detail?.skill.id === selectedSkill.id;
-  import_react5.useEffect(() => {
+  import_react6.useEffect(() => {
     let cancelled = false;
     fetch("/api/orchestrator-libraries").then((res) => res.ok ? res.json() : undefined).then((data) => {
       if (!cancelled && data)
@@ -31561,7 +31576,7 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
       cancelled = true;
     };
   }, [skills.length]);
-  import_react5.useEffect(() => {
+  import_react6.useEffect(() => {
     setDetail(null);
     setTree([]);
     setSelectedFile("SKILL.md");
@@ -31602,12 +31617,12 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
       cancelled = true;
     };
   }, [selectedSkill?.id]);
-  import_react5.useEffect(() => {
+  import_react6.useEffect(() => {
     if (selectedId && skills.some((skill) => skill.id === selectedId))
       return;
     setSelectedId(skills[0]?.id);
   }, [selectedId, skills]);
-  import_react5.useEffect(() => {
+  import_react6.useEffect(() => {
     setTree([]);
     if (!selectedSkill?.id)
       return;
@@ -31627,7 +31642,7 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
       cancelled = true;
     };
   }, [selectedSkill?.id]);
-  const openSkillFile = import_react5.useCallback(async (relativePath) => {
+  const openSkillFile = import_react6.useCallback(async (relativePath) => {
     if (!selectedSkill?.id)
       return;
     if (relativePath === "SKILL.md") {
@@ -32170,15 +32185,15 @@ function parseMarkdownBody(content3) {
   return match ? content3.slice(match[0].length) : content3;
 }
 function CreateSkillDialog({ open, libraries, onClose, onCreated }) {
-  const libraryTargets = import_react5.useMemo(() => (libraries?.libraries || []).filter((library) => library.valid && library.manifest?.name), [libraries]);
+  const libraryTargets = import_react6.useMemo(() => (libraries?.libraries || []).filter((library) => library.valid && library.manifest?.name), [libraries]);
   const defaultTarget = libraryTargets[0]?.manifest?.name ? `library:${libraryTargets[0].manifest.name}` : "global";
-  const [target, setTarget] = import_react5.useState(defaultTarget);
-  const [name2, setName] = import_react5.useState("");
-  const [description, setDescription] = import_react5.useState("");
-  const [body, setBody] = import_react5.useState("");
-  const [scaffold, setScaffold] = import_react5.useState("minimal");
-  const [serverError, setServerError] = import_react5.useState("");
-  import_react5.useEffect(() => {
+  const [target, setTarget] = import_react6.useState(defaultTarget);
+  const [name2, setName] = import_react6.useState("");
+  const [description, setDescription] = import_react6.useState("");
+  const [body, setBody] = import_react6.useState("");
+  const [scaffold, setScaffold] = import_react6.useState("minimal");
+  const [serverError, setServerError] = import_react6.useState("");
+  import_react6.useEffect(() => {
     if (open) {
       setTarget(defaultTarget);
       setName("");
@@ -32311,12 +32326,12 @@ function CreateSkillDialog({ open, libraries, onClose, onCreated }) {
   }, undefined, false, undefined, this);
 }
 function CopySkillDialog({ source, onClose, onCopied }) {
-  const [scope, setScope] = import_react5.useState("project");
-  const [name2, setName] = import_react5.useState("");
-  const [description, setDescription] = import_react5.useState("");
-  const [serverError, setServerError] = import_react5.useState("");
+  const [scope, setScope] = import_react6.useState("project");
+  const [name2, setName] = import_react6.useState("");
+  const [description, setDescription] = import_react6.useState("");
+  const [serverError, setServerError] = import_react6.useState("");
   const open = !!source;
-  import_react5.useEffect(() => {
+  import_react6.useEffect(() => {
     if (source) {
       setScope("project");
       setName(`${source.name}-copy`);
@@ -32551,7 +32566,7 @@ function MarkdownPreview({ content: content3, basePath = "SKILL.md", onOpenRelat
 }
 
 // web/features/templates/TemplatesPanel.tsx
-var import_react6 = __toESM(require_react(), 1);
+var import_react7 = __toESM(require_react(), 1);
 var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
 function templateAudience3(template) {
   return template.audience || "spawned";
@@ -32637,7 +32652,7 @@ function ValidationSummary3({ errors, serverError }) {
 }
 function TemplatesPanel({ kind, templates, onNew, onEdit, onDeleted, pushLog }) {
   const label = kind === "skill" ? "Skill Templates" : "Extension Templates";
-  const [smokeTests, setSmokeTests] = import_react6.useState({});
+  const [smokeTests, setSmokeTests] = import_react7.useState({});
   const deleteTemplate = async (name2) => {
     if (!confirm(`Delete ${label.slice(0, -1).toLowerCase()} '${name2}'?`))
       return;
@@ -32837,13 +32852,13 @@ function TemplatesPanel({ kind, templates, onNew, onEdit, onDeleted, pushLog }) 
   }, undefined, true, undefined, this);
 }
 function TemplateEditorDialog({ open, kind, template, availableSkills, availableExtensions, onClose, onSaved }) {
-  const [name2, setName] = import_react6.useState("");
-  const [description, setDescription] = import_react6.useState("");
-  const [audience, setAudience] = import_react6.useState("spawned");
-  const [autoApply, setAutoApply] = import_react6.useState("none");
-  const [itemsText, setItemsText] = import_react6.useState("");
-  const [serverError, setServerError] = import_react6.useState("");
-  import_react6.useEffect(() => {
+  const [name2, setName] = import_react7.useState("");
+  const [description, setDescription] = import_react7.useState("");
+  const [audience, setAudience] = import_react7.useState("spawned");
+  const [autoApply, setAutoApply] = import_react7.useState("none");
+  const [itemsText, setItemsText] = import_react7.useState("");
+  const [serverError, setServerError] = import_react7.useState("");
+  import_react7.useEffect(() => {
     if (!open)
       return;
     setName(template?.name || "");
@@ -33089,7 +33104,7 @@ ${ext.name}`).join(`
 }
 
 // web/features/root-orchestrator-profiles/RootOrchestratorProfilesPanel.tsx
-var import_react7 = __toESM(require_react(), 1);
+var import_react8 = __toESM(require_react(), 1);
 var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
 function splitItems3(text7) {
   return Array.from(new Set(text7.split(/[\n,]/).map((item) => item.trim()).filter(Boolean)));
@@ -33133,15 +33148,15 @@ function FormMessage5({ children, tone = "muted" }) {
   }, undefined, false, undefined, this);
 }
 function RootProfileEditorDialog({ open, mode, sourceProfile, detail, onClose, onSaved }) {
-  const [libraries, setLibraries] = import_react7.useState(null);
-  const [targetLibrary, setTargetLibrary] = import_react7.useState("");
-  const [name2, setName] = import_react7.useState("");
-  const [description, setDescription] = import_react7.useState("");
-  const [skillsText, setSkillsText] = import_react7.useState("");
-  const [skillTemplatesText, setSkillTemplatesText] = import_react7.useState("");
-  const [instructions, setInstructions] = import_react7.useState("");
-  const [serverError, setServerError] = import_react7.useState("");
-  import_react7.useEffect(() => {
+  const [libraries, setLibraries] = import_react8.useState(null);
+  const [targetLibrary, setTargetLibrary] = import_react8.useState("");
+  const [name2, setName] = import_react8.useState("");
+  const [description, setDescription] = import_react8.useState("");
+  const [skillsText, setSkillsText] = import_react8.useState("");
+  const [skillTemplatesText, setSkillTemplatesText] = import_react8.useState("");
+  const [instructions, setInstructions] = import_react8.useState("");
+  const [serverError, setServerError] = import_react8.useState("");
+  import_react8.useEffect(() => {
     if (!open)
       return;
     setServerError("");
@@ -33296,15 +33311,15 @@ function RootProfileEditorDialog({ open, mode, sourceProfile, detail, onClose, o
   }, undefined, false, undefined, this);
 }
 function RootOrchestratorProfilesPanel({ profiles, onChanged, pushLog }) {
-  const [selectedName, setSelectedName] = import_react7.useState(profiles[0]?.name || "");
-  const [detail, setDetail] = import_react7.useState();
-  const [dialog, setDialog] = import_react7.useState(null);
+  const [selectedName, setSelectedName] = import_react8.useState(profiles[0]?.name || "");
+  const [detail, setDetail] = import_react8.useState();
+  const [dialog, setDialog] = import_react8.useState(null);
   const selected = profiles.find((profile) => profile.name === selectedName) || profiles[0];
-  import_react7.useEffect(() => {
+  import_react8.useEffect(() => {
     if (!selectedName && profiles[0])
       setSelectedName(profiles[0].name);
   }, [profiles, selectedName]);
-  import_react7.useEffect(() => {
+  import_react8.useEffect(() => {
     let cancelled = false;
     if (!selected?.name) {
       setDetail(undefined);
@@ -33582,7 +33597,7 @@ function RootOrchestratorProfilesPanel({ profiles, onChanged, pushLog }) {
 }
 
 // web/features/roadmap/RoadmapPanel.tsx
-var import_react8 = __toESM(require_react(), 1);
+var import_react9 = __toESM(require_react(), 1);
 
 // web/features/roadmap/roadmap-view-model.ts
 function buildRoadmapHierarchy(overview) {
@@ -33700,26 +33715,19 @@ function statusWeight(status) {
 // web/features/roadmap/RoadmapPanel.tsx
 var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
 var defaultFilters = { inProgress: true, ready: true, blocked: true, backlog: true, closed: false };
-var summaryCards = [
-  { key: "inProgress", label: "In Progress", tone: "default" },
-  { key: "nextUp", label: "Next Up", tone: "success" },
-  { key: "blocked", label: "Blocked", tone: "destructive" },
-  { key: "backlog", label: "Backlog / Open", tone: "warning" },
-  { key: "closed", label: "Closed", tone: "outline" }
-];
 var filterOptions = [
   { key: "inProgress", label: "In Progress" },
   { key: "ready", label: "Ready" },
   { key: "blocked", label: "Blocked" },
-  { key: "backlog", label: "Backlog / Open" },
+  { key: "backlog", label: "Backlog" },
   { key: "closed", label: "Closed" }
 ];
 function RoadmapPanel({ pushLog }) {
-  const [overview, setOverview] = import_react8.useState(null);
-  const [loading, setLoading] = import_react8.useState(true);
-  const [error, setError] = import_react8.useState("");
-  const [filters, setFilters] = import_react8.useState(defaultFilters);
-  const [selectedIssueId, setSelectedIssueId] = import_react8.useState(null);
+  const [overview, setOverview] = import_react9.useState(null);
+  const [loading, setLoading] = import_react9.useState(true);
+  const [error, setError] = import_react9.useState("");
+  const [filters, setFilters] = import_react9.useState(defaultFilters);
+  const [selectedIssueId, setSelectedIssueId] = import_react9.useState(null);
   const refresh = async () => {
     setLoading(true);
     setError("");
@@ -33736,10 +33744,10 @@ function RoadmapPanel({ pushLog }) {
       setLoading(false);
     }
   };
-  import_react8.useEffect(() => {
+  import_react9.useEffect(() => {
     refresh();
   }, []);
-  const selectedIssue = import_react8.useMemo(() => {
+  const selectedIssue = import_react9.useMemo(() => {
     if (!overview || !selectedIssueId)
       return;
     return flattenHierarchy(buildRoadmapHierarchy(overview)).find((issue) => issue.id === selectedIssueId);
@@ -33759,7 +33767,7 @@ function RoadmapPanel({ pushLog }) {
                 }, undefined, false, undefined, this),
                 /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("p", {
                   className: "mt-1 text-sm text-muted-foreground",
-                  children: "Read-only project status derived from the current roadmap source."
+                  children: "Read-only, epic-first view of active project work."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
@@ -33802,8 +33810,25 @@ function RoadmapPanel({ pushLog }) {
   }, undefined, true, undefined, this);
 }
 function RoadmapSummary({ overview, filters, onFiltersChange, onSelectIssue }) {
-  const hierarchy = buildRoadmapHierarchy(overview);
-  const filteredHierarchy = filterHierarchy(hierarchy, filters, overview);
+  const hierarchy = import_react9.useMemo(() => buildRoadmapHierarchy(overview), [overview]);
+  const focusEpic = import_react9.useMemo(() => findFocusEpic(hierarchy), [hierarchy]);
+  const filteredHierarchy = import_react9.useMemo(() => filterHierarchy(hierarchy, filters, overview), [hierarchy, filters, overview]);
+  const [expandedEpicIds, setExpandedEpicIds] = import_react9.useState(new Set);
+  import_react9.useEffect(() => {
+    if (!focusEpic)
+      return;
+    setExpandedEpicIds((prev) => prev.size ? prev : new Set([focusEpic.epic.id]));
+  }, [focusEpic?.epic.id]);
+  const toggleEpic = (id) => {
+    setExpandedEpicIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id))
+        next.delete(id);
+      else
+        next.add(id);
+      return next;
+    });
+  };
   return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
     className: "space-y-4",
     children: [
@@ -33817,83 +33842,156 @@ function RoadmapSummary({ overview, filters, onFiltersChange, onSelectIssue }) {
               " total"
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
+            variant: "default",
             children: [
-              "Source: ",
-              overview.source.exists ? "loaded" : "missing"
+              overview.counts.inProgress,
+              " in progress"
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
+            variant: "success",
+            children: [
+              overview.counts.nextUp,
+              " ready"
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
+            variant: "destructive",
+            children: [
+              overview.counts.blocked,
+              " blocked"
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
+            variant: "outline",
+            children: [
+              overview.counts.closed,
+              " closed"
             ]
           }, undefined, true, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             className: "truncate",
-            children: overview.source.path
-          }, undefined, false, undefined, this)
+            children: [
+              "Source: ",
+              overview.source.exists ? "loaded" : "missing",
+              " · ",
+              overview.source.path
+            ]
+          }, undefined, true, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-        className: "grid gap-3 sm:grid-cols-2 lg:grid-cols-5",
-        children: summaryCards.map((item) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-          className: "rounded-md border border-border bg-background/40 p-4",
-          children: [
-            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-              className: "flex items-center justify-between gap-2",
-              children: [
-                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                  className: "text-sm font-medium",
-                  children: item.label
-                }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
-                  variant: item.tone,
-                  children: overview.counts[item.key]
-                }, undefined, false, undefined, this)
-              ]
-            }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-              className: "mt-2 text-3xl font-semibold tabular-nums",
-              children: overview.counts[item.key]
-            }, undefined, false, undefined, this)
-          ]
-        }, item.key, true, undefined, this))
+      focusEpic && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(FocusEpic, {
+        group: focusEpic,
+        onSelectIssue,
+        onExpand: () => setExpandedEpicIds((prev) => new Set(prev).add(focusEpic.epic.id))
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(FilterBar, {
         filters,
         onChange: onFiltersChange
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-        className: "grid gap-3 md:grid-cols-2",
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("details", {
+        className: "rounded-md border border-border bg-card/30 p-3 text-sm",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(QueuePreview, {
-            title: "Next Up",
-            issueIds: overview.groups.nextUp,
-            overview,
-            emptyText: "No ready work found.",
-            onSelectIssue
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("summary", {
+            className: "cursor-pointer font-medium",
+            children: "Ready & blocked queues"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(QueuePreview, {
-            title: "Blocked",
-            issueIds: overview.groups.blocked,
-            overview,
-            emptyText: "No blocked work found.",
-            onSelectIssue
-          }, undefined, false, undefined, this)
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+            className: "mt-3 grid gap-3 md:grid-cols-2",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(QueuePreview, {
+                title: "Next Up",
+                issueIds: overview.groups.nextUp,
+                overview,
+                emptyText: "No ready work found.",
+                onSelectIssue
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(QueuePreview, {
+                title: "Blocked",
+                issueIds: overview.groups.blocked,
+                overview,
+                emptyText: "No blocked work found.",
+                onSelectIssue
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
         ]
       }, undefined, true, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(RoadmapHierarchyView, {
         hierarchy: filteredHierarchy,
+        expandedEpicIds,
+        onToggleEpic: toggleEpic,
         onSelectIssue
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
+function FocusEpic({ group, onSelectIssue, onExpand }) {
+  const activeCount = group.activeChildren.length;
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+    className: "rounded-lg border border-primary/40 bg-primary/5 p-3",
+    children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+      className: "flex flex-wrap items-start justify-between gap-3",
+      children: [
+        /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+          className: "min-w-0",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+              className: "text-xs font-semibold uppercase tracking-wide text-primary",
+              children: "Focus epic"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
+              type: "button",
+              className: "mt-1 text-left text-base font-semibold hover:text-primary",
+              onClick: () => onSelectIssue(group.epic.id),
+              children: group.epic.title
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+              className: "mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
+                  variant: statusBadgeVariant(group.epic.status),
+                  children: formatStatus(group.epic.status)
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
+                  variant: "outline",
+                  children: [
+                    activeCount,
+                    " active children"
+                  ]
+                }, undefined, true, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
+                  variant: "outline",
+                  children: [
+                    "updated ",
+                    formatDate(group.epic.updatedAt) || "unknown"
+                  ]
+                }, undefined, true, undefined, this)
+              ]
+            }, undefined, true, undefined, this)
+          ]
+        }, undefined, true, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Button, {
+          variant: "secondary",
+          className: "px-2 py-1 text-xs",
+          onClick: onExpand,
+          children: "Follow epic"
+        }, undefined, false, undefined, this)
+      ]
+    }, undefined, true, undefined, this)
+  }, undefined, false, undefined, this);
+}
 function FilterBar({ filters, onChange }) {
   return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-    className: "flex flex-wrap items-center gap-2 rounded-md border border-border p-3",
+    className: "flex flex-wrap items-center gap-2 rounded-md border border-border/70 bg-background/30 p-2",
     children: [
       /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-        className: "text-sm font-medium",
+        className: "text-xs font-medium uppercase tracking-wide text-muted-foreground",
         children: "Filters"
       }, undefined, false, undefined, this),
       filterOptions.map((option) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Button, {
-        variant: filters[option.key] ? "default" : "secondary",
+        variant: filters[option.key] ? "secondary" : "ghost",
         className: "px-2 py-1 text-xs",
         onClick: () => onChange({ ...filters, [option.key]: !filters[option.key] }),
         children: [
@@ -33910,10 +34008,10 @@ function QueuePreview({ title, issueIds, overview, emptyText, onSelectIssue }) {
   const issueViewsById = new Map(flattenHierarchy(hierarchy).map((issue) => [issue.id, issue]));
   const visibleIssues = issueIds.map((id) => issueViewsById.get(id)).filter((issue) => !!issue).slice(0, 5);
   return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-    className: "rounded-md border border-border p-4",
+    className: "rounded-md border border-border p-3",
     children: [
       /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-        className: "mb-3 flex items-center justify-between gap-2",
+        className: "mb-2 flex items-center justify-between gap-2",
         children: [
           /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("h3", {
             className: "text-sm font-semibold",
@@ -33949,7 +34047,7 @@ function QueuePreview({ title, issueIds, overview, emptyText, onSelectIssue }) {
     ]
   }, undefined, true, undefined, this);
 }
-function RoadmapHierarchyView({ hierarchy, onSelectIssue }) {
+function RoadmapHierarchyView({ hierarchy, expandedEpicIds, onToggleEpic, onSelectIssue }) {
   return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
     className: "space-y-3 rounded-md border border-border p-4",
     children: [
@@ -33964,7 +34062,7 @@ function RoadmapHierarchyView({ hierarchy, onSelectIssue }) {
               }, undefined, false, undefined, this),
               /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("p", {
                 className: "mt-1 text-xs text-muted-foreground",
-                children: "Epics are shown as top-level groups; direct dependency links become child roadmap items."
+                children: "Minimal epic-first overview. Expand an epic to inspect child issues."
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
@@ -33978,50 +34076,13 @@ function RoadmapHierarchyView({ hierarchy, onSelectIssue }) {
         ]
       }, undefined, true, undefined, this),
       hierarchy.epics.length ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-        className: "space-y-3",
-        children: hierarchy.epics.map((group) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-          className: "rounded-lg border border-border bg-background/40 p-3",
-          children: [
-            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(IssueCard, {
-              issue: group.epic,
-              epic: true,
-              onSelectIssue
-            }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-              className: "mt-3 space-y-2 border-l border-border pl-3",
-              children: [
-                group.activeChildren.length ? group.activeChildren.map((issue) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(IssueCard, {
-                  issue,
-                  onSelectIssue
-                }, issue.id, false, undefined, this)) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("p", {
-                  className: "text-xs text-muted-foreground",
-                  children: "No active child issues linked to this epic."
-                }, undefined, false, undefined, this),
-                !!group.closedChildren.length && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("details", {
-                  className: "rounded border border-border/70 bg-card/30 p-2 text-xs text-muted-foreground",
-                  children: [
-                    /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("summary", {
-                      className: "cursor-pointer",
-                      children: [
-                        group.closedChildren.length,
-                        " closed child",
-                        group.closedChildren.length === 1 ? "" : "ren"
-                      ]
-                    }, undefined, true, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-                      className: "mt-2 space-y-2 opacity-70",
-                      children: group.closedChildren.map((issue) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(IssueCard, {
-                        issue,
-                        compact: true,
-                        onSelectIssue
-                      }, issue.id, false, undefined, this))
-                    }, undefined, false, undefined, this)
-                  ]
-                }, undefined, true, undefined, this)
-              ]
-            }, undefined, true, undefined, this)
-          ]
-        }, group.epic.id, true, undefined, this))
+        className: "space-y-2",
+        children: hierarchy.epics.map((group) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(EpicRow, {
+          group,
+          expanded: expandedEpicIds.has(group.epic.id),
+          onToggleEpic,
+          onSelectIssue
+        }, group.epic.id, false, undefined, this))
       }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("p", {
         className: "text-sm text-muted-foreground",
         children: "No epics found in the roadmap source."
@@ -34033,48 +34094,122 @@ function RoadmapHierarchyView({ hierarchy, onSelectIssue }) {
     ]
   }, undefined, true, undefined, this);
 }
+function EpicRow({ group, expanded, onToggleEpic, onSelectIssue }) {
+  const blockedCount = group.activeChildren.filter((issue) => issue.unresolvedBlockers.length).length;
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+    className: "rounded-lg border border-border bg-background/40",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+        className: "flex flex-wrap items-center gap-3 p-3",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Button, {
+            variant: "secondary",
+            className: "px-2 py-1 text-xs",
+            onClick: () => onToggleEpic(group.epic.id),
+            children: expanded ? "Collapse" : "Expand"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
+            type: "button",
+            className: "min-w-0 flex-1 text-left",
+            onClick: () => onSelectIssue(group.epic.id),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+                className: "truncate text-sm font-semibold hover:text-primary",
+                children: group.epic.title
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+                className: "mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground",
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+                    children: group.epic.id
+                  }, undefined, false, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
+                    variant: statusBadgeVariant(group.epic.status),
+                    children: formatStatus(group.epic.status)
+                  }, undefined, false, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
+                    variant: "outline",
+                    children: [
+                      group.activeChildren.length,
+                      " active"
+                    ]
+                  }, undefined, true, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
+                    variant: "outline",
+                    children: [
+                      group.closedChildren.length,
+                      " closed"
+                    ]
+                  }, undefined, true, undefined, this),
+                  !!blockedCount && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
+                    variant: "destructive",
+                    children: [
+                      blockedCount,
+                      " blocked"
+                    ]
+                  }, undefined, true, undefined, this)
+                ]
+              }, undefined, true, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      expanded && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+        className: "space-y-2 border-t border-border p-3",
+        children: [
+          group.activeChildren.length ? group.activeChildren.map((issue) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(IssueCard, {
+            issue,
+            onSelectIssue
+          }, issue.id, false, undefined, this)) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("p", {
+            className: "text-xs text-muted-foreground",
+            children: "No visible active child issues for the selected filters."
+          }, undefined, false, undefined, this),
+          !!group.closedChildren.length && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+            className: "space-y-2 opacity-70",
+            children: group.closedChildren.map((issue) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(IssueCard, {
+              issue,
+              compact: true,
+              onSelectIssue
+            }, issue.id, false, undefined, this))
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
 function UngroupedIssues({ issues, onSelectIssue }) {
   const active = sortIssueViews(issues.filter((issue) => issue.status !== "closed"));
   const closed = sortIssueViews(issues.filter((issue) => issue.status === "closed"));
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-    className: "space-y-2 border-t border-border pt-3",
+  const total = active.length + closed.length;
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("details", {
+    className: "border-t border-border pt-3",
+    open: total > 0 && active.length <= 3,
     children: [
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-        className: "flex items-center justify-between gap-2",
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("summary", {
+        className: "cursor-pointer text-sm font-semibold",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("h4", {
-            className: "text-sm font-semibold",
-            children: "Ungrouped"
-          }, undefined, false, undefined, this),
+          "Ungrouped ",
           /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
             variant: "outline",
-            children: issues.length
+            children: total
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      active.length ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-        className: "grid gap-2 md:grid-cols-2",
-        children: active.map((issue) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(IssueCard, {
-          issue,
-          onSelectIssue
-        }, issue.id, false, undefined, this))
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("p", {
-        className: "text-sm text-muted-foreground",
-        children: "No ungrouped active issues."
-      }, undefined, false, undefined, this),
-      !!closed.length && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("details", {
-        className: "rounded border border-border/70 bg-card/30 p-2 text-xs text-muted-foreground",
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+        className: "mt-2 space-y-2",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("summary", {
-            className: "cursor-pointer",
-            children: [
-              closed.length,
-              " closed ungrouped issue",
-              closed.length === 1 ? "" : "s"
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
-            className: "mt-2 grid gap-2 opacity-70 md:grid-cols-2",
+          active.length ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+            className: "grid gap-2 md:grid-cols-2",
+            children: active.map((issue) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(IssueCard, {
+              issue,
+              onSelectIssue
+            }, issue.id, false, undefined, this))
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("p", {
+            className: "text-sm text-muted-foreground",
+            children: "No ungrouped active issues."
+          }, undefined, false, undefined, this),
+          !!closed.length && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+            className: "grid gap-2 opacity-70 md:grid-cols-2",
             children: closed.map((issue) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(IssueCard, {
               issue,
               compact: true,
@@ -34086,11 +34221,11 @@ function UngroupedIssues({ issues, onSelectIssue }) {
     ]
   }, undefined, true, undefined, this);
 }
-function IssueCard({ issue, compact, epic, onSelectIssue }) {
+function IssueCard({ issue, compact, onSelectIssue }) {
   const blockerText = issue.unresolvedBlockers.map(formatDependency).join(", ");
   return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
     type: "button",
-    className: `block w-full rounded border text-left transition hover:border-primary/60 ${epic ? "border-primary/40 bg-primary/5" : "border-border/70 bg-card/40"} ${compact ? "p-2" : "p-3"} ${issue.status === "closed" ? "opacity-70" : ""}`,
+    className: `block w-full rounded border border-border/70 bg-card/40 text-left transition hover:border-primary/60 ${compact ? "p-2" : "p-3"} ${issue.status === "closed" ? "opacity-70" : ""}`,
     onClick: () => onSelectIssue(issue.id),
     children: [
       /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
@@ -34110,23 +34245,11 @@ function IssueCard({ issue, compact, epic, onSelectIssue }) {
               issue.priority
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
-            variant: "outline",
-            children: issue.type
-          }, undefined, false, undefined, this),
           !!issue.dependentCount && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
             variant: "default",
             children: [
               "blocks ",
               issue.dependentCount
-            ]
-          }, undefined, true, undefined, this),
-          !!issue.resolvedBlockerCount && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Badge, {
-            variant: "outline",
-            children: [
-              issue.resolvedBlockerCount,
-              " resolved blocker",
-              issue.resolvedBlockerCount === 1 ? "" : "s"
             ]
           }, undefined, true, undefined, this)
         ]
@@ -34320,11 +34443,7 @@ function Meta({ label, value }) {
 }
 function filterHierarchy(hierarchy, filters, overview) {
   return {
-    epics: hierarchy.epics.map((group) => ({
-      epic: group.epic,
-      activeChildren: group.activeChildren.filter((issue) => isVisible(issue, filters, overview)),
-      closedChildren: filters.closed ? group.closedChildren.filter((issue) => isVisible(issue, filters, overview)) : []
-    })),
+    epics: hierarchy.epics.map((group) => ({ epic: group.epic, activeChildren: group.activeChildren.filter((issue) => isVisible(issue, filters, overview)), closedChildren: filters.closed ? group.closedChildren.filter((issue) => isVisible(issue, filters, overview)) : [] })),
     ungrouped: hierarchy.ungrouped.filter((issue) => isVisible(issue, filters, overview))
   };
 }
@@ -34341,6 +34460,10 @@ function isVisible(issue, filters, overview) {
   if (overview.groups.ready.includes(issue.id))
     return filters.ready;
   return filters.backlog;
+}
+function findFocusEpic(hierarchy) {
+  const groups = [...hierarchy.epics];
+  return groups.find((group) => group.epic.status === "in_progress") || groups.sort((a, b) => (b.epic.updatedAt ?? "").localeCompare(a.epic.updatedAt ?? ""))[0];
 }
 function flattenHierarchy(hierarchy) {
   return [...hierarchy.epics.flatMap((group) => [group.epic, ...group.activeChildren, ...group.closedChildren]), ...hierarchy.ungrouped];
@@ -34379,27 +34502,27 @@ var tabs = [
   { id: "log", label: "Event Log" }
 ];
 function App() {
-  const [activeTab, setActiveTab] = import_react9.useState("agents");
-  const [connected, setConnected] = import_react9.useState(false);
-  const [agents, setAgents] = import_react9.useState({});
-  const [agentStats, setAgentStats] = import_react9.useState({});
-  const [logs, setLogs] = import_react9.useState([]);
-  const [types2, setTypes] = import_react9.useState([]);
-  const [rootProfiles, setRootProfiles] = import_react9.useState([]);
-  const [models, setModels] = import_react9.useState([]);
-  const [skillTemplates, setSkillTemplates] = import_react9.useState([]);
-  const [extensionTemplates, setExtensionTemplates] = import_react9.useState([]);
-  const [skills, setSkills] = import_react9.useState([]);
-  const [skillDiagnostics, setSkillDiagnostics] = import_react9.useState([]);
-  const [extensions, setExtensions] = import_react9.useState([]);
-  const [editingTemplate, setEditingTemplate] = import_react9.useState(null);
-  const [editingType, setEditingType] = import_react9.useState(undefined);
-  const [inspectAgentName, setInspectAgentName] = import_react9.useState(null);
-  const [inspectText, setInspectText] = import_react9.useState("Loading…");
-  const pushLog = import_react9.useCallback((text7, level = "info") => {
+  const [activeTab, setActiveTab] = import_react10.useState("agents");
+  const [connected, setConnected] = import_react10.useState(false);
+  const [agents, setAgents] = import_react10.useState({});
+  const [agentStats, setAgentStats] = import_react10.useState({});
+  const [logs, setLogs] = import_react10.useState([]);
+  const [types2, setTypes] = import_react10.useState([]);
+  const [rootProfiles, setRootProfiles] = import_react10.useState([]);
+  const [models, setModels] = import_react10.useState([]);
+  const [skillTemplates, setSkillTemplates] = import_react10.useState([]);
+  const [extensionTemplates, setExtensionTemplates] = import_react10.useState([]);
+  const [skills, setSkills] = import_react10.useState([]);
+  const [skillDiagnostics, setSkillDiagnostics] = import_react10.useState([]);
+  const [extensions, setExtensions] = import_react10.useState([]);
+  const [editingTemplate, setEditingTemplate] = import_react10.useState(null);
+  const [editingType, setEditingType] = import_react10.useState(undefined);
+  const [inspectAgentName, setInspectAgentName] = import_react10.useState(null);
+  const [inspectText, setInspectText] = import_react10.useState("Loading…");
+  const pushLog = import_react10.useCallback((text7, level = "info") => {
     setLogs((prev) => [{ id: Date.now() + Math.random(), level, text: `${new Date().toLocaleTimeString()}  ${text7}` }, ...prev].slice(0, 100));
   }, []);
-  const refreshTypes = import_react9.useCallback(async () => {
+  const refreshTypes = import_react10.useCallback(async () => {
     try {
       const res = await fetch("/api/agent-types");
       if (!res.ok)
@@ -34409,7 +34532,7 @@ function App() {
       pushLog(`Failed to load agent types: ${e.message}`, "error");
     }
   }, [pushLog]);
-  const refreshRootProfiles = import_react9.useCallback(async () => {
+  const refreshRootProfiles = import_react10.useCallback(async () => {
     try {
       const res = await fetch("/api/root-profiles");
       if (!res.ok)
@@ -34420,7 +34543,7 @@ function App() {
       pushLog(`Failed to load root profiles: ${e.message}`, "error");
     }
   }, [pushLog]);
-  const refreshModels = import_react9.useCallback(async () => {
+  const refreshModels = import_react10.useCallback(async () => {
     try {
       const res = await fetch("/api/models");
       if (!res.ok)
@@ -34431,14 +34554,14 @@ function App() {
       setModels([]);
     }
   }, []);
-  const refreshStats = import_react9.useCallback(async () => {
+  const refreshStats = import_react10.useCallback(async () => {
     try {
       const res = await fetch("/api/agent-stats");
       if (res.ok)
         setAgentStats(await res.json());
     } catch {}
   }, []);
-  const refreshTemplates = import_react9.useCallback(async () => {
+  const refreshTemplates = import_react10.useCallback(async () => {
     try {
       const [skillTemplatesRes, extsRes, availableExtsRes, skillsRes] = await Promise.all([
         fetch("/api/skill-templates"),
@@ -34471,7 +34594,7 @@ function App() {
       pushLog(`Failed to load templates: ${e.message}`, "error");
     }
   }, [pushLog]);
-  const handleEvent = import_react9.useCallback((ev) => {
+  const handleEvent = import_react10.useCallback((ev) => {
     switch (ev.type) {
       case "init":
         setAgents(Object.fromEntries(Object.entries(ev.data.agents || {}).map(([k, v]) => [k, { ...v }])));
@@ -34514,7 +34637,7 @@ function App() {
         break;
     }
   }, [pushLog]);
-  import_react9.useEffect(() => {
+  import_react10.useEffect(() => {
     let stopped = false;
     let es = null;
     let retry;
@@ -34538,7 +34661,7 @@ function App() {
         clearTimeout(retry);
     };
   }, [handleEvent]);
-  import_react9.useEffect(() => {
+  import_react10.useEffect(() => {
     refreshTypes();
     refreshRootProfiles();
     refreshModels();
@@ -34820,6 +34943,6 @@ function formatInspectData(data) {
   return lines.join(`
 `);
 }
-import_client.createRoot(document.getElementById("root")).render(/* @__PURE__ */ jsx_dev_runtime14.jsxDEV(import_react9.StrictMode, {
+import_client.createRoot(document.getElementById("root")).render(/* @__PURE__ */ jsx_dev_runtime14.jsxDEV(import_react10.StrictMode, {
   children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(App, {}, undefined, false, undefined, this)
 }, undefined, false, undefined, this));
