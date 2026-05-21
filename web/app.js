@@ -31720,7 +31720,7 @@ function SkillSourceBadges({ skill }) {
 function normalizeSkillName(value) {
   return value.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 64).replace(/-$/g, "");
 }
-function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate, onChanged }) {
+function SkillLibraryPanel({ skills, loadingSkills = false, diagnostics, skillTemplates, onEditTemplate, onChanged }) {
   const [query, setQuery] = import_react6.useState("");
   const [scope, setScope] = import_react6.useState("all");
   const [selectedId, setSelectedId] = import_react6.useState();
@@ -31766,6 +31766,7 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
   const templatesUsingSkill = import_react6.useMemo(() => selectedSkill ? skillTemplates.filter((template) => template.items.includes(skillTemplateItemValue(selectedSkill)) || template.items.includes(selectedSkill.name)) : [], [selectedSkill, skillTemplates]);
   const templatesMissingSkill = import_react6.useMemo(() => selectedSkill ? skillTemplates.filter((template) => !template.items.includes(skillTemplateItemValue(selectedSkill)) && !template.items.includes(selectedSkill.name)) : [], [selectedSkill, skillTemplates]);
   const detailMatchesSelected = !!selectedSkill?.id && detail?.skill.id === selectedSkill.id;
+  const initialListLoading = loadingSkills && !skills.length;
   import_react6.useEffect(() => {
     let cancelled = false;
     fetch("/api/orchestrator-libraries").then((res) => res.ok ? res.json() : undefined).then((data) => {
@@ -32013,7 +32014,7 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
               }, undefined, true, undefined, this),
               /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
                 className: "min-h-0 flex-1 space-y-2 overflow-auto pr-1",
-                children: !filtered.length ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+                children: initialListLoading ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(SkillListSkeleton, {}, undefined, false, undefined, this) : !filtered.length ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
                   className: "rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground",
                   children: "No skills found."
                 }, undefined, false, undefined, this) : filtered.map((skill) => {
@@ -32137,7 +32138,7 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
           }, undefined, false, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(CardContent, {
             className: "flex h-[calc(100%-4.5rem)] flex-col gap-3 pt-4",
-            children: !selectedSkill ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+            children: !selectedSkill ? initialListLoading ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(SkillDetailSkeleton, {}, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
               className: "rounded-md border border-dashed border-border p-8 text-center text-sm text-muted-foreground",
               children: "No skills discovered."
             }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(jsx_dev_runtime10.Fragment, {
@@ -32359,6 +32360,70 @@ function SkillLibraryPanel({ skills, diagnostics, skillTemplates, onEditTemplate
           onChanged();
         }
       }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function SkillListSkeleton() {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+    className: "space-y-2",
+    "aria-label": "Loading skills",
+    children: [0, 1, 2, 3, 4].map((idx) => /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+      className: "rounded-md border border-border p-3",
+      children: [
+        /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+          className: "flex items-center justify-between gap-3",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+              className: "h-4 w-32 animate-pulse rounded bg-muted"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+              className: "h-5 w-20 animate-pulse rounded-full bg-muted/70"
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+          className: "mt-3 h-3 w-full animate-pulse rounded bg-muted/70"
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+          className: "mt-2 h-3 w-2/3 animate-pulse rounded bg-muted/60"
+        }, undefined, false, undefined, this)
+      ]
+    }, idx, true, undefined, this))
+  }, undefined, false, undefined, this);
+}
+function SkillDetailSkeleton() {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+    className: "grid min-h-0 flex-1 gap-3 xl:grid-cols-[260px_1fr]",
+    "aria-label": "Loading skill library",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+        className: "min-h-0 rounded-md border border-border bg-background p-2",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+            className: "mb-2 h-3 w-16 animate-pulse rounded bg-muted"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+            className: "space-y-2",
+            children: [0, 1, 2, 3].map((idx) => /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+              className: "h-5 animate-pulse rounded bg-muted/70"
+            }, idx, false, undefined, this))
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+        className: "min-h-0 rounded-md border border-border bg-background p-5",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+            className: "mb-4 h-6 w-48 animate-pulse rounded bg-muted"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+            className: "space-y-3",
+            children: [0, 1, 2, 3, 4].map((idx) => /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+              className: "h-4 animate-pulse rounded bg-muted/70"
+            }, idx, false, undefined, this))
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
@@ -34820,6 +34885,7 @@ function App() {
   const [skillTemplates, setSkillTemplates] = import_react10.useState([]);
   const [extensionTemplates, setExtensionTemplates] = import_react10.useState([]);
   const [skills, setSkills] = import_react10.useState([]);
+  const [skillsLoading, setSkillsLoading] = import_react10.useState(true);
   const [skillDiagnostics, setSkillDiagnostics] = import_react10.useState([]);
   const [extensions, setExtensions] = import_react10.useState([]);
   const [editingTemplate, setEditingTemplate] = import_react10.useState(null);
@@ -34870,6 +34936,7 @@ function App() {
     } catch {}
   }, []);
   const refreshTemplates = import_react10.useCallback(async () => {
+    setSkillsLoading(true);
     try {
       const [skillTemplatesRes, extsRes, availableExtsRes, skillsRes] = await Promise.all([
         fetch("/api/skill-templates"),
@@ -34900,6 +34967,8 @@ function App() {
       }
     } catch (e) {
       pushLog(`Failed to load templates: ${e.message}`, "error");
+    } finally {
+      setSkillsLoading(false);
     }
   }, [pushLog]);
   const handleEvent = import_react10.useCallback((ev) => {
@@ -35095,6 +35164,7 @@ function App() {
           }, undefined, false, undefined, this),
           activeTab === "skills" && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(SkillLibraryPanel, {
             skills,
+            loadingSkills: skillsLoading,
             diagnostics: skillDiagnostics,
             skillTemplates,
             onEditTemplate: (template) => setEditingTemplate({ kind: "skill", template }),
