@@ -4,7 +4,7 @@ set -euo pipefail
 WORKSPACE="/workspaces/pi-agent-orchestrator"
 cd "$WORKSPACE"
 
-echo "==> Installing JavaScript and bundled Pi package dependencies"
+echo "==> Installing JavaScript dependencies and bundled Pi packages"
 bun install
 
 echo "==> Building dashboard assets served by the orchestrator extension"

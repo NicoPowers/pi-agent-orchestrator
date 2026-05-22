@@ -25,6 +25,9 @@ USER ${USERNAME}
 RUN curl -fsSL https://bun.sh/install | bash
 
 USER root
+RUN mkdir -p /home/${USERNAME}/.pi \
+  && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.pi
+
 RUN npm install -g @earendil-works/pi-coding-agent
 
 USER ${USERNAME}

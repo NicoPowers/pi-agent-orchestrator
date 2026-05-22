@@ -3,3 +3,8 @@
 .seeds/issues.jsonl merge=union
 .seeds/templates.jsonl merge=union
 .seeds/plans.jsonl merge=union
+
+*.sh text eol=lf
+.devcontainer/*.sh text eol=lf
+Dockerfile text eol=lf
+.gitattributes text eol=lf
