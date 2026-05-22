@@ -19,6 +19,7 @@ RUN apt-get update \
     python3 \
     ripgrep \
     unzip \
+    xdg-utils \
   && rm -rf /var/lib/apt/lists/*
 
 USER ${USERNAME}

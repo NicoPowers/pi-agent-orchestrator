@@ -1435,17 +1435,19 @@ export default function (pi: ExtensionAPI) {
 				return;
 			}
 			ctx.ui.notify(`Dashboard: ${serverHandle.url}`, "info");
-			// Try to open browser
+			// Try to open browser; missing desktop openers should not crash Pi.
 			const { spawn } = await import("node:child_process");
 			const platform = process.platform;
-			const cmd =
-				platform === "darwin"
-					? "open"
-					: platform === "win32"
-						? "start"
-						: "xdg-open";
+			const command =
+				platform === "win32"
+					? { cmd: "cmd", args: ["/c", "start", "", serverHandle.url] }
+					: { cmd: platform === "darwin" ? "open" : "xdg-open", args: [serverHandle.url] };
 			try {
-				spawn(cmd, [serverHandle.url], { detached: true, stdio: "ignore" });
+				const opener = spawn(command.cmd, command.args, { detached: true, stdio: "ignore" });
+				opener.on("error", () => {
+					/* ignore open failures */
+				});
+				opener.unref();
 			} catch {
 				/* ignore open failures */
 			}
