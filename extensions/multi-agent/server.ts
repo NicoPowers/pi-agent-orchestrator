@@ -1525,23 +1525,29 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 
 			Promise.resolve().then(async () => {
 				try {
-					await deps.sendToAgent(agent, message, 300_000, undefined, (update) => {
-						if (update.type === "status") {
-							broadcast({
-								type: "agent-status",
-								data: {
-									name,
-									status: update.status,
-									pendingSend: agent.pendingSend,
-								},
-							});
-						} else {
-							broadcast({
-								type: "agent-error",
-								data: { name, error: update.error, phase: update.phase },
-							});
-						}
-					});
+					await deps.sendToAgent(
+						agent,
+						message,
+						300_000,
+						undefined,
+						(update) => {
+							if (update.type === "status") {
+								broadcast({
+									type: "agent-status",
+									data: {
+										name,
+										status: update.status,
+										pendingSend: agent.pendingSend,
+									},
+								});
+							} else {
+								broadcast({
+									type: "agent-error",
+									data: { name, error: update.error, phase: update.phase },
+								});
+							}
+						},
+					);
 					log("server", `Dashboard send to ${name} completed`);
 				} catch (err: any) {
 					broadcast({

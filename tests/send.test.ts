@@ -303,9 +303,7 @@ describe("sendToAgent", () => {
 			/* Keep preflight pending until RPC timeout. */
 		});
 
-		await expect(sendToAgent(agent, "timeout", 1)).rejects.toThrow(
-			"timed out",
-		);
+		await expect(sendToAgent(agent, "timeout", 1)).rejects.toThrow("timed out");
 
 		expect(agent.status).toBe("error");
 		expect(agent.events).toContainEqual(

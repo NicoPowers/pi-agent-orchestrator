@@ -323,10 +323,13 @@ export type ServerEvent =
 				status: AgentStatus;
 				pendingSend?: PendingAgentSend;
 			};
-		}
+	  }
 	| { type: "agent-start"; data: { name: string } }
 	| { type: "agent-end"; data: { name: string; text: string } }
-	| { type: "agent-error"; data: { name: string; error: string; phase?: string } }
+	| {
+			type: "agent-error";
+			data: { name: string; error: string; phase?: string };
+	  }
 	| {
 			type: "agent-exit";
 			data: {
@@ -335,6 +338,6 @@ export type ServerEvent =
 				signal?: string | null;
 				reason?: string;
 			};
-		}
+	  }
 	| { type: "agent-delta"; data: { name: string; delta: string } }
 	| { type: "delegate"; data: { from: string; to: string; task: string } };
