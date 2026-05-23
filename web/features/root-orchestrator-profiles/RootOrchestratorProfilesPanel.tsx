@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type {
-	OrchestratorLibrariesInfo,
+	LatticeLibrariesInfo,
 	RootProfileDetailInfo,
 	RootProfileInfo,
 } from "../../types.js";
@@ -30,7 +30,7 @@ function splitItems(text: string): string[] {
 }
 
 function sourceLabel(profile: RootProfileInfo): string {
-	if (profile.source === "orchestrator-library")
+	if (profile.source === "lattice-library")
 		return `library: ${profile.scope || "unknown"}`;
 	return profile.source;
 }
@@ -95,7 +95,7 @@ function RootProfileEditorDialog({
 	onClose: () => void;
 	onSaved: () => void;
 }) {
-	const [libraries, setLibraries] = useState<OrchestratorLibrariesInfo | null>(
+	const [libraries, setLibraries] = useState<LatticeLibrariesInfo | null>(
 		null,
 	);
 	const [targetLibrary, setTargetLibrary] = useState("");
@@ -109,7 +109,7 @@ function RootProfileEditorDialog({
 	useEffect(() => {
 		if (!open) return;
 		setServerError("");
-		fetch("/api/orchestrator-libraries")
+		fetch("/api/lattice-libraries")
 			.then((res) => (res.ok ? res.json() : null))
 			.then((data) => setLibraries(data))
 			.catch(() => setLibraries(null));
@@ -117,7 +117,7 @@ function RootProfileEditorDialog({
 		setTargetLibrary(
 			mode === "edit"
 				? ""
-				: profile?.source === "orchestrator-library"
+				: profile?.source === "lattice-library"
 					? profile.scope || ""
 					: "",
 		);
@@ -155,14 +155,14 @@ function RootProfileEditorDialog({
 		!name.trim() ? "Name is required." : undefined,
 		!description.trim() ? "Description is required." : undefined,
 		mode !== "edit" && !targetLibrary && validLibraries.length
-			? "Choose an Orchestrator Library target."
+			? "Choose an Lattice Library target."
 			: undefined,
 	].filter(Boolean) as string[];
 	const profile = detail?.profile || sourceProfile;
 	const initialTargetLibrary =
 		mode === "edit"
 			? ""
-			: profile?.source === "orchestrator-library"
+			: profile?.source === "lattice-library"
 				? profile.scope || ""
 				: "";
 	const isDirty =
@@ -236,7 +236,7 @@ function RootProfileEditorDialog({
 			<div className="space-y-3">
 				{mode !== "edit" && (
 					<>
-						<FieldLabel required>Target Orchestrator Library</FieldLabel>
+						<FieldLabel required>Target Lattice Library</FieldLabel>
 						{validLibraries.length ? (
 							<Select
 								value={targetLibrary}
@@ -254,7 +254,7 @@ function RootProfileEditorDialog({
 							</Select>
 						) : (
 							<div className="rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
-								No valid Orchestrator Libraries are configured. This profile
+								No valid Lattice Libraries are configured. This profile
 								will be saved to the project .pi/orchestrator-profiles fallback.
 							</div>
 						)}

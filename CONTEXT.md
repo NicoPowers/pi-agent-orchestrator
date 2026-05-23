@@ -1,6 +1,6 @@
-# Pi Agent Orchestrator
+# Pi Lattice
 
-Pi Agent Orchestrator helps a root Pi session coordinate spawned agents and user-owned orchestration resources through an explicit dashboard-backed workflow.
+Pi Lattice helps a root Pi session coordinate spawned agents and user-owned orchestration resources through an explicit dashboard-backed workflow.
 
 ## Language
 
@@ -36,28 +36,28 @@ _Avoid_: Capability assignment UI
 A reusable capability bundle that can reference skills or extensions for eligible agents or orchestrator sessions.
 _Avoid_: Prompt template when referring to skill/extension templates
 
-**Orchestrator Library**:
-A user- or team-owned resource repository with an `orchestrator-library.json` manifest and namespaced orchestrator resources.
+**Lattice Library**:
+A user- or team-owned resource repository with an `lattice-library.json` manifest and namespaced orchestrator resources.
 _Avoid_: Package resources, native Pi resource path
 
 **Native Pi Resource Settings**:
-The advanced raw Pi skill and extension path settings shown as an escape hatch inside Orchestrator Library management.
-_Avoid_: Orchestrator Library resources
+The advanced raw Pi skill and extension path settings shown as an escape hatch inside Lattice Library management.
+_Avoid_: Lattice Library resources
 
 ## Relationships
 
-- The **Dashboard Shell** renders feature areas such as **Live Agents**, **Agent Types**, **Skill Library**, **Templates**, and **Orchestrator Libraries**.
-- An **Orchestrator Library** can contain **Agent Types**, **Root Orchestrator Profiles**, **Templates**, skills, and extensions.
-- **Native Pi Resource Settings** are visually managed inside **Orchestrator Libraries** but are not themselves **Orchestrator Library** resources.
+- The **Dashboard Shell** renders feature areas such as **Live Agents**, **Agent Types**, **Skill Library**, **Templates**, and **Lattice Libraries**.
+- An **Lattice Library** can contain **Agent Types**, **Root Orchestrator Profiles**, **Templates**, skills, and extensions.
+- **Native Pi Resource Settings** are visually managed inside **Lattice Libraries** but are not themselves **Lattice Library** resources.
 - A **Root Orchestrator Profile** is not an **Agent Type** and must not be spawned as a **Live Agent**.
 - A **Lead Agent** creates or curates **Issue Handoff Artifacts** for an issue, while the root orchestrator remains responsible for lifecycle oversight and final durable metadata promotion.
 
 ## Example dialogue
 
 > **Dev:** "Should the **Skill Library** copy dialog let me target my team folder?"
-> **Domain expert:** "Yes, if that folder is a configured **Orchestrator Library**; show it by manifest name and path so users know which resource repository will own the copied skill."
+> **Domain expert:** "Yes, if that folder is a configured **Lattice Library**; show it by manifest name and path so users know which resource repository will own the copied skill."
 
 ## Flagged ambiguities
 
 - "Profile" has been used for both **Agent Type** and **Root Orchestrator Profile**; resolved: only root `/orchestrate` configuration is a **Root Orchestrator Profile**, while spawnable markdown definitions are **Agent Types**.
-- "Resource settings" can mean **Orchestrator Library** manifest resources or **Native Pi Resource Settings**; resolved: native settings are an advanced escape hatch nested under library management but remain a separate concept.
+- "Resource settings" can mean **Lattice Library** manifest resources or **Native Pi Resource Settings**; resolved: native settings are an advanced escape hatch nested under library management but remain a separate concept.

@@ -81,7 +81,7 @@ describe("agent debug artifacts", () => {
 			expect(artifacts.timelinePath).toContain(
 				path.join(
 					".pi",
-					"pi-agent-orchestrator",
+					"pi-lattice",
 					"sessions",
 					"session-123",
 					"agents",

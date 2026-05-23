@@ -20,12 +20,12 @@ Then enable orchestration inside Pi:
 /dashboard
 ```
 
-The setup script runs `bun install`, builds the dashboard assets, and registers `/workspaces/pi-agent-orchestrator` as a local-path Pi package. That means Pi loads the orchestrator extension, skills, and bundled helper package resources from the mounted checkout. Edits to this repository are edits to the installed package; use `/reload` or restart Pi after extension/package manifest changes, and run `bun run build` after dashboard changes.
+The setup script runs `bun install`, builds the dashboard assets, and registers `/workspaces/pi-lattice` as a local-path Pi package. That means Pi loads the orchestrator extension, skills, and bundled helper package resources from the mounted checkout. Edits to this repository are edits to the installed package; use `/reload` or restart Pi after extension/package manifest changes, and run `bun run build` after dashboard changes.
 
 The devcontainer forwards the dashboard port `18765`.
 
 The devcontainer also forwards a WSL-side SSH agent through a stable socket at
-`/tmp/pi-agent-orchestrator-ssh-agent.sock`. On container startup,
+`/tmp/pi-lattice-ssh-agent.sock`. On container startup,
 `.devcontainer/init-ssh-agent.sh` starts that agent if needed and attempts to add
 the first non-passphrase-protected default key it finds:
 
@@ -36,7 +36,7 @@ the first non-passphrase-protected default key it finds:
 If the key is passphrase-protected, add it once from WSL with:
 
 ```bash
-SSH_AUTH_SOCK=/tmp/pi-agent-orchestrator-ssh-agent.sock ssh-add ~/.ssh/id_ed25519
+SSH_AUTH_SOCK=/tmp/pi-lattice-ssh-agent.sock ssh-add ~/.ssh/id_ed25519
 ```
 
 Inside the container, verify forwarding with `ssh-add -l`.
@@ -49,38 +49,38 @@ From inside the container:
 pi
 ```
 
-The first Pi login/configuration writes under `/home/node/.pi`. The devcontainer maps that path to a named Docker volume (`pi-agent-orchestrator-home`) so Pi config, cache, package installs, and auth survive container rebuilds.
+The first Pi login/configuration writes under `/home/node/.pi`. The devcontainer maps that path to a named Docker volume (`pi-lattice-home`) so Pi config, cache, package installs, and auth survive container rebuilds.
 
-## External Orchestrator Libraries
+## External Lattice Libraries
 
 Runtime paths inside the container are the source of truth. Repo-local libraries belong under:
 
 ```text
-.pi/pi-agent-orchestrator/libraries/<library-name>/orchestrator-library.json
+.pi/pi-lattice/libraries/<library-name>/lattice-library.json
 ```
 
 External team/user libraries should be bind-mounted before Pi starts under:
 
 ```text
-.pi/pi-agent-orchestrator/external-libraries/<library-name>/orchestrator-library.json
+.pi/pi-lattice/external-libraries/<library-name>/lattice-library.json
 ```
 
 For example, add an extra devcontainer mount for a host checkout:
 
 ```json
 "mounts": [
-  "source=/absolute/host/team-orchestrator-library,target=${containerWorkspaceFolder}/.pi/pi-agent-orchestrator/external-libraries/team,type=bind,consistency=cached"
+  "source=/absolute/host/team-lattice-library,target=${containerWorkspaceFolder}/.pi/pi-lattice/external-libraries/team,type=bind,consistency=cached"
 ]
 ```
 
-External libraries are separately versioned repositories. This project ignores `.pi/pi-agent-orchestrator/external-libraries/` so normal project status is not polluted by mounted library contents.
+External libraries are separately versioned repositories. This project ignores `.pi/pi-lattice/external-libraries/` so normal project status is not polluted by mounted library contents.
 
 ## Issue handoff artifacts
 
 Operational handoff artifacts for spawned-agent continuity live under the app-owned project tree:
 
 ```text
-.pi/pi-agent-orchestrator/issues/<issue-id>/
+.pi/pi-lattice/issues/<issue-id>/
   issue-context.json
   lead-plan.json
   lead-summary.md

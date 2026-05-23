@@ -1,7 +1,7 @@
 import { parseFrontmatter } from "@earendil-works/pi-coding-agent";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { discoverConfiguredOrchestratorLibraries } from "./orchestrator-library.js";
+import { discoverConfiguredLatticeLibraries } from "./lattice-library.js";
 
 export type TemplateAudience = "spawned" | "orchestrator" | "all";
 export type TemplateAutoApply = "none" | "spawned" | "all";
@@ -15,7 +15,7 @@ export interface TemplateDefinition {
 	/** Legacy alias: true only when autoApply is "spawned". */
 	applyToAll?: boolean;
 	validationErrors: string[];
-	source: "project" | "orchestrator-library";
+	source: "project" | "lattice-library";
 	scope?: string;
 	filePath: string;
 }
@@ -189,13 +189,13 @@ export function discoverTemplates(
 	}
 
 	if (config.libraryKind) {
-		for (const resource of discoverConfiguredOrchestratorLibraries(
+		for (const resource of discoverConfiguredLatticeLibraries(
 			cwd,
 		).resources.filter((resource) => resource.kind === config.libraryKind)) {
 			const template = readTemplateFile(
 				resource.filePath,
 				config,
-				"orchestrator-library",
+				"lattice-library",
 				resource.libraryName,
 			);
 			if (template) templates.push(template);
@@ -208,7 +208,7 @@ export function discoverTemplates(
 	)) {
 		if (
 			!byName.has(template.name) ||
-			byName.get(template.name)?.source !== "orchestrator-library"
+			byName.get(template.name)?.source !== "lattice-library"
 		)
 			byName.set(template.name, template);
 	}
@@ -235,7 +235,7 @@ function targetTemplateDir(
 ): { dir: string; error?: string } {
 	if (targetScope === "project") return { dir: templateDir(cwd, config) };
 	if (config.libraryKind) {
-		const libraries = discoverConfiguredOrchestratorLibraries(
+		const libraries = discoverConfiguredLatticeLibraries(
 			cwd,
 		).libraries.filter((candidate) => candidate.valid && candidate.manifest);
 		if (targetLibrary) {
@@ -247,7 +247,7 @@ function targetTemplateDir(
 			if (!library?.manifest)
 				return {
 					dir: "",
-					error: `Orchestrator Library '${targetLibrary}' not found`,
+					error: `Lattice Library '${targetLibrary}' not found`,
 				};
 			return { dir: library.resourceDirs[config.libraryKind].resolvedPath };
 		}

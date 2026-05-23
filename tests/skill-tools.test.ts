@@ -24,7 +24,7 @@ function makePiHarness() {
 }
 
 describe("skill management tools", () => {
-	it("bootstraps an Orchestrator Library at an explicit path", async () => {
+	it("bootstraps an Lattice Library at an explicit path", async () => {
 		const extension = (await import("../extensions/multi-agent/index.js"))
 			.default;
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-library-tool-"));
@@ -53,7 +53,7 @@ describe("skill management tools", () => {
 			expect(result.details.library.manifest.name).toBe("team");
 			expect(
 				fs.existsSync(
-					path.join(tmpDir, "team-library", "orchestrator-library.json"),
+					path.join(tmpDir, "team-library", "lattice-library.json"),
 				),
 			).toBe(true);
 			expect(

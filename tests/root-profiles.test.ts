@@ -36,12 +36,12 @@ describe("root orchestrator profiles", () => {
     expect(profile?.instructions).toContain("root orchestrator");
   });
 
-  it("discovers Orchestrator Library profiles from manifest-configured directories", async () => {
+  it("discovers Lattice Library profiles from manifest-configured directories", async () => {
     const { discoverRootProfiles } = await import("../extensions/multi-agent/root-profiles.js");
-    const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/orchestrator-library.js");
+    const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/lattice-library.js");
     const libraryRoot = path.join(tmpDir, "team-library");
     fs.mkdirSync(path.join(libraryRoot, "profiles"), { recursive: true });
-    fs.writeFileSync(path.join(libraryRoot, "orchestrator-library.json"), JSON.stringify({
+    fs.writeFileSync(path.join(libraryRoot, "lattice-library.json"), JSON.stringify({
       schema: ORCHESTRATOR_LIBRARY_SCHEMA,
       name: "team",
       resources: { orchestratorProfiles: "profiles" },
@@ -52,13 +52,13 @@ describe("root orchestrator profiles", () => {
       skillTemplates: "root-planning",
     }, "Plan before delegating.");
     fs.mkdirSync(path.join(tmpDir, ".pi"), { recursive: true });
-    fs.writeFileSync(path.join(tmpDir, ".pi", "settings.json"), JSON.stringify({ piAgentOrchestrator: { libraries: ["./team-library"] } }));
+    fs.writeFileSync(path.join(tmpDir, ".pi", "settings.json"), JSON.stringify({ piLattice: { libraries: ["./team-library"] } }));
 
     const profiles = discoverRootProfiles(tmpDir);
 
     expect(profiles.find((profile) => profile.name === "planning")).toMatchObject({
       name: "planning",
-      source: "orchestrator-library",
+      source: "lattice-library",
       scope: "team",
       skillTemplates: ["root-planning"],
       instructions: "Plan before delegating.",
@@ -104,18 +104,18 @@ describe("root orchestrator profiles", () => {
     expect(chooseRootProfileActivation("missing", [defaultProfile])).toMatchObject({ action: "error" });
   });
 
-  it("creates, edits, and deletes editable Orchestrator Library profiles with hash guards", async () => {
+  it("creates, edits, and deletes editable Lattice Library profiles with hash guards", async () => {
     const { saveRootProfile, getRootProfileDetail, deleteRootProfile } = await import("../extensions/multi-agent/root-profiles.js");
-    const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/orchestrator-library.js");
+    const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/lattice-library.js");
     const libraryRoot = path.join(tmpDir, "team-library");
     fs.mkdirSync(libraryRoot, { recursive: true });
-    fs.writeFileSync(path.join(libraryRoot, "orchestrator-library.json"), JSON.stringify({
+    fs.writeFileSync(path.join(libraryRoot, "lattice-library.json"), JSON.stringify({
       schema: ORCHESTRATOR_LIBRARY_SCHEMA,
       name: "team",
       resources: { orchestratorProfiles: "profiles" },
     }));
     fs.mkdirSync(path.join(tmpDir, ".pi"), { recursive: true });
-    fs.writeFileSync(path.join(tmpDir, ".pi", "settings.json"), JSON.stringify({ piAgentOrchestrator: { libraries: ["./team-library"] } }));
+    fs.writeFileSync(path.join(tmpDir, ".pi", "settings.json"), JSON.stringify({ piLattice: { libraries: ["./team-library"] } }));
 
     const created = saveRootProfile({
       targetLibrary: "team",
@@ -128,7 +128,7 @@ describe("root orchestrator profiles", () => {
     expect(created.success).toBe(true);
     expect(created.path).toBe(path.join(libraryRoot, "profiles", "planning.md"));
     let detail = getRootProfileDetail("planning", tmpDir);
-    expect(detail?.profile).toMatchObject({ source: "orchestrator-library", scope: "team", readOnly: false });
+    expect(detail?.profile).toMatchObject({ source: "lattice-library", scope: "team", readOnly: false });
     expect(detail?.frontmatter.skillTemplates).toBe("root-planning");
     expect(detail?.body).toBe("Plan before delegating.");
 

@@ -403,7 +403,7 @@ export default function (pi: ExtensionAPI) {
 			targetLibrary: Type.Optional(
 				Type.String({
 					description:
-						"Optional Orchestrator Library manifest name or root path. Overrides scope.",
+						"Optional Lattice Library manifest name or root path. Overrides scope.",
 				}),
 			),
 			name: Type.String({
@@ -498,13 +498,13 @@ export default function (pi: ExtensionAPI) {
 
 	pi.registerTool({
 		name: "orchestrator_library_bootstrap",
-		label: "Bootstrap Orchestrator Library",
+		label: "Bootstrap Lattice Library",
 		description:
-			"Create a starter Orchestrator Library at an explicit filesystem path and register it in Pi Orchestrator settings.",
+			"Create a starter Lattice Library at an explicit filesystem path and register it in Pi Orchestrator settings.",
 		parameters: Type.Object({
 			targetPath: Type.String({
 				description:
-					"Explicit target directory for the Orchestrator Library. Relative paths resolve from the current workspace.",
+					"Explicit target directory for the Lattice Library. Relative paths resolve from the current workspace.",
 			}),
 			name: Type.Optional(
 				Type.String({ description: "Optional manifest namespace/name." }),
@@ -514,10 +514,10 @@ export default function (pi: ExtensionAPI) {
 			),
 		}),
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-			const { bootstrapOrchestratorLibrary } = await import(
-				"./orchestrator-library.js"
+			const { bootstrapLatticeLibrary } = await import(
+				"./lattice-library.js"
 			);
-			const result = bootstrapOrchestratorLibrary(
+			const result = bootstrapLatticeLibrary(
 				{
 					targetPath: params.targetPath,
 					name: params.name,
@@ -530,7 +530,7 @@ export default function (pi: ExtensionAPI) {
 					content: [
 						{
 							type: "text",
-							text: result.error || "Failed to bootstrap Orchestrator Library.",
+							text: result.error || "Failed to bootstrap Lattice Library.",
 						},
 					],
 					isError: true,
@@ -540,7 +540,7 @@ export default function (pi: ExtensionAPI) {
 				content: [
 					{
 						type: "text",
-						text: `Created ${result.scope || "project"} Orchestrator Library '${result.library.manifest?.name || "unknown"}' at ${result.library.root}.`,
+						text: `Created ${result.scope || "project"} Lattice Library '${result.library.manifest?.name || "unknown"}' at ${result.library.root}.`,
 					},
 				],
 				details: result,
@@ -657,7 +657,7 @@ export default function (pi: ExtensionAPI) {
 			issueId: Type.Optional(
 				Type.String({
 					description:
-						"Optional Seeds issue id used to create/reuse .pi/pi-agent-orchestrator/issues/<issue-id>/ handoff artifacts",
+						"Optional Seeds issue id used to create/reuse .pi/pi-lattice/issues/<issue-id>/ handoff artifacts",
 				}),
 			),
 			extensions: Type.Optional(

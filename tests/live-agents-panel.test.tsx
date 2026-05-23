@@ -251,7 +251,7 @@ describe("Live Agents dashboard", () => {
 
 	it("shows issue handoff metadata on agent cards", async () => {
 		const artifactPath =
-			"/workspaces/repo/.pi/pi-agent-orchestrator/issues/pi-agent-orchestrator-f91c";
+			"/workspaces/repo/.pi/pi-lattice/issues/pi-lattice-f91c";
 		const { window, cleanup } = await render(
 			<AgentsPanel
 				agents={{
@@ -262,7 +262,7 @@ describe("Live Agents dashboard", () => {
 						children: [],
 						turns: 0,
 						worktree: "/tmp/pi-worktree-lead",
-						issueId: "pi-agent-orchestrator-f91c",
+						issueId: "pi-lattice-f91c",
 						artifactPath,
 					},
 				}}
@@ -274,7 +274,7 @@ describe("Live Agents dashboard", () => {
 		try {
 			const text = window.document.body.textContent || "";
 			expect(text).toContain("model: default");
-			expect(text).toContain("issue: pi-agent-orchestrator-f91c");
+			expect(text).toContain("issue: pi-lattice-f91c");
 			expect(text).toContain("artifacts:");
 			const artifact = Array.from(
 				window.document.querySelectorAll("span"),

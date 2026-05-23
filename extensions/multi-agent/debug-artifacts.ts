@@ -5,7 +5,7 @@ import { buildAgentTimeline, type AgentTimeline } from "./timeline.js";
 
 const DEBUG_ROOT_SEGMENTS = [
 	".pi",
-	"pi-agent-orchestrator",
+	"pi-lattice",
 	"sessions",
 ] as const;
 const MAX_SERIALIZED_TEXT = 200_000;

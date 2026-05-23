@@ -31,12 +31,12 @@ describe("skill discovery API", () => {
 		}
 	});
 
-	it("discovers Orchestrator Library skills", async () => {
+	it("discovers Lattice Library skills", async () => {
 		const { discoverSkills } = await import(
 			"../extensions/multi-agent/skill-discovery.js"
 		);
 		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/orchestrator-library.js"
+			"../extensions/multi-agent/lattice-library.js"
 		);
 		const tmpDir = fs.mkdtempSync(
 			path.join(os.tmpdir(), "pi-library-skill-discovery-"),
@@ -47,7 +47,7 @@ describe("skill discovery API", () => {
 				recursive: true,
 			});
 			fs.writeFileSync(
-				path.join(libraryRoot, "orchestrator-library.json"),
+				path.join(libraryRoot, "lattice-library.json"),
 				JSON.stringify({
 					schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 					name: "team",
@@ -62,7 +62,7 @@ describe("skill discovery API", () => {
 			fs.writeFileSync(
 				path.join(tmpDir, ".pi", "settings.json"),
 				JSON.stringify({
-					piAgentOrchestrator: { libraries: ["./team-library"] },
+					piLattice: { libraries: ["./team-library"] },
 				}),
 			);
 
@@ -71,7 +71,7 @@ describe("skill discovery API", () => {
 				(candidate) => candidate.name === "example-analysis",
 			);
 			expect(skill).toBeDefined();
-			expect(skill?.source).toBe("orchestrator-library");
+			expect(skill?.source).toBe("lattice-library");
 			expect(skill?.scope).toBe("team");
 			expect(skill?.editable).toBe(true);
 			expect(skill?.ref).toBe("team:skills/example-analysis/SKILL.md");
@@ -126,12 +126,12 @@ describe("skill discovery API", () => {
 		}
 	});
 
-	it("creates skills in the first configured Orchestrator Library by default", async () => {
+	it("creates skills in the first configured Lattice Library by default", async () => {
 		const { createSkill } = await import(
 			"../extensions/multi-agent/skill-discovery.js"
 		);
 		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/orchestrator-library.js"
+			"../extensions/multi-agent/lattice-library.js"
 		);
 		const tmpDir = fs.mkdtempSync(
 			path.join(os.tmpdir(), "pi-create-library-skill-"),
@@ -140,7 +140,7 @@ describe("skill discovery API", () => {
 			const libraryRoot = path.join(tmpDir, "team-library");
 			fs.mkdirSync(path.join(libraryRoot, "skills"), { recursive: true });
 			fs.writeFileSync(
-				path.join(libraryRoot, "orchestrator-library.json"),
+				path.join(libraryRoot, "lattice-library.json"),
 				JSON.stringify({
 					schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 					name: "team",
@@ -151,7 +151,7 @@ describe("skill discovery API", () => {
 			fs.writeFileSync(
 				path.join(tmpDir, ".pi", "settings.json"),
 				JSON.stringify({
-					piAgentOrchestrator: { libraries: ["./team-library"] },
+					piLattice: { libraries: ["./team-library"] },
 				}),
 			);
 
@@ -161,7 +161,7 @@ describe("skill discovery API", () => {
 			);
 
 			expect(result.success).toBe(true);
-			expect(result.detail?.skill.source).toBe("orchestrator-library");
+			expect(result.detail?.skill.source).toBe("lattice-library");
 			expect(result.detail?.skill.scope).toBe("team");
 			expect(
 				fs.existsSync(
@@ -178,12 +178,12 @@ describe("skill discovery API", () => {
 		}
 	});
 
-	it("creates skills in an explicitly selected Orchestrator Library", async () => {
+	it("creates skills in an explicitly selected Lattice Library", async () => {
 		const { createSkill } = await import(
 			"../extensions/multi-agent/skill-discovery.js"
 		);
 		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/orchestrator-library.js"
+			"../extensions/multi-agent/lattice-library.js"
 		);
 		const tmpDir = fs.mkdtempSync(
 			path.join(os.tmpdir(), "pi-create-selected-library-skill-"),
@@ -193,7 +193,7 @@ describe("skill discovery API", () => {
 				const libraryRoot = path.join(tmpDir, `${name}-library`);
 				fs.mkdirSync(path.join(libraryRoot, "skills"), { recursive: true });
 				fs.writeFileSync(
-					path.join(libraryRoot, "orchestrator-library.json"),
+					path.join(libraryRoot, "lattice-library.json"),
 					JSON.stringify({
 						schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 						name,
@@ -205,7 +205,7 @@ describe("skill discovery API", () => {
 			fs.writeFileSync(
 				path.join(tmpDir, ".pi", "settings.json"),
 				JSON.stringify({
-					piAgentOrchestrator: {
+					piLattice: {
 						libraries: ["./first-library", "./second-library"],
 					},
 				}),
@@ -310,12 +310,12 @@ describe("skill discovery API", () => {
 		}
 	});
 
-	it("copies a skill directory into an explicitly selected Orchestrator Library", async () => {
+	it("copies a skill directory into an explicitly selected Lattice Library", async () => {
 		const { discoverSkills, copySkill } = await import(
 			"../extensions/multi-agent/skill-discovery.js"
 		);
 		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/orchestrator-library.js"
+			"../extensions/multi-agent/lattice-library.js"
 		);
 		const tmpDir = fs.mkdtempSync(
 			path.join(os.tmpdir(), "pi-copy-skill-library-"),
@@ -332,7 +332,7 @@ describe("skill discovery API", () => {
 				const libraryRoot = path.join(tmpDir, `${name}-library`);
 				fs.mkdirSync(path.join(libraryRoot, "skills"), { recursive: true });
 				fs.writeFileSync(
-					path.join(libraryRoot, "orchestrator-library.json"),
+					path.join(libraryRoot, "lattice-library.json"),
 					JSON.stringify({
 						schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 						name,
@@ -344,7 +344,7 @@ describe("skill discovery API", () => {
 			fs.writeFileSync(
 				path.join(tmpDir, ".pi", "settings.json"),
 				JSON.stringify({
-					piAgentOrchestrator: {
+					piLattice: {
 						libraries: ["./first-library", "./second-library"],
 					},
 				}),

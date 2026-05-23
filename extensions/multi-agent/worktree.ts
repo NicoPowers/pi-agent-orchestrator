@@ -8,7 +8,7 @@ import { agents } from "./state.js";
 // Serialize git worktree operations
 let worktreeLock = Promise.resolve();
 const managedWorktrees = new Set<string>();
-const managedWorktreeMarkerDir = path.join(os.tmpdir(), "pi-agent-orchestrator-worktree-markers");
+const managedWorktreeMarkerDir = path.join(os.tmpdir(), "pi-lattice-worktree-markers");
 const managedWorktreeMarkerTtlMs = 24 * 60 * 60 * 1000;
 
 function markerPathFor(worktreePath: string): string {

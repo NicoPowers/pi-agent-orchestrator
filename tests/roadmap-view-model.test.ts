@@ -49,8 +49,8 @@ describe("roadmap hierarchy view model", () => {
 
   it("does not infer open child issues into closed epics by shared labels", () => {
     const overview = roadmapOverview([
-      issue({ id: "closed-epic", title: "Closed Epic", type: "epic", status: "closed", labels: ["orchestrator-library"] }),
-      issue({ id: "future-work", title: "Future Orchestrator Library work", labels: ["orchestrator-library"] }),
+      issue({ id: "closed-epic", title: "Closed Epic", type: "epic", status: "closed", labels: ["lattice-library"] }),
+      issue({ id: "future-work", title: "Future Lattice Library work", labels: ["lattice-library"] }),
       issue({ id: "explicit-child", title: "Explicit child", blockedBy: ["closed-epic"] }),
     ]);
 

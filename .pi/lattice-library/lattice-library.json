@@ -1,9 +1,9 @@
 {
-  "schema": "pi-orchestrator-library/v1",
+  "schema": "pi-lattice-library/v1",
   "name": "test123",
-  "description": "User-owned Pi Orchestrator Library",
+  "description": "User-owned Pi Lattice Library",
   "compatibility": {
-    "piAgentOrchestrator": ">=0.2.0"
+    "piLattice": ">=0.2.0"
   },
   "resources": {
     "agents": "agents",

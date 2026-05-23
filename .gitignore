@@ -2,6 +2,9 @@ node_modules/
 *.log
 .DS_Store
 .pi-lens/
+.pi/pi-lattice/external-libraries/
+.pi/pi-lattice/issues/
+.pi/pi-lattice/sessions/
 .pi/pi-agent-orchestrator/external-libraries/
 .pi/pi-agent-orchestrator/issues/
 .pi/pi-agent-orchestrator/sessions/

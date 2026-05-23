@@ -4,7 +4,7 @@ import * as path from "node:path";
 import { resolveSkillPath } from "./definitions.js";
 import { discoverSkillTemplates } from "./skill-templates.js";
 import { discoverExtensionTemplates } from "./extension-templates.js";
-import { resolveOrchestratorLibraryResourceRef } from "./orchestrator-library.js";
+import { resolveLatticeLibraryResourceRef } from "./lattice-library.js";
 import type { AgentDefinition } from "./state.js";
 import type { TemplateAudience, TemplateAutoApply } from "./template-common.js";
 
@@ -38,7 +38,7 @@ function uniqueStrings(items: Array<string | undefined>): string[] {
 }
 
 function resolveSkillRef(item: string, templateFilePath: string, cwd: string): string {
-  const libraryResource = resolveOrchestratorLibraryResourceRef(item, cwd, "skills");
+  const libraryResource = resolveLatticeLibraryResourceRef(item, cwd, "skills");
   if (libraryResource) return libraryResource.filePath;
   return resolveSkillPath(item, path.dirname(templateFilePath), cwd);
 }
@@ -144,7 +144,7 @@ export function resolveCapabilities(options: {
       return template.items.map((item) => resolveSkillRef(item, template.filePath, cwd));
     });
 
-  const directSkills = (definition?.skills || []).map((item) => resolveOrchestratorLibraryResourceRef(item, cwd, "skills")?.filePath || item);
+  const directSkills = (definition?.skills || []).map((item) => resolveLatticeLibraryResourceRef(item, cwd, "skills")?.filePath || item);
   const skills = uniqueStrings([...directSkills, ...skillTemplateItems]);
   for (const skillPath of skills) {
     const audience = parseSkillAudience(skillPath);

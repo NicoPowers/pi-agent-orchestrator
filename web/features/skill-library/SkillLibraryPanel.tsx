@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type {
-	OrchestratorLibrariesInfo,
+	LatticeLibrariesInfo,
 	SkillDetailInfo,
 	SkillInfo,
 } from "../../types.js";
@@ -189,8 +189,8 @@ export function SkillLibraryPanel({
 	const [templateError, setTemplateError] = useState("");
 	const [editableFilter, setEditableFilter] = useState("all");
 	const [referenceFilter, setReferenceFilter] = useState("all");
-	const [orchestratorLibraries, setOrchestratorLibraries] =
-		useState<OrchestratorLibrariesInfo | null>(null);
+	const [latticeLibraries, setLatticeLibraries] =
+		useState<LatticeLibrariesInfo | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
 	const scopes = useMemo(
@@ -253,14 +253,14 @@ export function SkillLibraryPanel({
 
 	useEffect(() => {
 		let cancelled = false;
-		fetch("/api/orchestrator-libraries")
+		fetch("/api/lattice-libraries")
 			.then((res) => (res.ok ? res.json() : undefined))
 			.then((data) => {
 				if (!cancelled && data)
-					setOrchestratorLibraries(data as OrchestratorLibrariesInfo);
+					setLatticeLibraries(data as LatticeLibrariesInfo);
 			})
 			.catch(() => {
-				if (!cancelled) setOrchestratorLibraries(null);
+				if (!cancelled) setLatticeLibraries(null);
 			});
 		return () => {
 			cancelled = true;
@@ -844,7 +844,7 @@ export function SkillLibraryPanel({
 			</Card>
 			<CreateSkillDialog
 				open={creating}
-				libraries={orchestratorLibraries}
+				libraries={latticeLibraries}
 				onClose={() => setCreating(false)}
 				onCreated={(created) => {
 					setCreating(false);
@@ -856,7 +856,7 @@ export function SkillLibraryPanel({
 			/>
 			<CopySkillDialog
 				source={copying}
-				libraries={orchestratorLibraries}
+				libraries={latticeLibraries}
 				onClose={() => setCopying(null)}
 				onCopied={(copied) => {
 					setCopying(null);
@@ -938,7 +938,7 @@ function CreateSkillDialog({
 	onCreated,
 }: {
 	open: boolean;
-	libraries: OrchestratorLibrariesInfo | null;
+	libraries: LatticeLibrariesInfo | null;
 	onClose: () => void;
 	onCreated: (detail: SkillDetailInfo) => void;
 }) {
@@ -1026,15 +1026,15 @@ function CreateSkillDialog({
 							key={library.root}
 							value={`library:${library.manifest!.name}`}
 						>
-							Orchestrator Library: {library.manifest!.name}
+							Lattice Library: {library.manifest!.name}
 						</option>
 					))}
 					<option value="global">Global Pi skills (~/.pi/agent/skills)</option>
 				</Select>
 				<FormMessage tone={libraryTargets.length ? "success" : "muted"}>
 					{libraryTargets.length
-						? "New skills default to the first configured Orchestrator Library by load order."
-						: "No Orchestrator Library is configured; new skills fall back to the global Pi skills folder."}
+						? "New skills default to the first configured Lattice Library by load order."
+						: "No Lattice Library is configured; new skills fall back to the global Pi skills folder."}
 				</FormMessage>
 				<FieldLabel required>Name</FieldLabel>
 				<Input value={name} onChange={(e) => setName(e.target.value)} />
@@ -1084,7 +1084,7 @@ function CopySkillDialog({
 	onCopied,
 }: {
 	source: SkillInfo | null;
-	libraries: OrchestratorLibrariesInfo | null;
+	libraries: LatticeLibrariesInfo | null;
 	onClose: () => void;
 	onCopied: (detail: SkillDetailInfo) => void;
 }) {
@@ -1198,7 +1198,7 @@ function CopySkillDialog({
 							key={library.root}
 							value={`library:${library.manifest!.name}`}
 						>
-							Orchestrator Library: {library.manifest!.name}
+							Lattice Library: {library.manifest!.name}
 						</option>
 					))}
 					<option value="project">Project (.pi/skills)</option>
@@ -1208,8 +1208,8 @@ function CopySkillDialog({
 				</Select>
 				<FormMessage tone={libraryTargets.length ? "success" : "muted"}>
 					{libraryTargets.length
-						? "Skill copies default to the first configured Orchestrator Library by load order."
-						: "No Orchestrator Library is configured; copies default to project skills."}
+						? "Skill copies default to the first configured Lattice Library by load order."
+						: "No Lattice Library is configured; copies default to project skills."}
 				</FormMessage>
 				<FieldLabel required>New name</FieldLabel>
 				<Input value={name} onChange={(e) => setName(e.target.value)} />

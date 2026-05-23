@@ -3,7 +3,7 @@ import * as path from "node:path";
 
 export const ISSUE_ARTIFACT_ROOT_SEGMENTS = [
 	".pi",
-	"pi-agent-orchestrator",
+	"pi-lattice",
 	"issues",
 ] as const;
 

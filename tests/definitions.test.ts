@@ -99,18 +99,18 @@ describe("definition discovery", () => {
 		expect(def?.delegate).toBe(false);
 	});
 
-	it("discovers Orchestrator Library agent definitions", async () => {
+	it("discovers Lattice Library agent definitions", async () => {
 		const { discoverDefinitions } = await import(
 			"../extensions/multi-agent/definitions.js"
 		);
 		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/orchestrator-library.js"
+			"../extensions/multi-agent/lattice-library.js"
 		);
 
 		const libraryRoot = path.join(tmpDir, "team-library");
 		fs.mkdirSync(path.join(libraryRoot, "agents"), { recursive: true });
 		fs.writeFileSync(
-			path.join(libraryRoot, "orchestrator-library.json"),
+			path.join(libraryRoot, "lattice-library.json"),
 			JSON.stringify({
 				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 				name: "team",
@@ -126,7 +126,7 @@ describe("definition discovery", () => {
 		fs.writeFileSync(
 			path.join(tmpDir, ".pi", "settings.json"),
 			JSON.stringify({
-				piAgentOrchestrator: { libraries: ["./team-library"] },
+				piLattice: { libraries: ["./team-library"] },
 			}),
 		);
 
@@ -213,18 +213,18 @@ describe("definition saving", () => {
 		}
 	});
 
-	it("saves a new agent definition to the first configured Orchestrator Library", async () => {
+	it("saves a new agent definition to the first configured Lattice Library", async () => {
 		const { saveAgentDefinition, discoverDefinitions } = await import(
 			"../extensions/multi-agent/definitions.js"
 		);
 		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/orchestrator-library.js"
+			"../extensions/multi-agent/lattice-library.js"
 		);
 
 		const libraryRoot = path.join(tmpDir, "team-library");
 		fs.mkdirSync(path.join(libraryRoot, "agents"), { recursive: true });
 		fs.writeFileSync(
-			path.join(libraryRoot, "orchestrator-library.json"),
+			path.join(libraryRoot, "lattice-library.json"),
 			JSON.stringify({
 				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 				name: "team",
@@ -235,7 +235,7 @@ describe("definition saving", () => {
 		fs.writeFileSync(
 			path.join(tmpDir, ".pi", "settings.json"),
 			JSON.stringify({
-				piAgentOrchestrator: { libraries: ["./team-library"] },
+				piLattice: { libraries: ["./team-library"] },
 			}),
 		);
 

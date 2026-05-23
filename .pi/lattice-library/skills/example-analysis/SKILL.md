@@ -1,6 +1,6 @@
 ---
 name: example-analysis
-description: Example analysis skill. Use when demonstrating Orchestrator Library skill structure.
+description: Example analysis skill. Use when demonstrating Lattice Library skill structure.
 ---
 
 # Example Analysis

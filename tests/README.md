@@ -23,7 +23,7 @@ Tests infrastructure that will be used by the HTTP server.
 ### `skills-api.test.ts`
 Tests skill discovery and backend helpers.
 - Discovery diagnostics for invalid skills
-- Project and Orchestrator Library skill discovery
+- Project and Lattice Library skill discovery
 - Copying skill directories with rewritten frontmatter and collision guards
 
 ### `send.test.ts`

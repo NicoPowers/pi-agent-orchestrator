@@ -4,6 +4,8 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
+export const LATTICE_LIBRARY_MANIFEST = "lattice-library.json";
+export const LATTICE_LIBRARY_SCHEMA = "pi-lattice-library/v1";
 export const ORCHESTRATOR_LIBRARY_MANIFEST = "orchestrator-library.json";
 export const ORCHESTRATOR_LIBRARY_SCHEMA = "pi-orchestrator-library/v1";
 
@@ -25,93 +27,92 @@ function readPackageVersion(): string {
 	}
 }
 
-export const PI_AGENT_ORCHESTRATOR_VERSION = readPackageVersion();
+export const PI_LATTICE_VERSION = readPackageVersion();
+export const PI_AGENT_ORCHESTRATOR_VERSION = PI_LATTICE_VERSION;
 
-export type OrchestratorResourceKind =
+export type LatticeResourceKind =
 	| "agents"
 	| "skillTemplates"
 	| "extensionTemplates"
 	| "skills"
 	| "extensions";
 
-export interface OrchestratorLibraryManifest {
+export interface LatticeLibraryManifest {
 	schema: string;
 	name: string;
 	description?: string;
 	compatibility?: {
+		piLattice?: string;
 		piAgentOrchestrator?: string;
 		[key: string]: unknown;
 	};
-	resources: Record<OrchestratorResourceKind, string>;
+	resources: Record<LatticeResourceKind, string>;
 }
 
-export interface ResolvedOrchestratorResourceDir {
-	kind: OrchestratorResourceKind;
+export interface ResolvedLatticeResourceDir {
+	kind: LatticeResourceKind;
 	rawPath: string;
 	resolvedPath: string;
 	exists: boolean;
 }
 
-export interface OrchestratorLibraryDiagnostic {
+export interface LatticeLibraryDiagnostic {
 	level: "error" | "warning";
 	message: string;
 	path?: string;
 }
 
-export type OrchestratorLibrarySource = "repo" | "external-mounted";
+export type LatticeLibrarySource = "repo" | "external-mounted";
 
-export interface OrchestratorLibraryInfo {
+export interface LatticeLibraryInfo {
 	root: string;
 	manifestPath: string;
-	manifest?: OrchestratorLibraryManifest;
-	resourceDirs: Record<
-		OrchestratorResourceKind,
-		ResolvedOrchestratorResourceDir
-	>;
-	diagnostics: OrchestratorLibraryDiagnostic[];
+	manifest?: LatticeLibraryManifest;
+	resourceDirs: Record<LatticeResourceKind, ResolvedLatticeResourceDir>;
+	diagnostics: LatticeLibraryDiagnostic[];
 	valid: boolean;
-	source?: OrchestratorLibrarySource;
+	source?: LatticeLibrarySource;
 	enabled?: boolean;
 	disabledKey?: string;
 }
 
-export interface OrchestratorLibrarySet {
-	libraries: OrchestratorLibraryInfo[];
-	diagnostics: OrchestratorLibraryDiagnostic[];
+export interface LatticeLibrarySet {
+	libraries: LatticeLibraryInfo[];
+	diagnostics: LatticeLibraryDiagnostic[];
 	valid: boolean;
 }
 
-export type OrchestratorLibrarySettingsScope = "global" | "project";
+export type LatticeLibrarySettingsScope = "global" | "project";
 
-export interface ConfiguredOrchestratorLibrary {
+export interface ConfiguredLatticeLibrary {
 	path: string;
-	scope: OrchestratorLibrarySettingsScope;
+	scope: LatticeLibrarySettingsScope;
 	editable?: boolean;
 }
 
-export interface OrchestratorLibraryScopeSettings {
-	scope: OrchestratorLibrarySettingsScope;
+export interface LatticeLibraryScopeSettings {
+	scope: LatticeLibrarySettingsScope;
 	settingsPath: string;
 	exists: boolean;
-	libraries: ConfiguredOrchestratorLibrary[];
+	libraries: ConfiguredLatticeLibrary[];
 	parseError?: string;
 	readError?: string;
 }
 
-export interface OrchestratorLibrarySettingsPayload {
-	global: OrchestratorLibraryScopeSettings;
-	project: OrchestratorLibraryScopeSettings;
-	libraries: ConfiguredOrchestratorLibrary[];
+export interface LatticeLibrarySettingsPayload {
+	global: LatticeLibraryScopeSettings;
+	project: LatticeLibraryScopeSettings;
+	libraries: ConfiguredLatticeLibrary[];
 }
 
-export interface OrchestratorLibrarySettingsPaths {
+export interface LatticeLibrarySettingsPaths {
 	globalSettingsPath?: string;
 	projectSettingsPath?: string;
 }
 
-export interface DiscoveredOrchestratorResource {
+export interface DiscoveredLatticeResource {
 	id: string;
-	kind: OrchestratorResourceKind;
+	kind: LatticeResourceKind;
 	name: string;
 	description?: string;
 	libraryName: string;
@@ -120,16 +121,16 @@ export interface DiscoveredOrchestratorResource {
 	relativePath: string;
 	editable: boolean;
 	readOnly: boolean;
-	diagnostics: OrchestratorLibraryDiagnostic[];
+	diagnostics: LatticeLibraryDiagnostic[];
 }
 
-export interface OrchestratorLibraryDiscovery {
-	library: OrchestratorLibraryInfo;
-	resources: DiscoveredOrchestratorResource[];
-	diagnostics: OrchestratorLibraryDiagnostic[];
+export interface LatticeLibraryDiscovery {
+	library: LatticeLibraryInfo;
+	resources: DiscoveredLatticeResource[];
+	diagnostics: LatticeLibraryDiagnostic[];
 }
 
-export interface OrchestratorDisplaySettings {
+export interface LatticeDisplaySettings {
 	showPackageExamples: boolean;
 	settingsPath: string;
 	exists: boolean;
@@ -137,24 +138,24 @@ export interface OrchestratorDisplaySettings {
 	readError?: string;
 }
 
-export interface OrchestratorLibrariesDiscovery {
-	libraries: OrchestratorLibraryInfo[];
-	resources: DiscoveredOrchestratorResource[];
-	diagnostics: OrchestratorLibraryDiagnostic[];
+export interface LatticeLibrariesDiscovery {
+	libraries: LatticeLibraryInfo[];
+	resources: DiscoveredLatticeResource[];
+	diagnostics: LatticeLibraryDiagnostic[];
 	valid: boolean;
-	settings: OrchestratorDisplaySettings;
+	settings: LatticeDisplaySettings;
 }
 
-export interface BootstrapOrchestratorLibraryResult {
+export interface BootstrapLatticeLibraryResult {
 	success: boolean;
 	status?: number;
 	error?: string;
-	scope?: OrchestratorLibrarySettingsScope;
-	library?: OrchestratorLibraryInfo;
-	settings?: OrchestratorLibrarySettingsPayload;
+	scope?: LatticeLibrarySettingsScope;
+	library?: LatticeLibraryInfo;
+	settings?: LatticeLibrarySettingsPayload;
 }
 
-const resourceDefaults: Record<OrchestratorResourceKind, string> = {
+const resourceDefaults: Record<LatticeResourceKind, string> = {
 	agents: "agents",
 	skillTemplates: "skill-templates",
 	extensionTemplates: "extension-templates",
@@ -162,7 +163,7 @@ const resourceDefaults: Record<OrchestratorResourceKind, string> = {
 	extensions: "extensions",
 };
 
-const manifestResourceKeys: Array<[OrchestratorResourceKind, string]> = [
+const manifestResourceKeys: Array<[LatticeResourceKind, string]> = [
 	["agents", "agents"],
 	["skillTemplates", "skillTemplates"],
 	["extensionTemplates", "extensionTemplates"],
@@ -183,9 +184,9 @@ function projectSettingsPath(repoCwd: string): string {
 }
 
 function settingsPathFor(
-	scope: OrchestratorLibrarySettingsScope,
+	scope: LatticeLibrarySettingsScope,
 	repoCwd: string,
-	paths: OrchestratorLibrarySettingsPaths = {},
+	paths: LatticeLibrarySettingsPaths = {},
 ): string {
 	if (scope === "global")
 		return paths.globalSettingsPath || globalSettingsPath();
@@ -235,7 +236,7 @@ function expandTilde(input: string): string {
 }
 
 function resolveConfiguredLibraryPath(
-	library: ConfiguredOrchestratorLibrary,
+	library: ConfiguredLatticeLibrary,
 	repoCwd: string,
 ): string {
 	const expanded = expandTilde(library.path);
@@ -244,11 +245,15 @@ function resolveConfiguredLibraryPath(
 }
 
 function appDataDir(repoCwd: string): string {
+	return path.join(repoCwd, ".pi", "pi-lattice");
+}
+
+function legacyAppDataDir(repoCwd: string): string {
 	return path.join(repoCwd, ".pi", "pi-agent-orchestrator");
 }
 
 function autoLibraryBuckets(repoCwd: string): Array<{
-	source: OrchestratorLibrarySource;
+	source: LatticeLibrarySource;
 	root: string;
 }> {
 	return [
@@ -256,6 +261,14 @@ function autoLibraryBuckets(repoCwd: string): Array<{
 		{
 			source: "external-mounted",
 			root: path.join(appDataDir(repoCwd), "external-libraries"),
+		},
+		{
+			source: "repo",
+			root: path.join(legacyAppDataDir(repoCwd), "libraries"),
+		},
+		{
+			source: "external-mounted",
+			root: path.join(legacyAppDataDir(repoCwd), "external-libraries"),
 		},
 	];
 }
@@ -269,7 +282,7 @@ function libraryDisabledKey(root: string, repoCwd: string): string {
 
 function readDisabledLibraryKeys(
 	repoCwd: string,
-	paths: OrchestratorLibrarySettingsPaths = {},
+	paths: LatticeLibrarySettingsPaths = {},
 ): Set<string> {
 	const read = readSettingsFile(settingsPathFor("project", repoCwd, paths));
 	const value = getOrchestratorSettings(read.settings).disabledLibraries;
@@ -282,12 +295,12 @@ function readDisabledLibraryKeys(
 
 function discoverAutoLibraryRoots(repoCwd: string): Array<{
 	root: string;
-	source: OrchestratorLibrarySource;
+	source: LatticeLibrarySource;
 	disabledKey: string;
 }> {
 	const roots: Array<{
 		root: string;
-		source: OrchestratorLibrarySource;
+		source: LatticeLibrarySource;
 		disabledKey: string;
 	}> = [];
 	for (const bucket of autoLibraryBuckets(repoCwd)) {
@@ -296,9 +309,7 @@ function discoverAutoLibraryRoots(repoCwd: string): Array<{
 			.readdirSync(bucket.root, { withFileTypes: true })
 			.filter((entry) => entry.isDirectory())
 			.map((entry) => path.join(bucket.root, entry.name))
-			.filter((root) =>
-				fs.existsSync(path.join(root, ORCHESTRATOR_LIBRARY_MANIFEST)),
-			)
+			.filter((root) => findLibraryManifestPath(root) !== undefined)
 			.sort((a, b) => a.localeCompare(b));
 		for (const root of entries) {
 			roots.push({
@@ -313,10 +324,10 @@ function discoverAutoLibraryRoots(repoCwd: string): Array<{
 
 function normalizeConfiguredLibraries(
 	value: unknown,
-	scope: OrchestratorLibrarySettingsScope,
-): ConfiguredOrchestratorLibrary[] {
+	scope: LatticeLibrarySettingsScope,
+): ConfiguredLatticeLibrary[] {
 	if (!Array.isArray(value)) return [];
-	const libraries: ConfiguredOrchestratorLibrary[] = [];
+	const libraries: ConfiguredLatticeLibrary[] = [];
 	for (const entry of value) {
 		if (typeof entry === "string" && entry.trim()) {
 			libraries.push({ path: entry.trim(), scope });
@@ -339,16 +350,34 @@ function normalizeConfiguredLibraries(
 function getOrchestratorSettings(
 	settings: Record<string, unknown>,
 ): Record<string, unknown> {
+	if (isObject(settings.piLattice)) return settings.piLattice;
 	return isObject(settings.piAgentOrchestrator)
 		? settings.piAgentOrchestrator
 		: {};
 }
 
+function setLatticeSettings(
+	settings: Record<string, unknown>,
+	value: Record<string, unknown>,
+): Record<string, unknown> {
+	const next: Record<string, unknown> = { ...settings, piLattice: value };
+	delete next.piAgentOrchestrator;
+	return next;
+}
+
+function findLibraryManifestPath(root: string): string | undefined {
+	const preferred = path.join(root, LATTICE_LIBRARY_MANIFEST);
+	if (fs.existsSync(preferred)) return preferred;
+	const legacy = path.join(root, ORCHESTRATOR_LIBRARY_MANIFEST);
+	if (fs.existsSync(legacy)) return legacy;
+	return undefined;
+}
+
 function readLibraryScopeSettings(
-	scope: OrchestratorLibrarySettingsScope,
+	scope: LatticeLibrarySettingsScope,
 	repoCwd: string,
-	paths: OrchestratorLibrarySettingsPaths = {},
-): OrchestratorLibraryScopeSettings {
+	paths: LatticeLibrarySettingsPaths = {},
+): LatticeLibraryScopeSettings {
 	const settingsPath = settingsPathFor(scope, repoCwd, paths);
 	const read = readSettingsFile(settingsPath);
 	return {
@@ -467,31 +496,32 @@ function satisfiesVersionRange(
 function validateCompatibility(
 	compatibility: Record<string, unknown>,
 	manifestPath: string,
-): OrchestratorLibraryDiagnostic[] {
-	const diagnostics: OrchestratorLibraryDiagnostic[] = [];
-	const requirement = compatibility.piAgentOrchestrator;
+): LatticeLibraryDiagnostic[] {
+	const diagnostics: LatticeLibraryDiagnostic[] = [];
+	const requirement =
+		compatibility.piLattice ?? compatibility.piAgentOrchestrator;
 	if (requirement === undefined) return diagnostics;
 	if (typeof requirement !== "string" || !requirement.trim()) {
 		diagnostics.push({
 			level: "error",
 			message:
-				"manifest compatibility.piAgentOrchestrator must be a string version range when provided",
+				"manifest compatibility.piLattice must be a string version range when provided (legacy compatibility.piAgentOrchestrator is also supported)",
 			path: manifestPath,
 		});
 		return diagnostics;
 	}
 	const range = requirement.trim();
-	const satisfied = satisfiesVersionRange(PI_AGENT_ORCHESTRATOR_VERSION, range);
+	const satisfied = satisfiesVersionRange(PI_LATTICE_VERSION, range);
 	if (satisfied === undefined) {
 		diagnostics.push({
 			level: "error",
-			message: `Unsupported pi-agent-orchestrator compatibility range '${range}'`,
+			message: `Unsupported pi-lattice compatibility range '${range}'`,
 			path: manifestPath,
 		});
 	} else if (!satisfied) {
 		diagnostics.push({
 			level: "error",
-			message: `Orchestrator Library requires pi-agent-orchestrator ${range}, but current version is ${PI_AGENT_ORCHESTRATOR_VERSION}`,
+			message: `Lattice Library requires pi-lattice ${range}, but current version is ${PI_LATTICE_VERSION}`,
 			path: manifestPath,
 		});
 	}
@@ -500,9 +530,9 @@ function validateCompatibility(
 
 function resolveResourceDir(
 	root: string,
-	kind: OrchestratorResourceKind,
+	kind: LatticeResourceKind,
 	rawPath: string,
-): { dir?: ResolvedOrchestratorResourceDir; error?: string } {
+): { dir?: ResolvedLatticeResourceDir; error?: string } {
 	const trimmed = rawPath.trim();
 	if (!trimmed) return { error: `${kind} resource path is empty` };
 	if (path.isAbsolute(trimmed))
@@ -525,21 +555,20 @@ function resolveResourceDir(
 	};
 }
 
-export function readOrchestratorLibrary(
-	rootPath: string,
-): OrchestratorLibraryInfo {
+export function readLatticeLibrary(rootPath: string): LatticeLibraryInfo {
 	const root = path.resolve(rootPath);
-	const manifestPath = path.join(root, ORCHESTRATOR_LIBRARY_MANIFEST);
-	const diagnostics: OrchestratorLibraryDiagnostic[] = [];
+	const manifestPath =
+		findLibraryManifestPath(root) ?? path.join(root, LATTICE_LIBRARY_MANIFEST);
+	const diagnostics: LatticeLibraryDiagnostic[] = [];
 	const resourceDirs = {} as Record<
-		OrchestratorResourceKind,
-		ResolvedOrchestratorResourceDir
+		LatticeResourceKind,
+		ResolvedLatticeResourceDir
 	>;
 
 	if (!fs.existsSync(manifestPath)) {
 		diagnostics.push({
 			level: "error",
-			message: `Missing ${ORCHESTRATOR_LIBRARY_MANIFEST}`,
+			message: `Missing ${LATTICE_LIBRARY_MANIFEST} (legacy ${ORCHESTRATOR_LIBRARY_MANIFEST} is also supported)`,
 			path: manifestPath,
 		});
 		for (const [kind] of manifestResourceKeys) {
@@ -555,7 +584,7 @@ export function readOrchestratorLibrary(
 	} catch (err: any) {
 		diagnostics.push({
 			level: "error",
-			message: `Invalid ${ORCHESTRATOR_LIBRARY_MANIFEST}: ${err?.message || String(err)}`,
+			message: `Invalid ${path.basename(manifestPath)}: ${err?.message || String(err)}`,
 			path: manifestPath,
 		});
 		for (const [kind] of manifestResourceKeys) {
@@ -568,16 +597,20 @@ export function readOrchestratorLibrary(
 	if (!isObject(parsed)) {
 		diagnostics.push({
 			level: "error",
-			message: `${ORCHESTRATOR_LIBRARY_MANIFEST} must contain a JSON object`,
+			message: `${path.basename(manifestPath)} must contain a JSON object`,
 			path: manifestPath,
 		});
 		return { root, manifestPath, resourceDirs, diagnostics, valid: false };
 	}
 
-	if (parsed.schema !== ORCHESTRATOR_LIBRARY_SCHEMA) {
+	const supportedSchemas = [
+		LATTICE_LIBRARY_SCHEMA,
+		ORCHESTRATOR_LIBRARY_SCHEMA,
+	];
+	if (!supportedSchemas.includes(String(parsed.schema || ""))) {
 		diagnostics.push({
 			level: "error",
-			message: `Unsupported orchestrator library schema '${String(parsed.schema || "")}'. Expected '${ORCHESTRATOR_LIBRARY_SCHEMA}'.`,
+			message: `Unsupported Lattice Library schema '${String(parsed.schema || "")}'. Expected '${LATTICE_LIBRARY_SCHEMA}'. Legacy '${ORCHESTRATOR_LIBRARY_SCHEMA}' is also supported.`,
 			path: manifestPath,
 		});
 	}
@@ -623,7 +656,7 @@ export function readOrchestratorLibrary(
 		});
 	}
 
-	const resources = {} as Record<OrchestratorResourceKind, string>;
+	const resources = {} as Record<LatticeResourceKind, string>;
 	for (const [kind, manifestKey] of manifestResourceKeys) {
 		const rawValue = rawResources[manifestKey];
 		const rawPath =
@@ -663,7 +696,7 @@ export function readOrchestratorLibrary(
 		}
 	}
 
-	const manifest: OrchestratorLibraryManifest | undefined =
+	const manifest: LatticeLibraryManifest | undefined =
 		typeof parsed.name === "string" && typeof parsed.schema === "string"
 			? {
 					schema: parsed.schema,
@@ -673,7 +706,7 @@ export function readOrchestratorLibrary(
 							? parsed.description
 							: undefined,
 					compatibility: isObject(parsed.compatibility)
-						? (parsed.compatibility as OrchestratorLibraryManifest["compatibility"])
+						? (parsed.compatibility as LatticeLibraryManifest["compatibility"])
 						: undefined,
 					resources,
 				}
@@ -698,10 +731,10 @@ function resourceId(libraryName: string, relativePath: string): string {
 }
 
 function readMarkdownResource(
-	kind: OrchestratorResourceKind,
-	library: OrchestratorLibraryInfo,
+	kind: LatticeResourceKind,
+	library: LatticeLibraryInfo,
 	filePath: string,
-): DiscoveredOrchestratorResource | undefined {
+): DiscoveredLatticeResource | undefined {
 	if (!library.manifest) return undefined;
 	try {
 		const content = fs.readFileSync(filePath, "utf-8");
@@ -754,9 +787,9 @@ function readMarkdownResource(
 }
 
 function discoverMarkdownResources(
-	kind: OrchestratorResourceKind,
-	library: OrchestratorLibraryInfo,
-): DiscoveredOrchestratorResource[] {
+	kind: LatticeResourceKind,
+	library: LatticeLibraryInfo,
+): DiscoveredLatticeResource[] {
 	const dir = library.resourceDirs[kind];
 	if (!dir?.exists) return [];
 	return fs
@@ -773,18 +806,16 @@ function discoverMarkdownResources(
 				path.join(dir.resolvedPath, entry.name),
 			),
 		)
-		.filter(
-			(resource): resource is DiscoveredOrchestratorResource => !!resource,
-		)
+		.filter((resource): resource is DiscoveredLatticeResource => !!resource)
 		.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function discoverSkillResources(
-	library: OrchestratorLibraryInfo,
-): DiscoveredOrchestratorResource[] {
+	library: LatticeLibraryInfo,
+): DiscoveredLatticeResource[] {
 	const dir = library.resourceDirs.skills;
 	if (!library.manifest || !dir?.exists) return [];
-	const resources: DiscoveredOrchestratorResource[] = [];
+	const resources: DiscoveredLatticeResource[] = [];
 	const addSkill = (skillFile: string) => {
 		const resource = readMarkdownResource("skills", library, skillFile);
 		if (resource) resources.push(resource);
@@ -805,11 +836,11 @@ function discoverSkillResources(
 }
 
 function discoverExtensionResources(
-	library: OrchestratorLibraryInfo,
-): DiscoveredOrchestratorResource[] {
+	library: LatticeLibraryInfo,
+): DiscoveredLatticeResource[] {
 	const dir = library.resourceDirs.extensions;
 	if (!library.manifest || !dir?.exists) return [];
-	const resources: DiscoveredOrchestratorResource[] = [];
+	const resources: DiscoveredLatticeResource[] = [];
 	for (const entry of fs.readdirSync(dir.resolvedPath, {
 		withFileTypes: true,
 	})) {
@@ -842,10 +873,10 @@ function discoverExtensionResources(
 	return resources.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export function discoverOrchestratorLibraryResources(
+export function discoverLatticeLibraryResources(
 	rootPath: string,
-): OrchestratorLibraryDiscovery {
-	const library = readOrchestratorLibrary(rootPath);
+): LatticeLibraryDiscovery {
+	const library = readLatticeLibrary(rootPath);
 	if (!library.valid || !library.manifest)
 		return { library, resources: [], diagnostics: library.diagnostics };
 	const resources = [
@@ -862,10 +893,10 @@ export function discoverOrchestratorLibraryResources(
 	return { library, resources, diagnostics };
 }
 
-export function readOrchestratorLibrarySettings(
+export function readLatticeLibrarySettings(
 	repoCwd: string,
-	paths: OrchestratorLibrarySettingsPaths = {},
-): OrchestratorLibrarySettingsPayload {
+	paths: LatticeLibrarySettingsPaths = {},
+): LatticeLibrarySettingsPayload {
 	const global = readLibraryScopeSettings("global", repoCwd, paths);
 	const project = readLibraryScopeSettings("project", repoCwd, paths);
 	return {
@@ -875,10 +906,10 @@ export function readOrchestratorLibrarySettings(
 	};
 }
 
-export function readOrchestratorDisplaySettings(
+export function readLatticeDisplaySettings(
 	repoCwd: string,
-	paths: OrchestratorLibrarySettingsPaths = {},
-): OrchestratorDisplaySettings {
+	paths: LatticeLibrarySettingsPaths = {},
+): LatticeDisplaySettings {
 	const settingsPath = settingsPathFor("project", repoCwd, paths);
 	const read = readSettingsFile(settingsPath);
 	const orchestrator = getOrchestratorSettings(read.settings);
@@ -891,15 +922,15 @@ export function readOrchestratorDisplaySettings(
 	};
 }
 
-export function updateOrchestratorDisplaySettings(
+export function updateLatticeDisplaySettings(
 	input: { showPackageExamples: boolean },
 	repoCwd: string,
-	paths: OrchestratorLibrarySettingsPaths = {},
+	paths: LatticeLibrarySettingsPaths = {},
 ): {
 	success: boolean;
 	status?: number;
 	error?: string;
-	settings?: OrchestratorDisplaySettings;
+	settings?: LatticeDisplaySettings;
 } {
 	if (typeof input.showPackageExamples !== "boolean")
 		return {
@@ -916,30 +947,29 @@ export function updateOrchestratorDisplaySettings(
 			error: `Cannot update ${settingsPath}: ${read.parseError || read.readError}`,
 		};
 
-	const next = { ...read.settings };
 	const existingOrchestratorSettings = getOrchestratorSettings(read.settings);
-	next.piAgentOrchestrator = {
+	const next = setLatticeSettings(read.settings, {
 		...existingOrchestratorSettings,
 		showPackageExamples: input.showPackageExamples,
-	};
+	});
 
 	fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
 	fs.writeFileSync(settingsPath, `${JSON.stringify(next, null, 2)}\n`, "utf-8");
 	return {
 		success: true,
-		settings: readOrchestratorDisplaySettings(repoCwd, paths),
+		settings: readLatticeDisplaySettings(repoCwd, paths),
 	};
 }
 
-export function updateOrchestratorLibraryEnabled(
+export function updateLatticeLibraryEnabled(
 	input: { root: string; enabled: boolean },
 	repoCwd: string,
-	paths: OrchestratorLibrarySettingsPaths = {},
+	paths: LatticeLibrarySettingsPaths = {},
 ): {
 	success: boolean;
 	status?: number;
 	error?: string;
-	discovery?: OrchestratorLibrariesDiscovery;
+	discovery?: LatticeLibrariesDiscovery;
 } {
 	if (typeof input.root !== "string" || !input.root.trim())
 		return { success: false, status: 400, error: "root is required" };
@@ -957,7 +987,7 @@ export function updateOrchestratorLibraryEnabled(
 		return {
 			success: false,
 			status: 404,
-			error: "Orchestrator Library is not in an auto-discovered location",
+			error: "Lattice Library is not in an auto-discovered location",
 		};
 
 	const settingsPath = settingsPathFor("project", repoCwd, paths);
@@ -973,33 +1003,32 @@ export function updateOrchestratorLibraryEnabled(
 	if (input.enabled) disabled.delete(target.disabledKey);
 	else disabled.add(target.disabledKey);
 
-	const next = { ...read.settings };
 	const existingOrchestratorSettings = getOrchestratorSettings(read.settings);
-	next.piAgentOrchestrator = {
+	const next = setLatticeSettings(read.settings, {
 		...existingOrchestratorSettings,
 		disabledLibraries: [...disabled].sort(),
-	};
+	});
 
 	fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
 	fs.writeFileSync(settingsPath, `${JSON.stringify(next, null, 2)}\n`, "utf-8");
 	return {
 		success: true,
-		discovery: discoverConfiguredOrchestratorLibraries(repoCwd, paths),
+		discovery: discoverConfiguredLatticeLibraries(repoCwd, paths),
 	};
 }
 
-export function updateOrchestratorLibrarySettings(
+export function updateLatticeLibrarySettings(
 	input: {
-		scope: OrchestratorLibrarySettingsScope;
+		scope: LatticeLibrarySettingsScope;
 		libraries: Array<string | { path: string; editable?: boolean }>;
 	},
 	repoCwd: string,
-	paths: OrchestratorLibrarySettingsPaths = {},
+	paths: LatticeLibrarySettingsPaths = {},
 ): {
 	success: boolean;
 	status?: number;
 	error?: string;
-	settings?: OrchestratorLibrarySettingsPayload;
+	settings?: LatticeLibrarySettingsPayload;
 } {
 	if (input.scope !== "global" && input.scope !== "project")
 		return {
@@ -1035,18 +1064,17 @@ export function updateOrchestratorLibrarySettings(
 				"each library entry must be a path string or object with a path string",
 		};
 
-	const next = { ...read.settings };
 	const existingOrchestratorSettings = getOrchestratorSettings(read.settings);
-	next.piAgentOrchestrator = {
+	const next = setLatticeSettings(read.settings, {
 		...existingOrchestratorSettings,
 		libraries: normalized,
-	};
+	});
 
 	fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
 	fs.writeFileSync(settingsPath, `${JSON.stringify(next, null, 2)}\n`, "utf-8");
 	return {
 		success: true,
-		settings: readOrchestratorLibrarySettings(repoCwd, paths),
+		settings: readLatticeLibrarySettings(repoCwd, paths),
 	};
 }
 
@@ -1057,7 +1085,7 @@ function isDirectoryEmpty(dir: string): boolean {
 function classifyBootstrapScope(
 	targetPath: string,
 	repoCwd: string,
-): OrchestratorLibrarySettingsScope {
+): LatticeLibrarySettingsScope {
 	const resolved = path.resolve(repoCwd, expandTilde(targetPath));
 	const relative = path.relative(path.resolve(repoCwd), resolved);
 	return !relative.startsWith("..") && !path.isAbsolute(relative)
@@ -1070,11 +1098,11 @@ function writeStarterFile(filePath: string, content: string) {
 	fs.writeFileSync(filePath, content, "utf-8");
 }
 
-export function bootstrapOrchestratorLibrary(
+export function bootstrapLatticeLibrary(
 	input: { targetPath: string; name?: string; description?: string },
 	repoCwd: string,
-	paths: OrchestratorLibrarySettingsPaths = {},
-): BootstrapOrchestratorLibraryResult {
+	paths: LatticeLibrarySettingsPaths = {},
+): BootstrapLatticeLibraryResult {
 	if (!input.targetPath?.trim())
 		return { success: false, status: 400, error: "targetPath is required" };
 	const targetPath = input.targetPath.trim();
@@ -1090,20 +1118,20 @@ export function bootstrapOrchestratorLibrary(
 		};
 	if (
 		!isDirectoryEmpty(resolvedTarget) &&
-		!fs.existsSync(path.join(resolvedTarget, ORCHESTRATOR_LIBRARY_MANIFEST))
+		!findLibraryManifestPath(resolvedTarget)
 	) {
 		return {
 			success: false,
 			status: 409,
 			error:
-				"target directory is not empty and does not contain an orchestrator-library.json manifest",
+				"target directory is not empty and does not contain a lattice-library.json manifest",
 		};
 	}
-	if (fs.existsSync(path.join(resolvedTarget, ORCHESTRATOR_LIBRARY_MANIFEST)))
+	if (findLibraryManifestPath(resolvedTarget))
 		return {
 			success: false,
 			status: 409,
-			error: "orchestrator library already exists at target path",
+			error: "Lattice Library already exists at target path",
 		};
 
 	const defaultName =
@@ -1111,19 +1139,18 @@ export function bootstrapOrchestratorLibrary(
 			.basename(resolvedTarget)
 			.toLowerCase()
 			.replace(/[^a-z0-9._-]+/g, "-")
-			.replace(/^[._-]+|[._-]+$/g, "") || "orchestrator-library";
+			.replace(/^[._-]+|[._-]+$/g, "") || "lattice-library";
 	const name = input.name?.trim() || defaultName;
 	const nameError = validateLibraryName(name);
 	if (nameError) return { success: false, status: 400, error: nameError };
 
 	fs.mkdirSync(resolvedTarget, { recursive: true });
 	const manifest = {
-		schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+		schema: LATTICE_LIBRARY_SCHEMA,
 		name,
-		description:
-			input.description?.trim() || "User-owned Pi Orchestrator Library",
+		description: input.description?.trim() || "User-owned Pi Lattice Library",
 		compatibility: {
-			piAgentOrchestrator: `>=${PI_AGENT_ORCHESTRATOR_VERSION}`,
+			piLattice: `>=${PI_LATTICE_VERSION}`,
 		},
 		resources: {
 			...resourceDefaults,
@@ -1131,12 +1158,12 @@ export function bootstrapOrchestratorLibrary(
 		},
 	};
 	writeStarterFile(
-		path.join(resolvedTarget, ORCHESTRATOR_LIBRARY_MANIFEST),
+		path.join(resolvedTarget, LATTICE_LIBRARY_MANIFEST),
 		`${JSON.stringify(manifest, null, 2)}\n`,
 	);
 	writeStarterFile(
 		path.join(resolvedTarget, "README.md"),
-		`# ${name}\n\nVersion-controlled Pi Orchestrator Library for root orchestrator profiles, agent types, templates, skills, and extensions.\n`,
+		`# ${name}\n\nVersion-controlled Pi Lattice Library for root orchestrator profiles, agent types, templates, skills, and extensions.\n`,
 	);
 	writeStarterFile(
 		path.join(resolvedTarget, "orchestrator-profiles", "example-planner.md"),
@@ -1144,7 +1171,7 @@ export function bootstrapOrchestratorLibrary(
 	);
 	writeStarterFile(
 		path.join(resolvedTarget, "agents", "example-researcher.md"),
-		"---\nname: example-researcher\ndescription: Example researcher agent type for this Orchestrator Library.\ntools: read, bash\nskillTemplates: example-core-skills\nextensionTemplates: example-web-tools\n---\n\nYou are an example researcher agent. Use this file as a starting point for your own agent types.\n",
+		"---\nname: example-researcher\ndescription: Example researcher agent type for this Lattice Library.\ntools: read, bash\nskillTemplates: example-core-skills\nextensionTemplates: example-web-tools\n---\n\nYou are an example researcher agent. Use this file as a starting point for your own agent types.\n",
 	);
 	writeStarterFile(
 		path.join(resolvedTarget, "skill-templates", "example-root-skills.md"),
@@ -1160,7 +1187,7 @@ export function bootstrapOrchestratorLibrary(
 	);
 	writeStarterFile(
 		path.join(resolvedTarget, "skills", "example-analysis", "SKILL.md"),
-		"---\nname: example-analysis\ndescription: Example analysis skill. Use when demonstrating Orchestrator Library skill structure.\n---\n\n# Example Analysis\n\nReplace this starter skill with your own workflow.\n",
+		"---\nname: example-analysis\ndescription: Example analysis skill. Use when demonstrating Lattice Library skill structure.\n---\n\n# Example Analysis\n\nReplace this starter skill with your own workflow.\n",
 	);
 	writeStarterFile(
 		path.join(resolvedTarget, "extensions", "example-extension", "index.ts"),
@@ -1168,13 +1195,12 @@ export function bootstrapOrchestratorLibrary(
 	);
 
 	const scope = classifyBootstrapScope(targetPath, repoCwd);
-	const current = readOrchestratorLibrarySettings(repoCwd, paths)[scope]
-		.libraries;
+	const current = readLatticeLibrarySettings(repoCwd, paths)[scope].libraries;
 	const storedPath =
 		scope === "project"
 			? path.relative(repoCwd, resolvedTarget).replace(/\\/g, "/") || "."
 			: targetPath;
-	const update = updateOrchestratorLibrarySettings(
+	const update = updateLatticeLibrarySettings(
 		{
 			scope,
 			libraries: [
@@ -1194,20 +1220,20 @@ export function bootstrapOrchestratorLibrary(
 	return {
 		success: true,
 		scope,
-		library: readOrchestratorLibrary(resolvedTarget),
+		library: readLatticeLibrary(resolvedTarget),
 		settings: update.settings,
 	};
 }
 
-export function discoverConfiguredOrchestratorLibraries(
+export function discoverConfiguredLatticeLibraries(
 	repoCwd: string,
-	paths: OrchestratorLibrarySettingsPaths = {},
-): OrchestratorLibrariesDiscovery {
+	paths: LatticeLibrarySettingsPaths = {},
+): LatticeLibrariesDiscovery {
 	const autoDiscovered = discoverAutoLibraryRoots(repoCwd);
 	const seenRoots = new Set(
 		autoDiscovered.map((library) => path.resolve(library.root)),
 	);
-	const legacyConfigured = readOrchestratorLibrarySettings(repoCwd, paths)
+	const legacyConfigured = readLatticeLibrarySettings(repoCwd, paths)
 		.libraries.map((library) => resolveConfiguredLibraryPath(library, repoCwd))
 		.filter((root) => {
 			const key = path.resolve(root);
@@ -1217,7 +1243,7 @@ export function discoverConfiguredOrchestratorLibraries(
 		})
 		.map((root) => ({
 			root,
-			source: "repo" as OrchestratorLibrarySource,
+			source: "repo" as LatticeLibrarySource,
 			disabledKey: libraryDisabledKey(root, repoCwd),
 		}));
 	const discovered = [...autoDiscovered, ...legacyConfigured];
@@ -1225,7 +1251,7 @@ export function discoverConfiguredOrchestratorLibraries(
 	const enabled = discovered.filter(
 		(library) => !disabledKeys.has(library.disabledKey),
 	);
-	const enabledSet = readOrchestratorLibraries(
+	const enabledSet = readLatticeLibraries(
 		enabled.map((library) => library.root),
 	);
 	const enabledByRoot = new Map(
@@ -1236,7 +1262,7 @@ export function discoverConfiguredOrchestratorLibraries(
 	);
 	const libraries = discovered.map((entry) => {
 		const enabledLibrary = enabledByRoot.get(path.resolve(entry.root));
-		const library = enabledLibrary || readOrchestratorLibrary(entry.root);
+		const library = enabledLibrary || readLatticeLibrary(entry.root);
 		return {
 			...library,
 			source: entry.source,
@@ -1244,12 +1270,12 @@ export function discoverConfiguredOrchestratorLibraries(
 			disabledKey: entry.disabledKey,
 		};
 	});
-	const resources: DiscoveredOrchestratorResource[] = [];
+	const resources: DiscoveredLatticeResource[] = [];
 	const diagnostics = [...enabledSet.diagnostics];
 
 	for (const library of libraries) {
 		if (!library.enabled || !library.valid || !library.manifest) continue;
-		const discovery = discoverOrchestratorLibraryResources(library.root);
+		const discovery = discoverLatticeLibraryResources(library.root);
 		resources.push(...discovery.resources);
 		diagnostics.push(
 			...discovery.diagnostics.filter(
@@ -1265,22 +1291,22 @@ export function discoverConfiguredOrchestratorLibraries(
 		valid:
 			enabledSet.valid &&
 			diagnostics.every((diagnostic) => diagnostic.level !== "error"),
-		settings: readOrchestratorDisplaySettings(repoCwd, paths),
+		settings: readLatticeDisplaySettings(repoCwd, paths),
 	};
 }
 
-export function resolveOrchestratorLibraryResourceRef(
+export function resolveLatticeLibraryResourceRef(
 	ref: string,
 	repoCwd: string,
-	kind?: OrchestratorResourceKind,
-): DiscoveredOrchestratorResource | undefined {
+	kind?: LatticeResourceKind,
+): DiscoveredLatticeResource | undefined {
 	const trimmed = ref.trim();
 	if (!trimmed.includes(":")) return undefined;
 	const [libraryName, ...rest] = trimmed.split(":");
 	const relative = rest.join(":");
 	if (!libraryName || !relative) return undefined;
 	const normalizedRelative = relative.replace(/\\/g, "/").replace(/^\/+/, "");
-	return discoverConfiguredOrchestratorLibraries(repoCwd).resources.find(
+	return discoverConfiguredLatticeLibraries(repoCwd).resources.find(
 		(resource) => {
 			if (resource.libraryName !== libraryName) return false;
 			if (kind && resource.kind !== kind) return false;
@@ -1294,14 +1320,10 @@ export function resolveOrchestratorLibraryResourceRef(
 	);
 }
 
-export function readOrchestratorLibraries(
-	rootPaths: string[],
-): OrchestratorLibrarySet {
-	const libraries = rootPaths.map((rootPath) =>
-		readOrchestratorLibrary(rootPath),
-	);
+export function readLatticeLibraries(rootPaths: string[]): LatticeLibrarySet {
+	const libraries = rootPaths.map((rootPath) => readLatticeLibrary(rootPath));
 	const diagnostics = libraries.flatMap((library) => library.diagnostics);
-	const byName = new Map<string, OrchestratorLibraryInfo>();
+	const byName = new Map<string, LatticeLibraryInfo>();
 
 	for (const library of libraries) {
 		const name = library.manifest?.name;
@@ -1311,8 +1333,8 @@ export function readOrchestratorLibraries(
 			byName.set(name, library);
 			continue;
 		}
-		const message = `Duplicate Orchestrator Library namespace '${name}' found at ${existing.root} and ${library.root}`;
-		const duplicateDiagnostic: OrchestratorLibraryDiagnostic = {
+		const message = `Duplicate Lattice Library namespace '${name}' found at ${existing.root} and ${library.root}`;
+		const duplicateDiagnostic: LatticeLibraryDiagnostic = {
 			level: "error",
 			message,
 			path: library.manifestPath,

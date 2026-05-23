@@ -1,9 +1,9 @@
 {
-  "piAgentOrchestrator": {
+  "piLattice": {
     "showPackageExamples": false,
     "libraries": [
       {
-        "path": ".pi/orchestrator-library"
+        "path": ".pi/lattice-library"
       }
     ]
   }

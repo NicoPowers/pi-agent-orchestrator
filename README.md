@@ -1,10 +1,10 @@
-# pi-agent-orchestrator
+# Pi Lattice
 
 Multi-agent orchestration extension for [Pi](https://pi.dev).
 
 > **Status:** this package is in heavy development and is not recommended for general use yet. APIs, dashboard flows, and storage conventions are still changing quickly.
 
-`pi-agent-orchestrator` lets an interactive Pi session become an explicit **orchestrator**. When you enable orchestration mode, Pi gets tools for creating isolated sub-agents, delegating work to them, inspecting progress, and managing the whole team from a browser dashboard.
+`pi-lattice` lets an interactive Pi session become an explicit **orchestrator**. When you enable orchestration mode, Pi gets tools for creating isolated sub-agents, delegating work to them, inspecting progress, and managing the whole team from a browser dashboard.
 
 ## Core ideas
 
@@ -35,11 +35,11 @@ You are {{name}}, a focused frontend implementation agent.
 Make small, tested, reviewable changes. Ask for clarification when requirements are ambiguous.
 ```
 
-Definitions can reference direct skills, skill templates, and extension templates. New and edited definitions should generally live in an **Orchestrator Library** rather than in this package.
+Definitions can reference direct skills, skill templates, and extension templates. New and edited definitions should generally live in a **Lattice Library** rather than in this package.
 
-### Orchestrator Libraries are the primary resource model
+### Lattice Libraries are the primary resource model
 
-An Orchestrator Library is a user- or team-owned folder that contains version-controlled orchestration resources:
+A Lattice Library is a user- or team-owned folder that contains version-controlled orchestration resources:
 
 - root orchestrator profiles
 - agent definitions
@@ -48,13 +48,13 @@ An Orchestrator Library is a user- or team-owned folder that contains version-co
 - curated skills
 - curated extensions
 
-Libraries are configured through `piAgentOrchestrator.libraries` in Pi settings and discovered by the dashboard. They are the preferred place to create and share orchestrator-managed resources.
+Libraries are configured through `piLattice.libraries` in Pi settings and discovered by the dashboard. Legacy `piLattice.libraries` settings are still read for compatibility. Libraries are the preferred place to create and share orchestrator-managed resources.
 
-A starter library contains an `orchestrator-library.json` manifest like:
+A starter library contains a `lattice-library.json` manifest like:
 
 ```json
 {
-  "schema": "pi-orchestrator-library/v1",
+  "schema": "pi-lattice-library/v1",
   "name": "team-ai",
   "description": "Team orchestration resources",
   "resources": {
@@ -75,7 +75,7 @@ team-ai:skills/example-analysis/SKILL.md
 team-ai:extensions/browser-tools
 ```
 
-Native Pi skill/extension source paths still exist as an advanced escape hatch, but the dashboard intentionally de-emphasizes them in favor of Orchestrator Libraries.
+Native Pi skill/extension source paths still exist as an advanced escape hatch, but the dashboard intentionally de-emphasizes them in favor of Lattice Libraries.
 
 ### Root orchestrator profiles
 
@@ -130,13 +130,13 @@ The dashboard can currently:
 - emergency-stop all spawned agents
 - create/edit agent type definitions
 - list, preview, copy, create, edit, and delete Root Orchestrator Profiles where allowed
-- browse Orchestrator Libraries and package example visibility
-- bootstrap/register Orchestrator Libraries from an explicit path
+- browse Lattice Libraries and package example visibility
+- bootstrap/register Lattice Libraries from an explicit path
 - browse, preview, edit, copy, create, and delete skills where allowed
 - label package-provided skills separately from project/global/library skills
 - create/edit/delete skill and extension templates
 - assign templates from the Agent Type editor
-- discover extensions from native paths, packages, and Orchestrator Libraries
+- discover extensions from native paths, packages, and Lattice Libraries
 - smoke-test extension templates and inspect runtime tool diagnostics
 - access native Pi skill/extension paths only as an advanced settings escape hatch
 
@@ -192,7 +192,7 @@ resource_settings_update(scope, skills?, extensions?)
 
 This project is currently intended for development and experimentation.
 
-For reproducible local development, prefer the checked-in Docker/devcontainer baseline. It keeps Pi config/cache/auth in a named Docker volume and treats container paths as runtime truth for spawned agents and Orchestrator Libraries. See [Containerized orchestration runtime](docs/container-runtime.md).
+For reproducible local development, prefer the checked-in Docker/devcontainer baseline. It keeps Pi config/cache/auth in a named Docker volume and treats container paths as runtime truth for spawned agents and Lattice Libraries. See [Containerized orchestration runtime](docs/container-runtime.md).
 
 ### Devcontainer: work on this package live
 
@@ -200,7 +200,7 @@ Open this repository in a devcontainer-compatible editor and choose **Reopen in 
 
 1. runs `bun install` in this checkout,
 2. builds the dashboard assets with `bun run build`, and
-3. registers this checkout as the Pi package with `pi install /workspaces/pi-agent-orchestrator`.
+3. registers this checkout as the Pi package with `pi install /workspaces/pi-lattice`.
 
 That final command is a local-path package install. Pi loads the orchestrator extension, skills, and bundled package resources from the mounted checkout, not from a copied npm cache. As you edit files in the repo, you are editing the installed package. Use `/reload` or restart Pi after extension/package manifest changes; run `bun run build` after dashboard changes.
 
@@ -230,14 +230,17 @@ for the exact socket path and verification command.
 For normal use outside this repository, install the package source directly:
 
 ```bash
+# From npm, once published
+pi install npm:pi-lattice
+
 # From git
-pi install git:github.com/NicoPowers/pi-agent-orchestrator
+pi install git:github.com/NicoPowers/pi-lattice
 
 # From a local checkout
-pi install /path/to/pi-agent-orchestrator
+pi install /path/to/pi-lattice
 ```
 
-The package manifest exposes the orchestrator plus the Pi helper packages this repo currently uses: `@os-eco/mulch-cli`, `@os-eco/seeds-cli`, `context-mode`, `pi-lens`, and `pi-web-access`. Those packages are listed in `dependencies` and `bundledDependencies`, and their Pi extensions/skills are surfaced through this package's `pi` manifest so users do not need to install them one by one.
+The package manifest exposes Pi Lattice plus the Pi helper packages this repo currently uses: `@os-eco/mulch-cli`, `@os-eco/seeds-cli`, `context-mode`, `pi-lens`, and `pi-web-access`. Those packages are listed in `dependencies` and `bundledDependencies`, and their Pi extensions/skills are surfaced through this package's `pi` manifest so users do not need to install them one by one.
 
 ### Validation
 

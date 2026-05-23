@@ -48,17 +48,17 @@ describe("template backend", () => {
 		});
 	});
 
-	it("saves and discovers templates in the first auto-discovered Orchestrator Library", async () => {
+	it("saves and discovers templates in the first auto-discovered Lattice Library", async () => {
 		const { saveSkillTemplate, discoverSkillTemplates } = await import(
 			"../extensions/multi-agent/skill-templates.js"
 		);
 		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/orchestrator-library.js"
+			"../extensions/multi-agent/lattice-library.js"
 		);
 		const libraryRoot = path.join(
 			tmpDir,
 			".pi",
-			"pi-agent-orchestrator",
+			"pi-lattice",
 			"libraries",
 			"team-library",
 		);
@@ -66,7 +66,7 @@ describe("template backend", () => {
 			recursive: true,
 		});
 		fs.writeFileSync(
-			path.join(libraryRoot, "orchestrator-library.json"),
+			path.join(libraryRoot, "lattice-library.json"),
 			JSON.stringify({
 				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 				name: "team",
@@ -91,7 +91,7 @@ describe("template backend", () => {
 		const templates = discoverSkillTemplates(tmpDir);
 		expect(templates[0]).toMatchObject({
 			name: "core",
-			source: "orchestrator-library",
+			source: "lattice-library",
 			scope: "team",
 		});
 	});
@@ -101,12 +101,12 @@ describe("template backend", () => {
 			"../extensions/multi-agent/skill-templates.js"
 		);
 		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/orchestrator-library.js"
+			"../extensions/multi-agent/lattice-library.js"
 		);
 		const libraryRoot = path.join(
 			tmpDir,
 			".pi",
-			"pi-agent-orchestrator",
+			"pi-lattice",
 			"libraries",
 			"team-library",
 		);
@@ -114,7 +114,7 @@ describe("template backend", () => {
 			recursive: true,
 		});
 		fs.writeFileSync(
-			path.join(libraryRoot, "orchestrator-library.json"),
+			path.join(libraryRoot, "lattice-library.json"),
 			JSON.stringify({
 				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 				name: "team",
@@ -142,18 +142,18 @@ describe("template backend", () => {
 		});
 	});
 
-	it("saves templates to an explicitly selected Orchestrator Library", async () => {
+	it("saves templates to an explicitly selected Lattice Library", async () => {
 		const { saveExtensionTemplate, discoverExtensionTemplates } = await import(
 			"../extensions/multi-agent/extension-templates.js"
 		);
 		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/orchestrator-library.js"
+			"../extensions/multi-agent/lattice-library.js"
 		);
 		for (const name of ["first", "second"]) {
 			const libraryRoot = path.join(
 				tmpDir,
 				".pi",
-				"pi-agent-orchestrator",
+				"pi-lattice",
 				"libraries",
 				`${name}-library`,
 			);
@@ -161,7 +161,7 @@ describe("template backend", () => {
 				recursive: true,
 			});
 			fs.writeFileSync(
-				path.join(libraryRoot, "orchestrator-library.json"),
+				path.join(libraryRoot, "lattice-library.json"),
 				JSON.stringify({
 					schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 					name,
@@ -184,7 +184,7 @@ describe("template backend", () => {
 			path.join(
 				tmpDir,
 				".pi",
-				"pi-agent-orchestrator",
+				"pi-lattice",
 				"libraries",
 				"second-library",
 				"extension-templates",
@@ -193,7 +193,7 @@ describe("template backend", () => {
 		);
 		expect(discoverExtensionTemplates(tmpDir)[0]).toMatchObject({
 			name: "browser-tools",
-			source: "orchestrator-library",
+			source: "lattice-library",
 			scope: "second",
 		});
 		expect(
@@ -201,7 +201,7 @@ describe("template backend", () => {
 				path.join(
 					tmpDir,
 					".pi",
-					"pi-agent-orchestrator",
+					"pi-lattice",
 					"libraries",
 					"first-library",
 					"extension-templates",

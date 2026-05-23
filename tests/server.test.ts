@@ -344,7 +344,7 @@ describe("root profile API", () => {
 	it("lists, loads, saves, copies, and deletes root orchestrator profiles", async () => {
 		const { startServer } = await import("../extensions/multi-agent/server.js");
 		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/orchestrator-library.js"
+			"../extensions/multi-agent/lattice-library.js"
 		);
 		const tmpDir = fs.mkdtempSync(
 			path.join(os.tmpdir(), "pi-root-profile-api-"),
@@ -352,7 +352,7 @@ describe("root profile API", () => {
 		const libraryRoot = path.join(tmpDir, "team-library");
 		fs.mkdirSync(libraryRoot, { recursive: true });
 		fs.writeFileSync(
-			path.join(libraryRoot, "orchestrator-library.json"),
+			path.join(libraryRoot, "lattice-library.json"),
 			JSON.stringify({
 				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 				name: "team",
@@ -363,7 +363,7 @@ describe("root profile API", () => {
 		fs.writeFileSync(
 			path.join(tmpDir, ".pi", "settings.json"),
 			JSON.stringify({
-				piAgentOrchestrator: { libraries: ["./team-library"] },
+				piLattice: { libraries: ["./team-library"] },
 			}),
 		);
 		const handle = await startServer({
@@ -506,7 +506,7 @@ describe("orchestrator display settings API", () => {
 			expect(teamCoder?.prompt).toBe("Persisted team coder prompt.");
 
 			res = await fetch(
-				`${handle.url}/api/orchestrator-libraries/display-settings`,
+				`${handle.url}/api/lattice-libraries/display-settings`,
 				{
 					method: "PUT",
 					headers: { "content-type": "application/json" },
@@ -1280,9 +1280,9 @@ describe("agent spawn API", () => {
 		const artifactPath = path.join(
 			tmpDir,
 			".pi",
-			"pi-agent-orchestrator",
+			"pi-lattice",
 			"issues",
-			"pi-agent-orchestrator-f91c",
+			"pi-lattice-f91c",
 		);
 		const handle = await startServer({
 			repoCwd: tmpDir,
@@ -1301,7 +1301,7 @@ describe("agent spawn API", () => {
 						model: options.model,
 						worktreePath: worktreeDir,
 						children: [],
-						issueId: "pi-agent-orchestrator-f91c",
+						issueId: "pi-lattice-f91c",
 						artifactPath,
 						_rpcRequests: new Map(),
 					} as any,
@@ -1322,22 +1322,22 @@ describe("agent spawn API", () => {
 				body: JSON.stringify({
 					name: "lead",
 					parent: "self",
-					issueId: "pi-agent-orchestrator-f91c",
+					issueId: "pi-lattice-f91c",
 				}),
 			});
 
 			expect(res.status).toBe(201);
-			expect(spawnedOptions.issueId).toBe("pi-agent-orchestrator-f91c");
+			expect(spawnedOptions.issueId).toBe("pi-lattice-f91c");
 			expect(spawnedOptions.model).toBe("openai/gpt-5.5");
 			const spawned = await res.json();
-			expect(spawned.issueId).toBe("pi-agent-orchestrator-f91c");
+			expect(spawned.issueId).toBe("pi-lattice-f91c");
 			expect(spawned.artifactPath).toBe(artifactPath);
 			expect(spawned.model).toBe("openai/gpt-5.5");
 
 			const inspectRes = await fetch(`${handle.url}/api/agents/lead/events`);
 			expect(inspectRes.status).toBe(200);
 			const inspect = await inspectRes.json();
-			expect(inspect.issueId).toBe("pi-agent-orchestrator-f91c");
+			expect(inspect.issueId).toBe("pi-lattice-f91c");
 			expect(inspect.artifactPath).toBe(artifactPath);
 			expect(inspect.model).toBe("openai/gpt-5.5");
 		} finally {

@@ -244,10 +244,10 @@ async function discoverSkillsUncached(cwd: string): Promise<DiscoveredSkill[]> {
 		} satisfies DiscoveredSkill;
 	});
 
-	const { discoverConfiguredOrchestratorLibraries } = await import(
-		"./orchestrator-library.js"
+	const { discoverConfiguredLatticeLibraries } = await import(
+		"./lattice-library.js"
 	);
-	const librarySkills = discoverConfiguredOrchestratorLibraries(cwd)
+	const librarySkills = discoverConfiguredLatticeLibraries(cwd)
 		.resources.filter((resource) => resource.kind === "skills")
 		.map((resource) => {
 			const kind =
@@ -264,7 +264,7 @@ async function discoverSkillsUncached(cwd: string): Promise<DiscoveredSkill[]> {
 					kind === "directory"
 						? path.dirname(resource.filePath)
 						: path.dirname(resource.filePath),
-				source: "orchestrator-library",
+				source: "lattice-library",
 				scope: resource.libraryName,
 				kind,
 				audience: skillAudience(resource.filePath),
@@ -325,10 +325,10 @@ async function resolveSkillTarget(
 	error?: string;
 	status?: number;
 }> {
-	const { discoverConfiguredOrchestratorLibraries } = await import(
-		"./orchestrator-library.js"
+	const { discoverConfiguredLatticeLibraries } = await import(
+		"./lattice-library.js"
 	);
-	const libraries = discoverConfiguredOrchestratorLibraries(
+	const libraries = discoverConfiguredLatticeLibraries(
 		cwd,
 	).libraries.filter((library) => library.valid && library.manifest);
 	if (input.targetLibrary) {
@@ -340,19 +340,19 @@ async function resolveSkillTarget(
 		if (!library?.manifest)
 			return {
 				root: "",
-				error: `Orchestrator Library '${input.targetLibrary}' not found`,
+				error: `Lattice Library '${input.targetLibrary}' not found`,
 				status: 404,
 			};
 		return {
 			root: library.resourceDirs.skills.resolvedPath,
-			source: "orchestrator-library",
+			source: "lattice-library",
 			scope: library.manifest.name,
 		};
 	}
 	if (!input.scope && libraries[0]?.manifest) {
 		return {
 			root: libraries[0].resourceDirs.skills.resolvedPath,
-			source: "orchestrator-library",
+			source: "lattice-library",
 			scope: libraries[0].manifest.name,
 		};
 	}

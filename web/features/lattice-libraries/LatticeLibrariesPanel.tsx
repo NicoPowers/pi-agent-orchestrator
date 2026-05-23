@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import type {
-	OrchestratorLibrariesInfo,
+	LatticeLibrariesInfo,
 	ResourcePathValidation,
 	ResourceScopeSettings,
 	ResourceSettingsInfo,
@@ -76,7 +76,7 @@ function libraryFolderName(name: string): string {
 		.replace(/^[._-]+|[._-]+$/g, "");
 }
 
-export function OrchestratorLibrariesPanel({
+export function LatticeLibrariesPanel({
 	pushLog,
 	onDisplaySettingsChanged,
 	onNativeSettingsSaved,
@@ -85,7 +85,7 @@ export function OrchestratorLibrariesPanel({
 	onDisplaySettingsChanged: () => void;
 	onNativeSettingsSaved: () => void;
 }) {
-	const [data, setData] = useState<OrchestratorLibrariesInfo | null>(null);
+	const [data, setData] = useState<LatticeLibrariesInfo | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [togglingRoot, setTogglingRoot] = useState<string | null>(null);
 	const [savingDisplay, setSavingDisplay] = useState(false);
@@ -101,12 +101,12 @@ export function OrchestratorLibrariesPanel({
 		setLoading(true);
 		setError("");
 		try {
-			const res = await fetch("/api/orchestrator-libraries");
+			const res = await fetch("/api/lattice-libraries");
 			if (!res.ok) throw new Error(await res.text());
-			setData((await res.json()) as OrchestratorLibrariesInfo);
+			setData((await res.json()) as LatticeLibrariesInfo);
 		} catch (e: any) {
-			setError(e.message || "Failed to load Orchestrator Libraries");
-			pushLog(`Failed to load Orchestrator Libraries: ${e.message}`, "error");
+			setError(e.message || "Failed to load Lattice Libraries");
+			pushLog(`Failed to load Lattice Libraries: ${e.message}`, "error");
 		} finally {
 			setLoading(false);
 		}
@@ -120,24 +120,21 @@ export function OrchestratorLibrariesPanel({
 		setTogglingRoot(root);
 		setError("");
 		try {
-			const res = await fetch("/api/orchestrator-libraries/enabled", {
+			const res = await fetch("/api/lattice-libraries/enabled", {
 				method: "PUT",
 				headers: { "content-type": "application/json" },
 				body: JSON.stringify({ root, enabled }),
 			});
 			if (!res.ok) throw new Error(await responseErrorText(res));
 			pushLog(
-				`${enabled ? "Enabled" : "Disabled"} Orchestrator Library ${shortPath(root)}`,
+				`${enabled ? "Enabled" : "Disabled"} Lattice Library ${shortPath(root)}`,
 				"success",
 			);
 			await load();
 			onNativeSettingsSaved();
 		} catch (e: any) {
-			setError(e.message || "Failed to update Orchestrator Library state");
-			pushLog(
-				`Failed to update Orchestrator Library state: ${e.message}`,
-				"error",
-			);
+			setError(e.message || "Failed to update Lattice Library state");
+			pushLog(`Failed to update Lattice Library state: ${e.message}`, "error");
 		} finally {
 			setTogglingRoot(null);
 		}
@@ -147,7 +144,7 @@ export function OrchestratorLibrariesPanel({
 		setSavingDisplay(true);
 		setError("");
 		try {
-			const res = await fetch("/api/orchestrator-libraries/display-settings", {
+			const res = await fetch("/api/lattice-libraries/display-settings", {
 				method: "PUT",
 				headers: { "content-type": "application/json" },
 				body: JSON.stringify({ showPackageExamples }),
@@ -171,15 +168,14 @@ export function OrchestratorLibrariesPanel({
 	const bootstrapLibrary = async (event: FormEvent) => {
 		event.preventDefault();
 		setBootstrapError("");
-		const folderName =
-			libraryFolderName(bootstrapName) || "orchestrator-library";
+		const folderName = libraryFolderName(bootstrapName) || "lattice-library";
 		setBootstrapSaving(true);
 		try {
-			const res = await fetch("/api/orchestrator-libraries/bootstrap", {
+			const res = await fetch("/api/lattice-libraries/bootstrap", {
 				method: "POST",
 				headers: { "content-type": "application/json" },
 				body: JSON.stringify({
-					targetPath: `./.pi/pi-agent-orchestrator/libraries/${folderName}`,
+					targetPath: `./.pi/pi-lattice/libraries/${folderName}`,
 					name: bootstrapName.trim() || undefined,
 					description: bootstrapDescription.trim() || undefined,
 				}),
@@ -190,7 +186,7 @@ export function OrchestratorLibrariesPanel({
 				library?: { root: string; manifest?: { name: string } };
 			};
 			pushLog(
-				`Created ${result.scope || "project"} Orchestrator Library${result.library?.manifest?.name ? ` '${result.library.manifest.name}'` : ""}${result.library?.root ? ` at ${result.library.root}` : ""}`,
+				`Created ${result.scope || "project"} Lattice Library${result.library?.manifest?.name ? ` '${result.library.manifest.name}'` : ""}${result.library?.root ? ` at ${result.library.root}` : ""}`,
 				"success",
 			);
 			setCreatingLibrary(false);
@@ -199,8 +195,8 @@ export function OrchestratorLibrariesPanel({
 			await load();
 			onNativeSettingsSaved();
 		} catch (e: any) {
-			setBootstrapError(e.message || "Failed to create Orchestrator Library");
-			pushLog(`Failed to create Orchestrator Library: ${e.message}`, "error");
+			setBootstrapError(e.message || "Failed to create Lattice Library");
+			pushLog(`Failed to create Lattice Library: ${e.message}`, "error");
 		} finally {
 			setBootstrapSaving(false);
 		}
@@ -233,7 +229,7 @@ export function OrchestratorLibrariesPanel({
 			<Card>
 				<CardHeader className="border-b border-border">
 					<div className="flex items-center justify-between gap-3">
-						<CardTitle>Orchestrator Libraries</CardTitle>
+						<CardTitle>Lattice Libraries</CardTitle>
 						<div className="flex gap-2">
 							<Button variant="secondary" onClick={openBootstrapDialog}>
 								+ New Library
@@ -246,17 +242,16 @@ export function OrchestratorLibrariesPanel({
 				</CardHeader>
 				<CardContent className="space-y-2 pt-4 text-sm text-muted-foreground">
 					<p>
-						Orchestrator Libraries are user-owned, version-controlled folders
-						for agent types, skill templates, extension templates, and curated
+						Lattice Libraries are user-owned, version-controlled folders for
+						agent types, skill templates, extension templates, and curated
 						skills/extensions.
 					</p>
 					<p>
 						Use libraries for orchestrator-managed agents, templates, skills,
 						and extensions. Repo-local libraries are discovered from{" "}
-						<code>.pi/pi-agent-orchestrator/libraries/*</code>; external
-						libraries must be mounted under{" "}
-						<code>.pi/pi-agent-orchestrator/external-libraries/*</code> before
-						Pi starts.
+						<code>.pi/pi-lattice/libraries/*</code>; external libraries must be
+						mounted under <code>.pi/pi-lattice/external-libraries/*</code>{" "}
+						before Pi starts.
 					</p>
 					{loading && !data && (
 						<div className="space-y-3 pt-1">
@@ -280,8 +275,7 @@ export function OrchestratorLibrariesPanel({
 								<div className="text-xs">
 									Read-only package examples are useful for onboarding, but can
 									be hidden once your own libraries are configured. Stored in
-									project settings:{" "}
-									<code>piAgentOrchestrator.showPackageExamples</code>.
+									project settings: <code>piLattice.showPackageExamples</code>.
 								</div>
 							</div>
 							<label className="flex shrink-0 items-center gap-2 text-sm text-foreground">
@@ -307,7 +301,7 @@ export function OrchestratorLibrariesPanel({
 							onClick={openBootstrapDialog}
 						>
 							<div className="font-medium text-foreground">
-								Click here to scaffold your first Orchestrator Library
+								Click here to scaffold your first Lattice Library
 							</div>
 							<div className="mt-1">
 								Pi can create a starter library for your agent types, templates,
@@ -320,7 +314,7 @@ export function OrchestratorLibrariesPanel({
 			</Card>
 			<Dialog
 				open={creatingLibrary}
-				title="Scaffold Orchestrator Library"
+				title="Scaffold Lattice Library"
 				onOpenChange={(open) => {
 					if (!open && !bootstrapSaving) setCreatingLibrary(false);
 				}}
@@ -331,10 +325,8 @@ export function OrchestratorLibrariesPanel({
 				<form className="space-y-3" onSubmit={bootstrapLibrary}>
 					<p className="text-sm text-muted-foreground">
 						New libraries are created in the repo-local auto-discovery folder:
-						<code>
-							.pi/pi-agent-orchestrator/libraries/&lt;library-name&gt;
-						</code>
-						. External libraries must be bind-mounted before Pi starts.
+						<code>.pi/pi-lattice/libraries/&lt;library-name&gt;</code>. External
+						libraries must be bind-mounted before Pi starts.
 					</p>
 					{bootstrapError && (
 						<div className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
@@ -350,7 +342,7 @@ export function OrchestratorLibrariesPanel({
 						/>
 						<FormMessage>
 							Used as the namespaced resource prefix and repo-local folder name;
-							leave blank for orchestrator-library.
+							leave blank for lattice-library.
 						</FormMessage>
 					</div>
 					<div className="space-y-1">
@@ -406,7 +398,7 @@ export function OrchestratorLibrariesPanel({
 							<CardTitle>Advanced native Pi resource paths</CardTitle>
 							<div className="mt-1 text-xs text-muted-foreground">
 								Optional escape hatch for Pi's raw skills/extensions settings.
-								Prefer Orchestrator Libraries for orchestrator resources.
+								Prefer Lattice Libraries for orchestrator resources.
 							</div>
 						</div>
 						<Button
@@ -645,7 +637,7 @@ function ResourceSettingsPanel({
 				</CardHeader>
 				<CardContent className="space-y-2 pt-4 text-sm text-muted-foreground">
 					<p>
-						Advanced/native Pi settings only. Prefer Orchestrator Libraries for
+						Advanced/native Pi settings only. Prefer Lattice Libraries for
 						orchestrator-managed agents, templates, skills, and extensions; use
 						these raw <code>settings.json</code> arrays only for native Pi
 						resources that must be loaded outside a library.

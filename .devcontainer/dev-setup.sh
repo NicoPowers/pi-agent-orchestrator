@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-WORKSPACE="/workspaces/pi-agent-orchestrator"
+WORKSPACE="/workspaces/pi-lattice"
 cd "$WORKSPACE"
 
 echo "==> Installing JavaScript dependencies and bundled Pi packages"
 bun install
 
-echo "==> Building dashboard assets served by the orchestrator extension"
+echo "==> Building dashboard assets served by the Pi Lattice extension"
 bun run build
 
-echo "==> Registering this checkout as the local pi-agent-orchestrator package"
+echo "==> Registering this checkout as the local pi-lattice package"
 pi install "$WORKSPACE"
 
 cat <<'MSG'

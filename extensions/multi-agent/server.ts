@@ -362,22 +362,24 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 			return;
 		}
 
-		// Orchestrator Library API
+		// Lattice Library API
 		if (
-			url.pathname === "/api/orchestrator-libraries" &&
+			["/api/lattice-libraries", "/api/orchestrator-libraries"].includes(
+				url.pathname,
+			) &&
 			req.method === "GET"
 		) {
-			const { discoverConfiguredOrchestratorLibraries } = await import(
-				"./orchestrator-library.js"
+			const { discoverConfiguredLatticeLibraries } = await import(
+				"./lattice-library.js"
 			);
-			send(
-				res,
-				jsonResponse(discoverConfiguredOrchestratorLibraries(deps.repoCwd)),
-			);
+			send(res, jsonResponse(discoverConfiguredLatticeLibraries(deps.repoCwd)));
 			return;
 		}
 		if (
-			url.pathname === "/api/orchestrator-libraries/enabled" &&
+			[
+				"/api/lattice-libraries/enabled",
+				"/api/orchestrator-libraries/enabled",
+			].includes(url.pathname) &&
 			req.method === "PUT"
 		) {
 			let body: any;
@@ -387,10 +389,10 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 				send(res, errorResponse("Invalid JSON", 400));
 				return;
 			}
-			const { updateOrchestratorLibraryEnabled } = await import(
-				"./orchestrator-library.js"
+			const { updateLatticeLibraryEnabled } = await import(
+				"./lattice-library.js"
 			);
-			const result = updateOrchestratorLibraryEnabled(
+			const result = updateLatticeLibraryEnabled(
 				{ root: body.root, enabled: body.enabled },
 				deps.repoCwd,
 			);
@@ -399,14 +401,17 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 				send(
 					res,
 					errorResponse(
-						result.error || "Failed to update Orchestrator Library state",
+						result.error || "Failed to update Lattice Library state",
 						result.status || 400,
 					),
 				);
 			return;
 		}
 		if (
-			url.pathname === "/api/orchestrator-libraries/display-settings" &&
+			[
+				"/api/lattice-libraries/display-settings",
+				"/api/orchestrator-libraries/display-settings",
+			].includes(url.pathname) &&
 			req.method === "PUT"
 		) {
 			let body: any;
@@ -416,10 +421,10 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 				send(res, errorResponse("Invalid JSON", 400));
 				return;
 			}
-			const { updateOrchestratorDisplaySettings } = await import(
-				"./orchestrator-library.js"
+			const { updateLatticeDisplaySettings } = await import(
+				"./lattice-library.js"
 			);
-			const result = updateOrchestratorDisplaySettings(
+			const result = updateLatticeDisplaySettings(
 				{ showPackageExamples: body.showPackageExamples },
 				deps.repoCwd,
 			);
@@ -435,7 +440,10 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 			return;
 		}
 		if (
-			url.pathname === "/api/orchestrator-libraries/bootstrap" &&
+			[
+				"/api/lattice-libraries/bootstrap",
+				"/api/orchestrator-libraries/bootstrap",
+			].includes(url.pathname) &&
 			req.method === "POST"
 		) {
 			let body: any;
@@ -445,10 +453,8 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 				send(res, errorResponse("Invalid JSON", 400));
 				return;
 			}
-			const { bootstrapOrchestratorLibrary } = await import(
-				"./orchestrator-library.js"
-			);
-			const result = bootstrapOrchestratorLibrary(
+			const { bootstrapLatticeLibrary } = await import("./lattice-library.js");
+			const result = bootstrapLatticeLibrary(
 				{
 					targetPath: body.targetPath,
 					name: body.name,
@@ -461,7 +467,7 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 				send(
 					res,
 					errorResponse(
-						result.error || "Failed to bootstrap Orchestrator Library",
+						result.error || "Failed to bootstrap Lattice Library",
 						result.status || 400,
 					),
 				);
@@ -829,11 +835,11 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 
 		// GET /api/agent-types
 		if (url.pathname === "/api/agent-types" && req.method === "GET") {
-			const { readOrchestratorDisplaySettings } = await import(
-				"./orchestrator-library.js"
+			const { readLatticeDisplaySettings } = await import(
+				"./lattice-library.js"
 			);
 			const { isSpawnableAgentDefinition } = await import("./definitions.js");
-			const displaySettings = readOrchestratorDisplaySettings(deps.repoCwd);
+			const displaySettings = readLatticeDisplaySettings(deps.repoCwd);
 			const defs = deps
 				.discoverDefinitions(deps.repoCwd)
 				.filter(isSpawnableAgentDefinition)

@@ -30,9 +30,9 @@ function makeAgent(overrides: Partial<Agent> = {}): Agent {
 		worktreePath: "/tmp/pi-worktree-lead",
 		parent: "self",
 		children: ["scout"],
-		issueId: "pi-agent-orchestrator-7510",
+		issueId: "pi-lattice-7510",
 		artifactPath:
-			"/repo/.pi/pi-agent-orchestrator/issues/pi-agent-orchestrator-7510",
+			"/repo/.pi/pi-lattice/issues/pi-lattice-7510",
 		artifactFiles: { handoff: "/repo/handoff.md" } as any,
 		runtimeTools: {
 			active: [{ name: "read" }, { name: "bash" }],
@@ -55,7 +55,7 @@ describe("agent timeline", () => {
 			worktree: "/tmp/pi-worktree-lead",
 			parent: "self",
 			children: ["scout"],
-			issueId: "pi-agent-orchestrator-7510",
+			issueId: "pi-lattice-7510",
 		});
 		expect(timeline.definition).toMatchObject({
 			name: "lead",

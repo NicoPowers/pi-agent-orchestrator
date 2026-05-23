@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
-import { discoverConfiguredOrchestratorLibraries } from "./orchestrator-library.js";
+import { discoverConfiguredLatticeLibraries } from "./lattice-library.js";
 import { log } from "./state.js";
 
 export interface ExtensionMetadata {
@@ -167,8 +167,8 @@ function libraryExtensionName(relativePath: string): string {
 	return normalized.replace(/\/index$/, "");
 }
 
-function getOrchestratorLibraryExtensions(cwd: string): DiscoveredExtension[] {
-	return discoverConfiguredOrchestratorLibraries(cwd)
+function getLatticeLibraryExtensions(cwd: string): DiscoveredExtension[] {
+	return discoverConfiguredLatticeLibraries(cwd)
 		.resources.filter((resource) => resource.kind === "extensions")
 		.map((resource) => ({
 			name: libraryExtensionName(resource.relativePath),
@@ -190,8 +190,8 @@ export function discoverExtensions(cwd: string): DiscoveredExtension[] {
 	// 3. NPM packages
 	const npmExts = getNpmPackageExtensions();
 
-	// 4. Orchestrator Libraries (preferred for orchestrator-managed extension templates)
-	const libraryExts = getOrchestratorLibraryExtensions(cwd);
+	// 4. Lattice Libraries (preferred for orchestrator-managed extension templates)
+	const libraryExts = getLatticeLibraryExtensions(cwd);
 
 	const map = new Map<string, DiscoveredExtension>();
 

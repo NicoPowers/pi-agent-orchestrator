@@ -30867,7 +30867,7 @@ function InspectField({ label, value }) {
   }, undefined, true, undefined, this);
 }
 
-// web/features/orchestrator-libraries/OrchestratorLibrariesPanel.tsx
+// web/features/lattice-libraries/LatticeLibrariesPanel.tsx
 var import_react4 = __toESM(require_react(), 1);
 
 // web/components/ui/dialog.tsx
@@ -30936,7 +30936,7 @@ function Dialog({
   }, undefined, false, undefined, this);
 }
 
-// web/features/orchestrator-libraries/OrchestratorLibrariesPanel.tsx
+// web/features/lattice-libraries/LatticeLibrariesPanel.tsx
 var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
 function shortPath2(p) {
   if (!p)
@@ -30986,7 +30986,7 @@ function FormMessage({
 function libraryFolderName(name2) {
   return name2.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^[._-]+|[._-]+$/g, "");
 }
-function OrchestratorLibrariesPanel({
+function LatticeLibrariesPanel({
   pushLog,
   onDisplaySettingsChanged,
   onNativeSettingsSaved
@@ -31006,13 +31006,13 @@ function OrchestratorLibrariesPanel({
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/orchestrator-libraries");
+      const res = await fetch("/api/lattice-libraries");
       if (!res.ok)
         throw new Error(await res.text());
       setData(await res.json());
     } catch (e) {
-      setError(e.message || "Failed to load Orchestrator Libraries");
-      pushLog(`Failed to load Orchestrator Libraries: ${e.message}`, "error");
+      setError(e.message || "Failed to load Lattice Libraries");
+      pushLog(`Failed to load Lattice Libraries: ${e.message}`, "error");
     } finally {
       setLoading(false);
     }
@@ -31024,19 +31024,19 @@ function OrchestratorLibrariesPanel({
     setTogglingRoot(root4);
     setError("");
     try {
-      const res = await fetch("/api/orchestrator-libraries/enabled", {
+      const res = await fetch("/api/lattice-libraries/enabled", {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ root: root4, enabled })
       });
       if (!res.ok)
         throw new Error(await responseErrorText(res));
-      pushLog(`${enabled ? "Enabled" : "Disabled"} Orchestrator Library ${shortPath2(root4)}`, "success");
+      pushLog(`${enabled ? "Enabled" : "Disabled"} Lattice Library ${shortPath2(root4)}`, "success");
       await load();
       onNativeSettingsSaved();
     } catch (e) {
-      setError(e.message || "Failed to update Orchestrator Library state");
-      pushLog(`Failed to update Orchestrator Library state: ${e.message}`, "error");
+      setError(e.message || "Failed to update Lattice Library state");
+      pushLog(`Failed to update Lattice Library state: ${e.message}`, "error");
     } finally {
       setTogglingRoot(null);
     }
@@ -31045,7 +31045,7 @@ function OrchestratorLibrariesPanel({
     setSavingDisplay(true);
     setError("");
     try {
-      const res = await fetch("/api/orchestrator-libraries/display-settings", {
+      const res = await fetch("/api/lattice-libraries/display-settings", {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ showPackageExamples })
@@ -31066,14 +31066,14 @@ function OrchestratorLibrariesPanel({
   const bootstrapLibrary = async (event) => {
     event.preventDefault();
     setBootstrapError("");
-    const folderName = libraryFolderName(bootstrapName) || "orchestrator-library";
+    const folderName = libraryFolderName(bootstrapName) || "lattice-library";
     setBootstrapSaving(true);
     try {
-      const res = await fetch("/api/orchestrator-libraries/bootstrap", {
+      const res = await fetch("/api/lattice-libraries/bootstrap", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          targetPath: `./.pi/pi-agent-orchestrator/libraries/${folderName}`,
+          targetPath: `./.pi/pi-lattice/libraries/${folderName}`,
           name: bootstrapName.trim() || undefined,
           description: bootstrapDescription.trim() || undefined
         })
@@ -31081,15 +31081,15 @@ function OrchestratorLibrariesPanel({
       if (!res.ok)
         throw new Error(await responseErrorText(res));
       const result = await res.json();
-      pushLog(`Created ${result.scope || "project"} Orchestrator Library${result.library?.manifest?.name ? ` '${result.library.manifest.name}'` : ""}${result.library?.root ? ` at ${result.library.root}` : ""}`, "success");
+      pushLog(`Created ${result.scope || "project"} Lattice Library${result.library?.manifest?.name ? ` '${result.library.manifest.name}'` : ""}${result.library?.root ? ` at ${result.library.root}` : ""}`, "success");
       setCreatingLibrary(false);
       setBootstrapName("");
       setBootstrapDescription("");
       await load();
       onNativeSettingsSaved();
     } catch (e) {
-      setBootstrapError(e.message || "Failed to create Orchestrator Library");
-      pushLog(`Failed to create Orchestrator Library: ${e.message}`, "error");
+      setBootstrapError(e.message || "Failed to create Lattice Library");
+      pushLog(`Failed to create Lattice Library: ${e.message}`, "error");
     } finally {
       setBootstrapSaving(false);
     }
@@ -31125,7 +31125,7 @@ function OrchestratorLibrariesPanel({
               className: "flex items-center justify-between gap-3",
               children: [
                 /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(CardTitle, {
-                  children: "Orchestrator Libraries"
+                  children: "Lattice Libraries"
                 }, undefined, false, undefined, this),
                 /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
                   className: "flex gap-2",
@@ -31150,19 +31150,19 @@ function OrchestratorLibrariesPanel({
             className: "space-y-2 pt-4 text-sm text-muted-foreground",
             children: [
               /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("p", {
-                children: "Orchestrator Libraries are user-owned, version-controlled folders for agent types, skill templates, extension templates, and curated skills/extensions."
+                children: "Lattice Libraries are user-owned, version-controlled folders for agent types, skill templates, extension templates, and curated skills/extensions."
               }, undefined, false, undefined, this),
               /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("p", {
                 children: [
                   "Use libraries for orchestrator-managed agents, templates, skills, and extensions. Repo-local libraries are discovered from",
                   " ",
                   /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("code", {
-                    children: ".pi/pi-agent-orchestrator/libraries/*"
+                    children: ".pi/pi-lattice/libraries/*"
                   }, undefined, false, undefined, this),
                   "; external libraries must be mounted under",
                   " ",
                   /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("code", {
-                    children: ".pi/pi-agent-orchestrator/external-libraries/*"
+                    children: ".pi/pi-lattice/external-libraries/*"
                   }, undefined, false, undefined, this),
                   " before Pi starts."
                 ]
@@ -31212,7 +31212,7 @@ function OrchestratorLibrariesPanel({
                           "Read-only package examples are useful for onboarding, but can be hidden once your own libraries are configured. Stored in project settings:",
                           " ",
                           /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("code", {
-                            children: "piAgentOrchestrator.showPackageExamples"
+                            children: "piLattice.showPackageExamples"
                           }, undefined, false, undefined, this),
                           "."
                         ]
@@ -31245,7 +31245,7 @@ function OrchestratorLibrariesPanel({
                 children: [
                   /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
                     className: "font-medium text-foreground",
-                    children: "Click here to scaffold your first Orchestrator Library"
+                    children: "Click here to scaffold your first Lattice Library"
                   }, undefined, false, undefined, this),
                   /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
                     className: "mt-1",
@@ -31259,7 +31259,7 @@ function OrchestratorLibrariesPanel({
       }, undefined, true, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Dialog, {
         open: creatingLibrary,
-        title: "Scaffold Orchestrator Library",
+        title: "Scaffold Lattice Library",
         onOpenChange: (open) => {
           if (!open && !bootstrapSaving)
             setCreatingLibrary(false);
@@ -31276,7 +31276,7 @@ function OrchestratorLibrariesPanel({
               children: [
                 "New libraries are created in the repo-local auto-discovery folder:",
                 /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("code", {
-                  children: ".pi/pi-agent-orchestrator/libraries/<library-name>"
+                  children: ".pi/pi-lattice/libraries/<library-name>"
                 }, undefined, false, undefined, this),
                 ". External libraries must be bind-mounted before Pi starts."
               ]
@@ -31298,7 +31298,7 @@ function OrchestratorLibrariesPanel({
                   placeholder: "team-ai"
                 }, undefined, false, undefined, this),
                 /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(FormMessage, {
-                  children: "Used as the namespaced resource prefix and repo-local folder name; leave blank for orchestrator-library."
+                  children: "Used as the namespaced resource prefix and repo-local folder name; leave blank for lattice-library."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
@@ -31380,7 +31380,7 @@ function OrchestratorLibrariesPanel({
                     }, undefined, false, undefined, this),
                     /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
                       className: "mt-1 text-xs text-muted-foreground",
-                      children: "Optional escape hatch for Pi's raw skills/extensions settings. Prefer Orchestrator Libraries for orchestrator resources."
+                      children: "Optional escape hatch for Pi's raw skills/extensions settings. Prefer Lattice Libraries for orchestrator resources."
                     }, undefined, false, undefined, this)
                   ]
                 }, undefined, true, undefined, this),
@@ -31635,7 +31635,7 @@ Save anyway?`))
             children: [
               /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("p", {
                 children: [
-                  "Advanced/native Pi settings only. Prefer Orchestrator Libraries for orchestrator-managed agents, templates, skills, and extensions; use these raw ",
+                  "Advanced/native Pi settings only. Prefer Lattice Libraries for orchestrator-managed agents, templates, skills, and extensions; use these raw ",
                   /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("code", {
                     children: "settings.json"
                   }, undefined, false, undefined, this),
@@ -32770,7 +32770,7 @@ function SkillLibraryPanel({
   const [templateError, setTemplateError] = import_react6.useState("");
   const [editableFilter, setEditableFilter] = import_react6.useState("all");
   const [referenceFilter, setReferenceFilter] = import_react6.useState("all");
-  const [orchestratorLibraries, setOrchestratorLibraries] = import_react6.useState(null);
+  const [latticeLibraries, setLatticeLibraries] = import_react6.useState(null);
   const [loading, setLoading] = import_react6.useState(false);
   const [error, setError] = import_react6.useState("");
   const scopes = import_react6.useMemo(() => Array.from(new Set(skills.map(skillScopeLabel))).sort(), [skills]);
@@ -32807,12 +32807,12 @@ function SkillLibraryPanel({
   const initialListLoading = loadingSkills && !skills.length;
   import_react6.useEffect(() => {
     let cancelled = false;
-    fetch("/api/orchestrator-libraries").then((res) => res.ok ? res.json() : undefined).then((data) => {
+    fetch("/api/lattice-libraries").then((res) => res.ok ? res.json() : undefined).then((data) => {
       if (!cancelled && data)
-        setOrchestratorLibraries(data);
+        setLatticeLibraries(data);
     }).catch(() => {
       if (!cancelled)
-        setOrchestratorLibraries(null);
+        setLatticeLibraries(null);
     });
     return () => {
       cancelled = true;
@@ -33411,7 +33411,7 @@ function SkillLibraryPanel({
       }, undefined, true, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(CreateSkillDialog, {
         open: creating,
-        libraries: orchestratorLibraries,
+        libraries: latticeLibraries,
         onClose: () => setCreating(false),
         onCreated: (created) => {
           setCreating(false);
@@ -33423,7 +33423,7 @@ function SkillLibraryPanel({
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(CopySkillDialog, {
         source: copying,
-        libraries: orchestratorLibraries,
+        libraries: latticeLibraries,
         onClose: () => setCopying(null),
         onCopied: (copied) => {
           setCopying(null);
@@ -33607,7 +33607,7 @@ function CreateSkillDialog({
             libraryTargets.map((library) => /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("option", {
               value: `library:${library.manifest.name}`,
               children: [
-                "Orchestrator Library: ",
+                "Lattice Library: ",
                 library.manifest.name
               ]
             }, library.root, true, undefined, this)),
@@ -33619,7 +33619,7 @@ function CreateSkillDialog({
         }, undefined, true, undefined, this),
         /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FormMessage3, {
           tone: libraryTargets.length ? "success" : "muted",
-          children: libraryTargets.length ? "New skills default to the first configured Orchestrator Library by load order." : "No Orchestrator Library is configured; new skills fall back to the global Pi skills folder."
+          children: libraryTargets.length ? "New skills default to the first configured Lattice Library by load order." : "No Lattice Library is configured; new skills fall back to the global Pi skills folder."
         }, undefined, false, undefined, this),
         /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FieldLabel3, {
           required: true,
@@ -33810,7 +33810,7 @@ function CopySkillDialog({
             libraryTargets.map((library) => /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("option", {
               value: `library:${library.manifest.name}`,
               children: [
-                "Orchestrator Library: ",
+                "Lattice Library: ",
                 library.manifest.name
               ]
             }, library.root, true, undefined, this)),
@@ -33826,7 +33826,7 @@ function CopySkillDialog({
         }, undefined, true, undefined, this),
         /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FormMessage3, {
           tone: libraryTargets.length ? "success" : "muted",
-          children: libraryTargets.length ? "Skill copies default to the first configured Orchestrator Library by load order." : "No Orchestrator Library is configured; copies default to project skills."
+          children: libraryTargets.length ? "Skill copies default to the first configured Lattice Library by load order." : "No Lattice Library is configured; copies default to project skills."
         }, undefined, false, undefined, this),
         /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FieldLabel3, {
           required: true,
@@ -34321,7 +34321,7 @@ function TemplateEditorDialog({
     if (!open)
       return;
     let cancelled = false;
-    fetch("/api/orchestrator-libraries").then((res) => res.ok ? res.json() : undefined).then((data) => {
+    fetch("/api/lattice-libraries").then((res) => res.ok ? res.json() : undefined).then((data) => {
       if (!cancelled && data)
         setLibraries(data);
     }).catch(() => {
@@ -34365,7 +34365,7 @@ function TemplateEditorDialog({
     }));
     setItemsText((template?.items || []).join(`
 `));
-    setTarget(template?.source === "orchestrator-library" && template.scope ? `library:${template.scope}` : "project");
+    setTarget(template?.source === "lattice-library" && template.scope ? `library:${template.scope}` : "project");
     setServerError("");
   }, [open, template, kind]);
   const field = kind === "skill" ? "skills" : "extensions";
@@ -34422,7 +34422,7 @@ function TemplateEditorDialog({
     filePath: ""
   });
   const isDirty = name2 !== (template?.name || "") || description !== (template?.description || "") || audience !== initialAudience || autoApply !== initialAutoApply || itemsText !== (template?.items || []).join(`
-`) || target !== (template?.source === "orchestrator-library" && template.scope ? `library:${template.scope}` : "project");
+`) || target !== (template?.source === "lattice-library" && template.scope ? `library:${template.scope}` : "project");
   const discardMessage = "Discard unsaved template changes?";
   const close = () => {
     if (!isDirty || confirm(discardMessage))
@@ -34516,7 +34516,7 @@ function TemplateEditorDialog({
                 libraryTargets.map((library) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("option", {
                   value: `library:${library.manifest.name}`,
                   children: [
-                    "Orchestrator Library: ",
+                    "Lattice Library: ",
                     library.manifest.name
                   ]
                 }, library.root, true, undefined, this))
@@ -34524,7 +34524,7 @@ function TemplateEditorDialog({
             }, undefined, true, undefined, this),
             /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FormMessage4, {
               tone: libraryTargets.length ? "success" : "muted",
-              children: template ? "Existing templates save back to their current source." : libraryTargets.length ? "Choose a project or writable Orchestrator Library target explicitly." : "No Orchestrator Library is configured; new templates save to the project."
+              children: template ? "Existing templates save back to their current source." : libraryTargets.length ? "Choose a project or writable Lattice Library target explicitly." : "No Lattice Library is configured; new templates save to the project."
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this),
@@ -34691,7 +34691,7 @@ function splitItems3(text7) {
   return Array.from(new Set(text7.split(/[\n,]/).map((item) => item.trim()).filter(Boolean)));
 }
 function sourceLabel(profile) {
-  if (profile.source === "orchestrator-library")
+  if (profile.source === "lattice-library")
     return `library: ${profile.scope || "unknown"}`;
   return profile.source;
 }
@@ -34755,9 +34755,9 @@ function RootProfileEditorDialog({
     if (!open)
       return;
     setServerError("");
-    fetch("/api/orchestrator-libraries").then((res) => res.ok ? res.json() : null).then((data) => setLibraries(data)).catch(() => setLibraries(null));
+    fetch("/api/lattice-libraries").then((res) => res.ok ? res.json() : null).then((data) => setLibraries(data)).catch(() => setLibraries(null));
     const profile2 = detail?.profile || sourceProfile;
-    setTargetLibrary(mode === "edit" ? "" : profile2?.source === "orchestrator-library" ? profile2.scope || "" : "");
+    setTargetLibrary(mode === "edit" ? "" : profile2?.source === "lattice-library" ? profile2.scope || "" : "");
     setName(mode === "new" ? "" : mode === "copy" ? `${sourceProfile?.name || "profile"}-copy` : profile2?.name || "");
     setDescription(mode === "new" ? "" : mode === "copy" ? `${sourceProfile?.description || "Root orchestrator profile"} copy` : profile2?.description || "");
     setSkillsText((detail?.profile.skills || sourceProfile?.skills || []).join(`
@@ -34770,10 +34770,10 @@ function RootProfileEditorDialog({
   const errors = [
     !name2.trim() ? "Name is required." : undefined,
     !description.trim() ? "Description is required." : undefined,
-    mode !== "edit" && !targetLibrary && validLibraries.length ? "Choose an Orchestrator Library target." : undefined
+    mode !== "edit" && !targetLibrary && validLibraries.length ? "Choose an Lattice Library target." : undefined
   ].filter(Boolean);
   const profile = detail?.profile || sourceProfile;
-  const initialTargetLibrary = mode === "edit" ? "" : profile?.source === "orchestrator-library" ? profile.scope || "" : "";
+  const initialTargetLibrary = mode === "edit" ? "" : profile?.source === "lattice-library" ? profile.scope || "" : "";
   const isDirty = targetLibrary !== initialTargetLibrary || name2 !== (mode === "new" ? "" : mode === "copy" ? `${sourceProfile?.name || "profile"}-copy` : profile?.name || "") || description !== (mode === "new" ? "" : mode === "copy" ? `${sourceProfile?.description || "Root orchestrator profile"} copy` : profile?.description || "") || skillsText !== (detail?.profile.skills || sourceProfile?.skills || []).join(`
 `) || skillTemplatesText !== (detail?.profile.skillTemplates || sourceProfile?.skillTemplates || []).join(`
 `) || instructions !== (detail?.body || sourceProfile?.instructions || "");
@@ -34820,7 +34820,7 @@ function RootProfileEditorDialog({
           children: [
             /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(FieldLabel5, {
               required: true,
-              children: "Target Orchestrator Library"
+              children: "Target Lattice Library"
             }, undefined, false, undefined, this),
             validLibraries.length ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Select, {
               value: targetLibrary,
@@ -34842,7 +34842,7 @@ function RootProfileEditorDialog({
               ]
             }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
               className: "rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground",
-              children: "No valid Orchestrator Libraries are configured. This profile will be saved to the project .pi/orchestrator-profiles fallback."
+              children: "No valid Lattice Libraries are configured. This profile will be saved to the project .pi/orchestrator-profiles fallback."
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this),
@@ -36223,7 +36223,7 @@ var tabs = [
   { id: "types", label: "Agent Types" },
   { id: "rootProfiles", label: "Root Profiles" },
   { id: "skills", label: "Skill Library" },
-  { id: "orchestratorLibraries", label: "Orchestrator Libraries" },
+  { id: "latticeLibraries", label: "Lattice Libraries" },
   { id: "skillTemplates", label: "Skill Templates" },
   { id: "extensionTemplates", label: "Extension Templates" },
   { id: "hierarchy", label: "Hierarchy" },
@@ -36716,9 +36716,9 @@ function App() {
             onEditTemplate: (template) => setEditingTemplate({ kind: "skill", template }),
             onChanged: refreshTemplates
           }, undefined, false, undefined, this),
-          activeTab === "orchestratorLibraries" && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(PageFrame, {
+          activeTab === "latticeLibraries" && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(PageFrame, {
             mode: "wide",
-            children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(OrchestratorLibrariesPanel, {
+            children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(LatticeLibrariesPanel, {
               pushLog,
               onDisplaySettingsChanged: () => {
                 refreshTypes();

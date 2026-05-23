@@ -1,7 +1,7 @@
 {
-  "name": "pi-agent-orchestrator",
+  "name": "pi-lattice",
   "version": "0.2.0",
-  "description": "Multi-agent orchestration extension for Pi. Spawn specialized sub-agents with isolated context windows, custom prompts, and targeted skills. Includes a real-time web dashboard.",
+  "description": "Pi Lattice multi-agent orchestration extension for Pi. Spawn specialized sub-agents with isolated context windows, custom prompts, targeted skills, Lattice Libraries, and a real-time web dashboard.",
   "keywords": ["pi-package"],
   "bundledDependencies": [
     "@os-eco/mulch-cli",
@@ -28,6 +28,10 @@
     "lint": "bunx tsc --noEmit --skipLibCheck",
     "build": "bun build --target=browser --outdir=web web/app.tsx && bunx tailwindcss -i web/tailwind.css -o web/app.css --minify",
     "check": "bun run lint && bun run build && bun run test"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
   },
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "^0.75.1",

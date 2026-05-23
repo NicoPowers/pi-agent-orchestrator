@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "pi-agent-orchestrator",
+      "name": "pi-lattice",
       "dependencies": {
         "@os-eco/mulch-cli": "0.10.1",
         "@os-eco/seeds-cli": "0.4.7",
@@ -15,6 +15,10 @@
         "react-dom": "^19.2.6",
         "react-markdown": "^10.1.0",
         "remark-gfm": "^4.0.1",
+      },
+      "peerDependencies": {
+        "@earendil-works/pi-coding-agent": "*",
+        "typebox": "*",
       },
       "devDependencies": {
         "@earendil-works/pi-coding-agent": "^0.75.1",

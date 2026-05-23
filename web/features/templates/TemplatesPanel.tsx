@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type {
 	ExtensionInfo,
 	ExtensionTemplateSmokeTestResult,
-	OrchestratorLibrariesInfo,
+	LatticeLibrariesInfo,
 	SkillInfo,
 } from "../../types.js";
 import type { LogLine } from "../../shared/dashboard-types.js";
@@ -398,7 +398,7 @@ export function TemplateEditorDialog({
 	const [autoApply, setAutoApply] = useState<TemplateAutoApply>("none");
 	const [itemsText, setItemsText] = useState("");
 	const [target, setTarget] = useState("project");
-	const [libraries, setLibraries] = useState<OrchestratorLibrariesInfo | null>(
+	const [libraries, setLibraries] = useState<LatticeLibrariesInfo | null>(
 		null,
 	);
 	const [serverError, setServerError] = useState("");
@@ -412,10 +412,10 @@ export function TemplateEditorDialog({
 	useEffect(() => {
 		if (!open) return;
 		let cancelled = false;
-		fetch("/api/orchestrator-libraries")
+		fetch("/api/lattice-libraries")
 			.then((res) => (res.ok ? res.json() : undefined))
 			.then((data) => {
-				if (!cancelled && data) setLibraries(data as OrchestratorLibrariesInfo);
+				if (!cancelled && data) setLibraries(data as LatticeLibrariesInfo);
 			})
 			.catch(() => {
 				if (!cancelled) setLibraries(null);
@@ -474,7 +474,7 @@ export function TemplateEditorDialog({
 		);
 		setItemsText((template?.items || []).join("\n"));
 		setTarget(
-			template?.source === "orchestrator-library" && template.scope
+			template?.source === "lattice-library" && template.scope
 				? `library:${template.scope}`
 				: "project",
 		);
@@ -561,7 +561,7 @@ export function TemplateEditorDialog({
 		autoApply !== initialAutoApply ||
 		itemsText !== (template?.items || []).join("\n") ||
 		target !==
-			(template?.source === "orchestrator-library" && template.scope
+			(template?.source === "lattice-library" && template.scope
 				? `library:${template.scope}`
 				: "project");
 	const discardMessage = "Discard unsaved template changes?";
@@ -645,7 +645,7 @@ export function TemplateEditorDialog({
 								key={library.root}
 								value={`library:${library.manifest!.name}`}
 							>
-								Orchestrator Library: {library.manifest!.name}
+								Lattice Library: {library.manifest!.name}
 							</option>
 						))}
 					</Select>
@@ -653,8 +653,8 @@ export function TemplateEditorDialog({
 						{template
 							? "Existing templates save back to their current source."
 							: libraryTargets.length
-								? "Choose a project or writable Orchestrator Library target explicitly."
-								: "No Orchestrator Library is configured; new templates save to the project."}
+								? "Choose a project or writable Lattice Library target explicitly."
+								: "No Lattice Library is configured; new templates save to the project."}
 					</FormMessage>
 				</div>
 				<div className="grid gap-3 md:grid-cols-2">

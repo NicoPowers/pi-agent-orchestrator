@@ -1,6 +1,6 @@
 ---
 name: example-researcher
-description: Example researcher agent type for this Orchestrator Library.
+description: Example researcher agent type for this Lattice Library.
 tools: read, bash
 skillTemplates: example-core-skills
 extensionTemplates: example-web-tools

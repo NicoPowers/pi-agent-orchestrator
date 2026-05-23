@@ -20,12 +20,12 @@ describe("issue handoff artifacts", () => {
 
 		const workspace = prepareIssueArtifactWorkspace(
 			repoDir,
-			"../pi-agent-orchestrator-1234/../../evil issue",
+			"../pi-lattice-1234/../../evil issue",
 		);
 		const expectedRoot = path.join(
 			repoDir,
 			".pi",
-			"pi-agent-orchestrator",
+			"pi-lattice",
 			"issues",
 		);
 
@@ -53,7 +53,7 @@ describe("issue handoff artifacts", () => {
 
 		const parent = prepareIssueArtifactWorkspace(
 			repoDir,
-			"pi-agent-orchestrator-f91c",
+			"pi-lattice-f91c",
 		);
 		const childMetadata = resolveIssueArtifactMetadata({
 			repoCwd: repoDir,
@@ -62,7 +62,7 @@ describe("issue handoff artifacts", () => {
 		});
 
 		expect(childMetadata).toEqual({
-			issueId: "pi-agent-orchestrator-f91c",
+			issueId: "pi-lattice-f91c",
 			artifactPath: parent.issuePath,
 			artifactFiles: parent.files,
 		});
@@ -73,7 +73,7 @@ describe("issue handoff artifacts", () => {
 			await import("../extensions/multi-agent/artifacts.js");
 		const workspace = prepareIssueArtifactWorkspace(
 			repoDir,
-			"pi-agent-orchestrator-f91c",
+			"pi-lattice-f91c",
 		);
 
 		const leadInstructions = renderIssueArtifactInstructions({

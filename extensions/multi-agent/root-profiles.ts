@@ -3,9 +3,9 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { resolveSkillPath } from "./definitions.js";
-import { discoverConfiguredOrchestratorLibraries } from "./orchestrator-library.js";
+import { discoverConfiguredLatticeLibraries } from "./lattice-library.js";
 import { resolveCapabilities } from "./capability-resolution.js";
-import { resolveOrchestratorLibraryResourceRef } from "./orchestrator-library.js";
+import { resolveLatticeLibraryResourceRef } from "./lattice-library.js";
 import type { AgentDefinition } from "./state.js";
 
 export interface RootOrchestratorProfile {
@@ -14,7 +14,7 @@ export interface RootOrchestratorProfile {
   skills?: string[];
   skillTemplates?: string[];
   instructions: string;
-  source: "user" | "project" | "package" | "orchestrator-library";
+  source: "user" | "project" | "package" | "lattice-library";
   scope?: string;
   filePath: string;
   readOnly?: boolean;
@@ -129,7 +129,7 @@ function readProfileFile(filePath: string, source: RootOrchestratorProfile["sour
   const description = typeof frontmatter.description === "string" ? frontmatter.description.trim() : "Root orchestrator profile";
   if (!safeProfileName(name)) return undefined;
   const baseDir = path.dirname(filePath);
-  const skills = parseList(frontmatter.skills)?.map((item) => resolveOrchestratorLibraryResourceRef(item, cwd, "skills")?.filePath || resolveSkillPath(item, baseDir, cwd));
+  const skills = parseList(frontmatter.skills)?.map((item) => resolveLatticeLibraryResourceRef(item, cwd, "skills")?.filePath || resolveSkillPath(item, baseDir, cwd));
   const skillTemplates = parseList(frontmatter.skillTemplates);
   return {
     name,
@@ -180,7 +180,7 @@ function loadProfilesFromDir(dir: string | undefined, source: RootOrchestratorPr
   return profiles;
 }
 
-function libraryProfilePathFromManifest(library: ReturnType<typeof discoverConfiguredOrchestratorLibraries>["libraries"][number]): string | undefined {
+function libraryProfilePathFromManifest(library: ReturnType<typeof discoverConfiguredLatticeLibraries>["libraries"][number]): string | undefined {
   if (!library.valid || !library.manifest) return undefined;
   let rawResources: Record<string, unknown> = {};
   try {
@@ -202,7 +202,7 @@ function libraryProfilePathFromManifest(library: ReturnType<typeof discoverConfi
 
 function libraryProfileDirs(cwd: string): Array<{ dir: string; scope: string }> {
   const dirs: Array<{ dir: string; scope: string }> = [];
-  for (const library of discoverConfiguredOrchestratorLibraries(cwd).libraries) {
+  for (const library of discoverConfiguredLatticeLibraries(cwd).libraries) {
     if (!library.valid || !library.manifest) continue;
     const dir = libraryProfilePathFromManifest(library);
     if (dir && isDirectory(dir)) dirs.push({ dir, scope: library.manifest.name });
@@ -211,18 +211,18 @@ function libraryProfileDirs(cwd: string): Array<{ dir: string; scope: string }> 
 }
 
 function resolveProfileSaveTarget(cwd: string, targetLibrary?: string): { dir: string; source: RootOrchestratorProfile["source"]; scope?: string; error?: string; status?: number } {
-  const libraries = discoverConfiguredOrchestratorLibraries(cwd).libraries.filter((library) => library.valid && library.manifest);
+  const libraries = discoverConfiguredLatticeLibraries(cwd).libraries.filter((library) => library.valid && library.manifest);
   if (targetLibrary) {
     const library = libraries.find((candidate) => candidate.manifest?.name === targetLibrary || candidate.root === targetLibrary);
-    if (!library?.manifest) return { dir: "", source: "project", error: `Orchestrator Library '${targetLibrary}' not found`, status: 404 };
+    if (!library?.manifest) return { dir: "", source: "project", error: `Lattice Library '${targetLibrary}' not found`, status: 404 };
     const dir = libraryProfilePathFromManifest(library);
-    if (!dir) return { dir: "", source: "orchestrator-library", error: `Orchestrator Library '${targetLibrary}' has an invalid orchestratorProfiles resource path`, status: 400 };
-    return { dir, source: "orchestrator-library", scope: library.manifest.name };
+    if (!dir) return { dir: "", source: "lattice-library", error: `Lattice Library '${targetLibrary}' has an invalid orchestratorProfiles resource path`, status: 400 };
+    return { dir, source: "lattice-library", scope: library.manifest.name };
   }
   const library = libraries[0];
   if (library?.manifest) {
     const dir = libraryProfilePathFromManifest(library);
-    if (dir) return { dir, source: "orchestrator-library", scope: library.manifest.name };
+    if (dir) return { dir, source: "lattice-library", scope: library.manifest.name };
   }
   return { dir: path.join(cwd, ".pi", "orchestrator-profiles"), source: "project" };
 }
@@ -232,7 +232,7 @@ export function discoverRootProfiles(cwd: string): RootOrchestratorProfile[] {
     ...loadProfilesFromDir(packageProfilesDir(), "package", cwd),
     ...loadProfilesFromDir(path.join(getAgentDir(), "orchestrator-profiles"), "user", cwd),
     ...loadProfilesFromDir(projectProfilesDir(cwd), "project", cwd),
-    ...libraryProfileDirs(cwd).flatMap((entry) => loadProfilesFromDir(entry.dir, "orchestrator-library", cwd, entry.scope)),
+    ...libraryProfileDirs(cwd).flatMap((entry) => loadProfilesFromDir(entry.dir, "lattice-library", cwd, entry.scope)),
   ];
 
   const byName = new Map<string, RootOrchestratorProfile>();

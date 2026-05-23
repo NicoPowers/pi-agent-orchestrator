@@ -18,7 +18,7 @@ import {
 	HierarchyPanel,
 } from "./features/live-agents/LiveAgentsPanel.js";
 import { InspectTimeline as InspectTimelinePanel } from "./features/live-agents/InspectTimeline.js";
-import { OrchestratorLibrariesPanel } from "./features/orchestrator-libraries/OrchestratorLibrariesPanel.js";
+import { LatticeLibrariesPanel } from "./features/lattice-libraries/LatticeLibrariesPanel.js";
 import {
 	AgentTypesPanel,
 	AgentTypeTestDialog,
@@ -47,7 +47,7 @@ type Tab =
 	| "types"
 	| "rootProfiles"
 	| "skills"
-	| "orchestratorLibraries"
+	| "latticeLibraries"
 	| "skillTemplates"
 	| "extensionTemplates"
 	| "hierarchy"
@@ -60,7 +60,7 @@ const tabs: Array<{ id: Tab; label: string }> = [
 	{ id: "types", label: "Agent Types" },
 	{ id: "rootProfiles", label: "Root Profiles" },
 	{ id: "skills", label: "Skill Library" },
-	{ id: "orchestratorLibraries", label: "Orchestrator Libraries" },
+	{ id: "latticeLibraries", label: "Lattice Libraries" },
 	{ id: "skillTemplates", label: "Skill Templates" },
 	{ id: "extensionTemplates", label: "Extension Templates" },
 	{ id: "hierarchy", label: "Hierarchy" },
@@ -608,9 +608,9 @@ function App() {
 						onChanged={refreshTemplates}
 					/>
 				)}
-				{activeTab === "orchestratorLibraries" && (
+				{activeTab === "latticeLibraries" && (
 					<PageFrame mode="wide">
-						<OrchestratorLibrariesPanel
+						<LatticeLibrariesPanel
 							pushLog={pushLog}
 							onDisplaySettingsChanged={() => {
 								refreshTypes();

@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import type { AgentClass, AgentDefinition } from "./state.js";
-import { discoverConfiguredOrchestratorLibraries } from "./orchestrator-library.js";
+import { discoverConfiguredLatticeLibraries } from "./lattice-library.js";
 
 function isDirectory(p: string): boolean {
 	try {
@@ -222,7 +222,7 @@ export function discoverDefinitions(cwd: string): AgentDefinition[] {
 	const packageDefs = packageDir
 		? loadDefinitionsFromDir(packageDir, "package", cwd)
 		: [];
-	const libraryDefs = discoverConfiguredOrchestratorLibraries(cwd)
+	const libraryDefs = discoverConfiguredLatticeLibraries(cwd)
 		.resources.filter((resource) => resource.kind === "agents")
 		.flatMap((resource) =>
 			loadDefinitionsFromDir(
@@ -270,7 +270,7 @@ export function saveAgentDefinition(
 				error: nonSpawnableAgentReason(normalizedDef),
 				status: 403,
 			};
-		const library = discoverConfiguredOrchestratorLibraries(cwd).libraries.find(
+		const library = discoverConfiguredLatticeLibraries(cwd).libraries.find(
 			(candidate) => candidate.valid && candidate.manifest,
 		);
 		const projectDir = findProjectAgentsDir(cwd);

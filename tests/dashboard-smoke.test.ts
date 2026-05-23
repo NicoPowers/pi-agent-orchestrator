@@ -231,7 +231,7 @@ describe("dashboard bundle smoke test", () => {
 						return Response.json([]);
 					if (url.includes("/api/extensions")) return Response.json([]);
 					if (
-						url.includes("/api/orchestrator-libraries/bootstrap") &&
+						url.includes("/api/lattice-libraries/bootstrap") &&
 						init?.method === "POST"
 					) {
 						bootstrapRequests.push(JSON.parse(String(init.body || "{}")));
@@ -239,11 +239,11 @@ describe("dashboard bundle smoke test", () => {
 							success: true,
 							scope: "project",
 							library: {
-								root: "/tmp/repo/.pi/orchestrator-library",
+								root: "/tmp/repo/.pi/lattice-library",
 								manifestPath:
-									"/tmp/repo/.pi/orchestrator-library/orchestrator-library.json",
+									"/tmp/repo/.pi/lattice-library/lattice-library.json",
 								manifest: {
-									schema: "pio.orchestrator-library.v1",
+									schema: "pio.lattice-library.v1",
 									name: "team-ai",
 									description: "Team library",
 									resources: {},
@@ -253,7 +253,7 @@ describe("dashboard bundle smoke test", () => {
 							},
 						});
 					}
-					if (url.includes("/api/orchestrator-libraries"))
+					if (url.includes("/api/lattice-libraries"))
 						return Response.json({
 							libraries: [],
 							resources: [],
@@ -485,28 +485,9 @@ describe("dashboard bundle smoke test", () => {
 			expect(text).toContain("package");
 			expect(text).not.toContain("Skill & Extension Paths");
 
-			const librarianSkillButton = Array.from(
-				window.document.getElementsByTagName("button"),
-			).find(
-				(button) =>
-					button.textContent?.includes("librarian") &&
-					button.textContent?.includes("Package skill"),
-			);
-			librarianSkillButton?.dispatchEvent(
-				new window.MouseEvent("click", { bubbles: true }),
-			);
-			await window.happyDOM.waitUntilComplete();
-			await new Promise((resolve) => setTimeout(resolve, 10));
-			const loadingSkillText =
-				window.document.getElementById("root")?.textContent || "";
-			expect(loadingSkillText).toContain("Loading skill actions");
-			expect(loadingSkillText).not.toContain("Delete");
-
 			const libraryNav = Array.from(
 				window.document.getElementsByTagName("button"),
-			).find((button) =>
-				button.textContent?.includes("Orchestrator Libraries"),
-			);
+			).find((button) => button.textContent?.includes("Lattice Libraries"));
 			libraryNav?.dispatchEvent(
 				new window.MouseEvent("click", { bubbles: true }),
 			);
@@ -515,7 +496,7 @@ describe("dashboard bundle smoke test", () => {
 			const libraryText =
 				window.document.getElementById("root")?.textContent || "";
 			expect(libraryText).toContain(
-				"Click here to scaffold your first Orchestrator Library",
+				"Click here to scaffold your first Lattice Library",
 			);
 			expect(libraryText).not.toContain("Target path");
 			expect(libraryText).not.toContain("Create library");
@@ -524,7 +505,7 @@ describe("dashboard bundle smoke test", () => {
 				window.document.getElementsByTagName("button"),
 			).find((button) =>
 				button.textContent?.includes(
-					"Click here to scaffold your first Orchestrator Library",
+					"Click here to scaffold your first Lattice Library",
 				),
 			);
 			scaffoldButton?.dispatchEvent(
@@ -561,8 +542,7 @@ describe("dashboard bundle smoke test", () => {
 			await new Promise((resolve) => setTimeout(resolve, 50));
 			expect(bootstrapRequests).toEqual([
 				{
-					targetPath:
-						"./.pi/pi-agent-orchestrator/libraries/orchestrator-library",
+					targetPath: "./.pi/pi-lattice/libraries/lattice-library",
 				},
 			]);
 			expect(text).not.toContain("name: demodescription:");

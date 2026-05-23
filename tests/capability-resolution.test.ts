@@ -68,7 +68,7 @@ describe("capability resolution", () => {
 		expect(result.errors).toEqual([]);
 	});
 
-	it("resolves Orchestrator Library skill refs to concrete skill paths", async () => {
+	it("resolves Lattice Library skill refs to concrete skill paths", async () => {
 		const { saveSkillTemplate } = await import(
 			"../extensions/multi-agent/skill-templates.js"
 		);
@@ -76,13 +76,13 @@ describe("capability resolution", () => {
 			"../extensions/multi-agent/capability-resolution.js"
 		);
 		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/orchestrator-library.js"
+			"../extensions/multi-agent/lattice-library.js"
 		);
 
 		const libraryRoot = path.join(
 			tmpDir,
 			".pi",
-			"pi-agent-orchestrator",
+			"pi-lattice",
 			"libraries",
 			"team-library",
 		);
@@ -90,7 +90,7 @@ describe("capability resolution", () => {
 			recursive: true,
 		});
 		fs.writeFileSync(
-			path.join(libraryRoot, "orchestrator-library.json"),
+			path.join(libraryRoot, "lattice-library.json"),
 			JSON.stringify({
 				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 				name: "team",

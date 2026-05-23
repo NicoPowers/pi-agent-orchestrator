@@ -4,17 +4,17 @@ import * as os from "node:os";
 import * as path from "node:path";
 import {
 	ORCHESTRATOR_LIBRARY_SCHEMA,
-	bootstrapOrchestratorLibrary,
-	discoverConfiguredOrchestratorLibraries,
-	discoverOrchestratorLibraryResources,
-	readOrchestratorLibraries,
-	readOrchestratorLibrary,
-	readOrchestratorDisplaySettings,
-	readOrchestratorLibrarySettings,
-	updateOrchestratorDisplaySettings,
-	updateOrchestratorLibraryEnabled,
-	updateOrchestratorLibrarySettings,
-} from "../extensions/multi-agent/orchestrator-library.js";
+	bootstrapLatticeLibrary,
+	discoverConfiguredLatticeLibraries,
+	discoverLatticeLibraryResources,
+	readLatticeLibraries,
+	readLatticeLibrary,
+	readLatticeDisplaySettings,
+	readLatticeLibrarySettings,
+	updateLatticeDisplaySettings,
+	updateLatticeLibraryEnabled,
+	updateLatticeLibrarySettings,
+} from "../extensions/multi-agent/lattice-library.js";
 
 function withTempDir(prefix: string, fn: (dir: string) => void) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -27,7 +27,7 @@ function withTempDir(prefix: string, fn: (dir: string) => void) {
 
 function writeManifest(dir: string, manifest: unknown) {
 	fs.writeFileSync(
-		path.join(dir, "orchestrator-library.json"),
+		path.join(dir, "lattice-library.json"),
 		JSON.stringify(manifest, null, 2),
 	);
 }
@@ -50,7 +50,7 @@ describe("orchestrator library manifest", () => {
 				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 				name: "team-ai",
 				description: "Team resources",
-				compatibility: { piAgentOrchestrator: ">=0.1.0" },
+				compatibility: { piLattice: ">=0.1.0" },
 				resources: {
 					agents: "orchestrator/agents",
 					skillTemplates: "orchestrator/skill-templates",
@@ -60,7 +60,7 @@ describe("orchestrator library manifest", () => {
 				},
 			});
 
-			const library = readOrchestratorLibrary(dir);
+			const library = readLatticeLibrary(dir);
 			expect(library.valid).toBe(true);
 			expect(library.manifest?.name).toBe("team-ai");
 			expect(library.resourceDirs.agents.resolvedPath).toBe(
@@ -77,11 +77,11 @@ describe("orchestrator library manifest", () => {
 
 	it("reports a missing manifest", () => {
 		withTempDir("pio-library-missing-", (dir) => {
-			const library = readOrchestratorLibrary(dir);
+			const library = readLatticeLibrary(dir);
 			expect(library.valid).toBe(false);
 			expect(
 				library.diagnostics.some((diagnostic) =>
-					diagnostic.message.includes("Missing orchestrator-library.json"),
+					diagnostic.message.includes("Missing lattice-library.json"),
 				),
 			).toBe(true);
 		});
@@ -89,12 +89,12 @@ describe("orchestrator library manifest", () => {
 
 	it("reports invalid JSON", () => {
 		withTempDir("pio-library-invalid-json-", (dir) => {
-			fs.writeFileSync(path.join(dir, "orchestrator-library.json"), "{ nope");
-			const library = readOrchestratorLibrary(dir);
+			fs.writeFileSync(path.join(dir, "lattice-library.json"), "{ nope");
+			const library = readLatticeLibrary(dir);
 			expect(library.valid).toBe(false);
 			expect(
 				library.diagnostics.some((diagnostic) =>
-					diagnostic.message.includes("Invalid orchestrator-library.json"),
+					diagnostic.message.includes("Invalid lattice-library.json"),
 				),
 			).toBe(true);
 		});
@@ -103,13 +103,11 @@ describe("orchestrator library manifest", () => {
 	it("reports missing required schema and name", () => {
 		withTempDir("pio-library-missing-required-", (dir) => {
 			writeManifest(dir, { resources: {} });
-			const library = readOrchestratorLibrary(dir);
+			const library = readLatticeLibrary(dir);
 			expect(library.valid).toBe(false);
 			expect(
 				library.diagnostics.some((diagnostic) =>
-					diagnostic.message.includes(
-						"Unsupported orchestrator library schema",
-					),
+					diagnostic.message.includes("Unsupported Lattice Library schema"),
 				),
 			).toBe(true);
 			expect(
@@ -133,7 +131,7 @@ describe("orchestrator library manifest", () => {
 					extensions: "extensions",
 				},
 			});
-			const library = readOrchestratorLibrary(dir);
+			const library = readLatticeLibrary(dir);
 			expect(library.valid).toBe(true);
 			expect(
 				library.diagnostics.filter(
@@ -148,15 +146,15 @@ describe("orchestrator library manifest", () => {
 		});
 	});
 
-	it("accepts compatible pi-agent-orchestrator version ranges", () => {
+	it("accepts compatible pi-lattice version ranges", () => {
 		withTempDir("pio-library-compatible-version-", (dir) => {
 			writeManifest(dir, {
 				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 				name: "compatible-version",
-				compatibility: { piAgentOrchestrator: ">=0.1.0 <1.0.0" },
+				compatibility: { piLattice: ">=0.1.0 <1.0.0" },
 				resources: {},
 			});
-			const library = readOrchestratorLibrary(dir);
+			const library = readLatticeLibrary(dir);
 			expect(library.valid).toBe(true);
 			expect(
 				library.diagnostics.filter(
@@ -166,42 +164,42 @@ describe("orchestrator library manifest", () => {
 		});
 	});
 
-	it("rejects libraries that require a newer pi-agent-orchestrator version", () => {
+	it("rejects libraries that require a newer pi-lattice version", () => {
 		withTempDir("pio-library-newer-version-", (dir) => {
 			writeManifest(dir, {
 				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 				name: "future-version",
-				compatibility: { piAgentOrchestrator: ">=999.0.0" },
+				compatibility: { piLattice: ">=999.0.0" },
 				resources: {},
 			});
-			const library = readOrchestratorLibrary(dir);
+			const library = readLatticeLibrary(dir);
 			expect(library.valid).toBe(false);
 			expect(
 				library.diagnostics.some(
 					(diagnostic) =>
 						diagnostic.level === "error" &&
 						diagnostic.message.includes(
-							"requires pi-agent-orchestrator >=999.0.0",
+							"requires pi-lattice >=999.0.0",
 						),
 				),
 			).toBe(true);
 		});
 	});
 
-	it("rejects non-string pi-agent-orchestrator compatibility values", () => {
+	it("rejects non-string pi-lattice compatibility values", () => {
 		withTempDir("pio-library-invalid-version-", (dir) => {
 			writeManifest(dir, {
 				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
 				name: "invalid-version",
-				compatibility: { piAgentOrchestrator: 123 },
+				compatibility: { piLattice: 123 },
 				resources: {},
 			});
-			const library = readOrchestratorLibrary(dir);
+			const library = readLatticeLibrary(dir);
 			expect(library.valid).toBe(false);
 			expect(
 				library.diagnostics.some((diagnostic) =>
 					diagnostic.message.includes(
-						"compatibility.piAgentOrchestrator must be a string",
+						"compatibility.piLattice must be a string",
 					),
 				),
 			).toBe(true);
@@ -221,7 +219,7 @@ describe("orchestrator library manifest", () => {
 					extensions: "extensions",
 				},
 			});
-			const library = readOrchestratorLibrary(dir);
+			const library = readLatticeLibrary(dir);
 			expect(library.valid).toBe(false);
 			expect(
 				library.diagnostics.some((diagnostic) =>
@@ -248,7 +246,7 @@ describe("orchestrator library manifest", () => {
 				resources: {},
 			});
 
-			const set = readOrchestratorLibraries([one, two]);
+			const set = readLatticeLibraries([one, two]);
 			expect(set.valid).toBe(true);
 			expect(set.libraries.map((library) => library.manifest?.name)).toEqual([
 				"one",
@@ -277,11 +275,11 @@ describe("orchestrator library manifest", () => {
 				resources: {},
 			});
 
-			const set = readOrchestratorLibraries([one, two]);
+			const set = readLatticeLibraries([one, two]);
 			expect(set.valid).toBe(false);
 			const duplicate = set.diagnostics.find((diagnostic) =>
 				diagnostic.message.includes(
-					"Duplicate Orchestrator Library namespace 'team'",
+					"Duplicate Lattice Library namespace 'team'",
 				),
 			);
 			expect(duplicate?.message).toContain(one);
@@ -330,7 +328,7 @@ describe("orchestrator library resource discovery", () => {
 				"export default function () {}\n",
 			);
 
-			const discovery = discoverOrchestratorLibraryResources(dir);
+			const discovery = discoverLatticeLibraryResources(dir);
 			expect(discovery.library.valid).toBe(true);
 			expect(
 				discovery.resources
@@ -363,7 +361,7 @@ describe("orchestrator library resource discovery", () => {
 				name: "empty-library",
 				resources: {},
 			});
-			const discovery = discoverOrchestratorLibraryResources(dir);
+			const discovery = discoverLatticeLibraryResources(dir);
 			expect(discovery.library.valid).toBe(true);
 			expect(discovery.resources).toHaveLength(0);
 			expect(
@@ -380,15 +378,15 @@ describe("orchestrator library resource discovery", () => {
 describe("orchestrator library bootstrap", () => {
 	it("creates a starter library scaffold and registers in project settings for in-repo paths", () => {
 		withTempDir("pio-bootstrap-project-", (dir) => {
-			const result = bootstrapOrchestratorLibrary(
-				{ targetPath: "./.pi/orchestrator-library", name: "project-ai" },
+			const result = bootstrapLatticeLibrary(
+				{ targetPath: "./.pi/lattice-library", name: "project-ai" },
 				dir,
 				{ globalSettingsPath: path.join(dir, "global-settings.json") },
 			);
 			expect(result.success).toBe(true);
 			expect(result.scope).toBe("project");
-			const root = path.join(dir, ".pi", "orchestrator-library");
-			expect(fs.existsSync(path.join(root, "orchestrator-library.json"))).toBe(
+			const root = path.join(dir, ".pi", "lattice-library");
+			expect(fs.existsSync(path.join(root, "lattice-library.json"))).toBe(
 				true,
 			);
 			expect(
@@ -414,12 +412,12 @@ describe("orchestrator library bootstrap", () => {
 					path.join(root, "extensions", "example-extension", "index.ts"),
 				),
 			).toBe(true);
-			expect(readOrchestratorLibrary(root).valid).toBe(true);
-			const settings = readOrchestratorLibrarySettings(dir, {
+			expect(readLatticeLibrary(root).valid).toBe(true);
+			const settings = readLatticeLibrarySettings(dir, {
 				globalSettingsPath: path.join(dir, "global-settings.json"),
 			});
 			expect(settings.project.libraries.map((library) => library.path)).toEqual(
-				[".pi/orchestrator-library"],
+				[".pi/lattice-library"],
 			);
 		});
 	});
@@ -429,14 +427,14 @@ describe("orchestrator library bootstrap", () => {
 			withTempDir("pio-bootstrap-global-target-", (parent) => {
 				const target = path.join(parent, "team-ai");
 				const globalSettingsPath = path.join(repo, "global-settings.json");
-				const result = bootstrapOrchestratorLibrary(
+				const result = bootstrapLatticeLibrary(
 					{ targetPath: target, name: "team-ai" },
 					repo,
 					{ globalSettingsPath },
 				);
 				expect(result.success).toBe(true);
 				expect(result.scope).toBe("global");
-				const settings = readOrchestratorLibrarySettings(repo, {
+				const settings = readLatticeLibrarySettings(repo, {
 					globalSettingsPath,
 				});
 				expect(
@@ -451,7 +449,7 @@ describe("orchestrator library bootstrap", () => {
 			const target = path.join(dir, "not-empty");
 			fs.mkdirSync(target, { recursive: true });
 			fs.writeFileSync(path.join(target, "file.txt"), "content");
-			const result = bootstrapOrchestratorLibrary(
+			const result = bootstrapLatticeLibrary(
 				{ targetPath: target, name: "bad" },
 				dir,
 				{ globalSettingsPath: path.join(dir, "global-settings.json") },
@@ -482,21 +480,21 @@ describe("configured orchestrator library discovery", () => {
 			const repoOne = path.join(
 				dir,
 				".pi",
-				"pi-agent-orchestrator",
+				"pi-lattice",
 				"libraries",
 				"repo-one",
 			);
 			const externalOne = path.join(
 				dir,
 				".pi",
-				"pi-agent-orchestrator",
+				"pi-lattice",
 				"external-libraries",
 				"external-one",
 			);
 			createLibrary(repoOne, "repo-one", "agent-a");
 			createLibrary(externalOne, "external-one", "agent-b");
 
-			const discovery = discoverConfiguredOrchestratorLibraries(dir, {
+			const discovery = discoverConfiguredLatticeLibraries(dir, {
 				globalSettingsPath: path.join(dir, "global-settings.json"),
 			});
 			expect(discovery.valid).toBe(true);
@@ -521,14 +519,14 @@ describe("configured orchestrator library discovery", () => {
 			const enabledRoot = path.join(
 				dir,
 				".pi",
-				"pi-agent-orchestrator",
+				"pi-lattice",
 				"libraries",
 				"enabled",
 			);
 			const disabledRoot = path.join(
 				dir,
 				".pi",
-				"pi-agent-orchestrator",
+				"pi-lattice",
 				"external-libraries",
 				"disabled",
 			);
@@ -538,15 +536,15 @@ describe("configured orchestrator library discovery", () => {
 			fs.writeFileSync(
 				path.join(dir, ".pi", "settings.json"),
 				JSON.stringify({
-					piAgentOrchestrator: {
+					piLattice: {
 						disabledLibraries: [
-							".pi/pi-agent-orchestrator/external-libraries/disabled",
+							".pi/pi-lattice/external-libraries/disabled",
 						],
 					},
 				}),
 			);
 
-			const discovery = discoverConfiguredOrchestratorLibraries(dir, {
+			const discovery = discoverConfiguredLatticeLibraries(dir, {
 				globalSettingsPath: path.join(dir, "global-settings.json"),
 			});
 			expect(
@@ -566,13 +564,13 @@ describe("configured orchestrator library discovery", () => {
 			const root = path.join(
 				dir,
 				".pi",
-				"pi-agent-orchestrator",
+				"pi-lattice",
 				"libraries",
 				"toggle-me",
 			);
 			createLibrary(root, "toggle-me", "agent-a");
 
-			const disabled = updateOrchestratorLibraryEnabled(
+			const disabled = updateLatticeLibraryEnabled(
 				{ root, enabled: false },
 				dir,
 				{ globalSettingsPath: path.join(dir, "global-settings.json") },
@@ -581,7 +579,7 @@ describe("configured orchestrator library discovery", () => {
 			expect(disabled.discovery?.libraries[0].enabled).toBe(false);
 			expect(disabled.discovery?.resources).toHaveLength(0);
 
-			const enabled = updateOrchestratorLibraryEnabled(
+			const enabled = updateLatticeLibraryEnabled(
 				{ root, enabled: true },
 				dir,
 				{ globalSettingsPath: path.join(dir, "global-settings.json") },
@@ -599,28 +597,28 @@ describe("configured orchestrator library discovery", () => {
 			const one = path.join(
 				dir,
 				".pi",
-				"pi-agent-orchestrator",
+				"pi-lattice",
 				"libraries",
 				"one",
 			);
 			const two = path.join(
 				dir,
 				".pi",
-				"pi-agent-orchestrator",
+				"pi-lattice",
 				"external-libraries",
 				"two",
 			);
 			createLibrary(one, "team", "agent-a");
 			createLibrary(two, "team", "agent-b");
 
-			const discovery = discoverConfiguredOrchestratorLibraries(dir, {
+			const discovery = discoverConfiguredLatticeLibraries(dir, {
 				globalSettingsPath: path.join(dir, "global-settings.json"),
 			});
 			expect(discovery.valid).toBe(false);
 			expect(
 				discovery.diagnostics.some((diagnostic) =>
 					diagnostic.message.includes(
-						"Duplicate Orchestrator Library namespace 'team'",
+						"Duplicate Lattice Library namespace 'team'",
 					),
 				),
 			).toBe(true);
@@ -636,12 +634,12 @@ describe("orchestrator display settings", () => {
 		withTempDir("pio-display-settings-", (dir) => {
 			const settingsPath = path.join(dir, ".pi", "settings.json");
 			expect(
-				readOrchestratorDisplaySettings(dir, {
+				readLatticeDisplaySettings(dir, {
 					globalSettingsPath: path.join(dir, "global-settings.json"),
 				}).showPackageExamples,
 			).toBe(true);
 
-			const result = updateOrchestratorDisplaySettings(
+			const result = updateLatticeDisplaySettings(
 				{ showPackageExamples: false },
 				dir,
 				{ globalSettingsPath: path.join(dir, "global-settings.json") },
@@ -649,12 +647,12 @@ describe("orchestrator display settings", () => {
 			expect(result.success).toBe(true);
 			expect(result.settings?.showPackageExamples).toBe(false);
 			expect(
-				readOrchestratorDisplaySettings(dir, {
+				readLatticeDisplaySettings(dir, {
 					globalSettingsPath: path.join(dir, "global-settings.json"),
 				}).showPackageExamples,
 			).toBe(false);
 			const raw = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
-			expect(raw.piAgentOrchestrator.showPackageExamples).toBe(false);
+			expect(raw.piLattice.showPackageExamples).toBe(false);
 		});
 	});
 });
@@ -662,7 +660,7 @@ describe("orchestrator display settings", () => {
 describe("orchestrator library settings", () => {
 	it("reads empty global and project settings", () => {
 		withTempDir("pio-library-settings-empty-", (dir) => {
-			const settings = readOrchestratorLibrarySettings(dir, {
+			const settings = readLatticeLibrarySettings(dir, {
 				globalSettingsPath: path.join(dir, "global-settings.json"),
 			});
 			expect(settings.global.libraries).toEqual([]);
@@ -677,7 +675,7 @@ describe("orchestrator library settings", () => {
 			fs.writeFileSync(
 				globalSettingsPath,
 				JSON.stringify({
-					piAgentOrchestrator: {
+					piLattice: {
 						libraries: ["~/personal", { path: "~/team", editable: true }],
 					},
 				}),
@@ -686,11 +684,11 @@ describe("orchestrator library settings", () => {
 			fs.writeFileSync(
 				path.join(dir, ".pi", "settings.json"),
 				JSON.stringify({
-					piAgentOrchestrator: { libraries: ["./.pi/orchestrator-library"] },
+					piLattice: { libraries: ["./.pi/lattice-library"] },
 				}),
 			);
 
-			const settings = readOrchestratorLibrarySettings(dir, {
+			const settings = readLatticeLibrarySettings(dir, {
 				globalSettingsPath,
 			});
 			expect(settings.global.libraries.map((library) => library.path)).toEqual([
@@ -699,14 +697,14 @@ describe("orchestrator library settings", () => {
 			]);
 			expect(settings.global.libraries[1].editable).toBe(true);
 			expect(settings.project.libraries.map((library) => library.path)).toEqual(
-				["./.pi/orchestrator-library"],
+				["./.pi/lattice-library"],
 			);
 			expect(
 				settings.libraries.map((library) => `${library.scope}:${library.path}`),
 			).toEqual([
 				"global:~/personal",
 				"global:~/team",
-				"project:./.pi/orchestrator-library",
+				"project:./.pi/lattice-library",
 			]);
 		});
 	});
@@ -720,15 +718,15 @@ describe("orchestrator library settings", () => {
 					{
 						packages: ["pkg"],
 						skills: ["skills"],
-						piAgentOrchestrator: { theme: "dark" },
+						piLattice: { theme: "dark" },
 					},
 					null,
 					2,
 				),
 			);
 
-			const result = updateOrchestratorLibrarySettings(
-				{ scope: "project", libraries: ["./.pi/orchestrator-library"] },
+			const result = updateLatticeLibrarySettings(
+				{ scope: "project", libraries: ["./.pi/lattice-library"] },
 				dir,
 				{ globalSettingsPath: path.join(dir, "global-settings.json") },
 			);
@@ -738,9 +736,9 @@ describe("orchestrator library settings", () => {
 			);
 			expect(raw.packages).toEqual(["pkg"]);
 			expect(raw.skills).toEqual(["skills"]);
-			expect(raw.piAgentOrchestrator.theme).toBe("dark");
-			expect(raw.piAgentOrchestrator.libraries).toEqual([
-				{ path: "./.pi/orchestrator-library" },
+			expect(raw.piLattice.theme).toBe("dark");
+			expect(raw.piLattice.libraries).toEqual([
+				{ path: "./.pi/lattice-library" },
 			]);
 		});
 	});
@@ -754,14 +752,14 @@ describe("orchestrator library settings", () => {
 				"agent",
 				"settings.json",
 			);
-			const result = updateOrchestratorLibrarySettings(
+			const result = updateLatticeLibrarySettings(
 				{ scope: "global", libraries: [{ path: "~/team", editable: true }] },
 				dir,
 				{ globalSettingsPath },
 			);
 			expect(result.success).toBe(true);
 			const raw = JSON.parse(fs.readFileSync(globalSettingsPath, "utf-8"));
-			expect(raw.piAgentOrchestrator.libraries).toEqual([
+			expect(raw.piLattice.libraries).toEqual([
 				{ path: "~/team", editable: true },
 			]);
 			expect(result.settings?.global.libraries[0]).toMatchObject({

@@ -175,7 +175,7 @@ export interface RootProfileInfo {
 	skills?: string[];
 	skillTemplates?: string[];
 	instructions: string;
-	source: "user" | "project" | "package" | "orchestrator-library";
+	source: "user" | "project" | "package" | "lattice-library";
 	scope?: string;
 	filePath: string;
 	readOnly?: boolean;
@@ -272,13 +272,13 @@ export interface ResourceSettingsInfo {
 	project: ResourceScopeSettings;
 }
 
-export interface OrchestratorLibraryDiagnosticInfo {
+export interface LatticeLibraryDiagnosticInfo {
 	level: "error" | "warning";
 	message: string;
 	path?: string;
 }
 
-export interface OrchestratorLibraryInfo {
+export interface LatticeLibraryInfo {
 	root: string;
 	manifestPath: string;
 	manifest?: {
@@ -288,14 +288,14 @@ export interface OrchestratorLibraryInfo {
 		compatibility?: Record<string, unknown>;
 		resources: Record<string, string>;
 	};
-	diagnostics: OrchestratorLibraryDiagnosticInfo[];
+	diagnostics: LatticeLibraryDiagnosticInfo[];
 	valid: boolean;
 	source?: "repo" | "external-mounted";
 	enabled?: boolean;
 	disabledKey?: string;
 }
 
-export interface OrchestratorLibraryResourceInfo {
+export interface LatticeLibraryResourceInfo {
 	id: string;
 	kind:
 		| "agents"
@@ -311,10 +311,10 @@ export interface OrchestratorLibraryResourceInfo {
 	relativePath: string;
 	editable: boolean;
 	readOnly: boolean;
-	diagnostics: OrchestratorLibraryDiagnosticInfo[];
+	diagnostics: LatticeLibraryDiagnosticInfo[];
 }
 
-export interface OrchestratorDisplaySettingsInfo {
+export interface LatticeDisplaySettingsInfo {
 	showPackageExamples: boolean;
 	settingsPath: string;
 	exists: boolean;
@@ -322,12 +322,12 @@ export interface OrchestratorDisplaySettingsInfo {
 	readError?: string;
 }
 
-export interface OrchestratorLibrariesInfo {
-	libraries: OrchestratorLibraryInfo[];
-	resources: OrchestratorLibraryResourceInfo[];
-	diagnostics: OrchestratorLibraryDiagnosticInfo[];
+export interface LatticeLibrariesInfo {
+	libraries: LatticeLibraryInfo[];
+	resources: LatticeLibraryResourceInfo[];
+	diagnostics: LatticeLibraryDiagnosticInfo[];
 	valid: boolean;
-	settings: OrchestratorDisplaySettingsInfo;
+	settings: LatticeDisplaySettingsInfo;
 }
 
 export type ServerEvent =
