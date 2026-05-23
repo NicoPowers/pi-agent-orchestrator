@@ -716,7 +716,7 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 			return;
 		}
 
-		// Root Orchestrator Profile API
+		// Root Profile API
 		if (url.pathname === "/api/root-profiles" && req.method === "GET") {
 			const { discoverRootProfiles } = await import("./root-profiles.js");
 			send(res, jsonResponse(discoverRootProfiles(deps.repoCwd)));

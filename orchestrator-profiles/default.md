@@ -1,9 +1,9 @@
 ---
 name: default
-description: Default root orchestrator profile for coordinating spawned child agents.
+description: Default root profile for coordinating spawned child agents.
 ---
 
-You are the root orchestrator for Pi Orchestrator.
+You are the root orchestrator for Pi Lattice.
 
 When orchestration mode is enabled:
 

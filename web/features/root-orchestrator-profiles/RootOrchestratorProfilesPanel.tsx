@@ -95,9 +95,7 @@ function RootProfileEditorDialog({
 	onClose: () => void;
 	onSaved: () => void;
 }) {
-	const [libraries, setLibraries] = useState<LatticeLibrariesInfo | null>(
-		null,
-	);
+	const [libraries, setLibraries] = useState<LatticeLibrariesInfo | null>(null);
 	const [targetLibrary, setTargetLibrary] = useState("");
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
@@ -132,7 +130,7 @@ function RootProfileEditorDialog({
 			mode === "new"
 				? ""
 				: mode === "copy"
-					? `${sourceProfile?.description || "Root orchestrator profile"} copy`
+					? `${sourceProfile?.description || "Root profile"} copy`
 					: profile?.description || "",
 		);
 		setSkillsText(
@@ -155,7 +153,7 @@ function RootProfileEditorDialog({
 		!name.trim() ? "Name is required." : undefined,
 		!description.trim() ? "Description is required." : undefined,
 		mode !== "edit" && !targetLibrary && validLibraries.length
-			? "Choose an Lattice Library target."
+			? "Choose a Lattice Library target."
 			: undefined,
 	].filter(Boolean) as string[];
 	const profile = detail?.profile || sourceProfile;
@@ -177,7 +175,7 @@ function RootProfileEditorDialog({
 			(mode === "new"
 				? ""
 				: mode === "copy"
-					? `${sourceProfile?.description || "Root orchestrator profile"} copy`
+					? `${sourceProfile?.description || "Root profile"} copy`
 					: profile?.description || "") ||
 		skillsText !==
 			(detail?.profile.skills || sourceProfile?.skills || []).join("\n") ||
@@ -220,7 +218,7 @@ function RootProfileEditorDialog({
 
 	const title =
 		mode === "new"
-			? "New Root Orchestrator Profile"
+			? "New Root Profile"
 			: mode === "copy"
 				? `Copy ${sourceProfile?.name || "Profile"}`
 				: `Edit ${detail?.profile.name || "Profile"}`;
@@ -254,8 +252,8 @@ function RootProfileEditorDialog({
 							</Select>
 						) : (
 							<div className="rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
-								No valid Lattice Libraries are configured. This profile
-								will be saved to the project .pi/orchestrator-profiles fallback.
+								No valid Lattice Libraries are configured. This profile will be
+								saved to the project .pi/orchestrator-profiles fallback.
 							</div>
 						)}
 					</>
@@ -293,9 +291,8 @@ function RootProfileEditorDialog({
 					placeholder="Instructions appended when /orchestrate activates this profile"
 				/>
 				<FormMessage>
-					Root Orchestrator Profiles are root-only instructions/skills for
-					/orchestrate. They are not Agent Types and do not load arbitrary
-					extensions.
+					Root Profiles are root-only instructions/skills for /orchestrate. They
+					are not Agent Types and do not load arbitrary extensions.
 				</FormMessage>
 				{(!!errors.length || serverError) && (
 					<div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
@@ -372,14 +369,14 @@ export function RootOrchestratorProfilesPanel({
 	}, [selected?.name, pushLog]);
 
 	const deleteProfile = async (profile: RootProfileInfo) => {
-		if (!confirm(`Delete Root Orchestrator Profile '${profile.name}'?`)) return;
+		if (!confirm(`Delete Root Profile '${profile.name}'?`)) return;
 		const res = await fetch(
 			`/api/root-profiles/${encodeURIComponent(profile.name)}`,
 			{ method: "DELETE" },
 		);
 		if (!res.ok)
 			return pushLog(`Delete failed: ${await responseErrorText(res)}`, "error");
-		pushLog(`Deleted Root Orchestrator Profile '${profile.name}'`, "warn");
+		pushLog(`Deleted Root Profile '${profile.name}'`, "warn");
 		setSelectedName("");
 		onChanged();
 	};
@@ -396,7 +393,7 @@ export function RootOrchestratorProfilesPanel({
 			<Card>
 				<CardHeader className="border-b border-border">
 					<div className="flex items-center justify-between gap-3">
-						<CardTitle>Root Orchestrator Profiles</CardTitle>
+						<CardTitle>Root Profiles</CardTitle>
 						<Button
 							variant="secondary"
 							className="px-2 py-1 text-xs"
@@ -478,7 +475,7 @@ export function RootOrchestratorProfilesPanel({
 				<CardContent className="space-y-4 pt-4">
 					{!selected ? (
 						<p className="text-sm text-muted-foreground">
-							Select a Root Orchestrator Profile.
+							Select a Root Profile.
 						</p>
 					) : (
 						<>
@@ -571,7 +568,7 @@ export function RootOrchestratorProfilesPanel({
 				onSaved={() => {
 					setDialog(null);
 					onChanged();
-					pushLog("Saved Root Orchestrator Profile", "success");
+					pushLog("Saved Root Profile", "success");
 				}}
 			/>
 		</div>

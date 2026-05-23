@@ -31159,12 +31159,12 @@ function LatticeLibrariesPanel({
                   /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("code", {
                     children: ".pi/pi-lattice/libraries/*"
                   }, undefined, false, undefined, this),
-                  "; external libraries must be mounted under",
-                  " ",
+                  "; external libraries must be mounted under ",
                   /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("code", {
                     children: ".pi/pi-lattice/external-libraries/*"
                   }, undefined, false, undefined, this),
-                  " before Pi starts."
+                  " ",
+                  "before Pi starts."
                 ]
               }, undefined, true, undefined, this),
               loading && !data && /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
@@ -31209,8 +31209,7 @@ function LatticeLibrariesPanel({
                       /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
                         className: "text-xs",
                         children: [
-                          "Read-only package examples are useful for onboarding, but can be hidden once your own libraries are configured. Stored in project settings:",
-                          " ",
+                          "Read-only package examples are useful for onboarding, but can be hidden once your own libraries are configured. Stored in project settings: ",
                           /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("code", {
                             children: "piLattice.showPackageExamples"
                           }, undefined, false, undefined, this),
@@ -34759,7 +34758,7 @@ function RootProfileEditorDialog({
     const profile2 = detail?.profile || sourceProfile;
     setTargetLibrary(mode === "edit" ? "" : profile2?.source === "lattice-library" ? profile2.scope || "" : "");
     setName(mode === "new" ? "" : mode === "copy" ? `${sourceProfile?.name || "profile"}-copy` : profile2?.name || "");
-    setDescription(mode === "new" ? "" : mode === "copy" ? `${sourceProfile?.description || "Root orchestrator profile"} copy` : profile2?.description || "");
+    setDescription(mode === "new" ? "" : mode === "copy" ? `${sourceProfile?.description || "Root profile"} copy` : profile2?.description || "");
     setSkillsText((detail?.profile.skills || sourceProfile?.skills || []).join(`
 `));
     setSkillTemplatesText((detail?.profile.skillTemplates || sourceProfile?.skillTemplates || []).join(`
@@ -34770,11 +34769,11 @@ function RootProfileEditorDialog({
   const errors = [
     !name2.trim() ? "Name is required." : undefined,
     !description.trim() ? "Description is required." : undefined,
-    mode !== "edit" && !targetLibrary && validLibraries.length ? "Choose an Lattice Library target." : undefined
+    mode !== "edit" && !targetLibrary && validLibraries.length ? "Choose a Lattice Library target." : undefined
   ].filter(Boolean);
   const profile = detail?.profile || sourceProfile;
   const initialTargetLibrary = mode === "edit" ? "" : profile?.source === "lattice-library" ? profile.scope || "" : "";
-  const isDirty = targetLibrary !== initialTargetLibrary || name2 !== (mode === "new" ? "" : mode === "copy" ? `${sourceProfile?.name || "profile"}-copy` : profile?.name || "") || description !== (mode === "new" ? "" : mode === "copy" ? `${sourceProfile?.description || "Root orchestrator profile"} copy` : profile?.description || "") || skillsText !== (detail?.profile.skills || sourceProfile?.skills || []).join(`
+  const isDirty = targetLibrary !== initialTargetLibrary || name2 !== (mode === "new" ? "" : mode === "copy" ? `${sourceProfile?.name || "profile"}-copy` : profile?.name || "") || description !== (mode === "new" ? "" : mode === "copy" ? `${sourceProfile?.description || "Root profile"} copy` : profile?.description || "") || skillsText !== (detail?.profile.skills || sourceProfile?.skills || []).join(`
 `) || skillTemplatesText !== (detail?.profile.skillTemplates || sourceProfile?.skillTemplates || []).join(`
 `) || instructions !== (detail?.body || sourceProfile?.instructions || "");
   const discardMessage = "Discard unsaved root profile changes?";
@@ -34805,7 +34804,7 @@ function RootProfileEditorDialog({
       return setServerError(await responseErrorText5(res));
     onSaved();
   };
-  const title = mode === "new" ? "New Root Orchestrator Profile" : mode === "copy" ? `Copy ${sourceProfile?.name || "Profile"}` : `Edit ${detail?.profile.name || "Profile"}`;
+  const title = mode === "new" ? "New Root Profile" : mode === "copy" ? `Copy ${sourceProfile?.name || "Profile"}` : `Edit ${detail?.profile.name || "Profile"}`;
   return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Dialog, {
     open,
     title,
@@ -34894,7 +34893,7 @@ function RootProfileEditorDialog({
           placeholder: "Instructions appended when /orchestrate activates this profile"
         }, undefined, false, undefined, this),
         /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(FormMessage5, {
-          children: "Root Orchestrator Profiles are root-only instructions/skills for /orchestrate. They are not Agent Types and do not load arbitrary extensions."
+          children: "Root Profiles are root-only instructions/skills for /orchestrate. They are not Agent Types and do not load arbitrary extensions."
         }, undefined, false, undefined, this),
         (!!errors.length || serverError) && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
           className: "rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive",
@@ -34965,12 +34964,12 @@ function RootOrchestratorProfilesPanel({
     };
   }, [selected?.name, pushLog]);
   const deleteProfile = async (profile) => {
-    if (!confirm(`Delete Root Orchestrator Profile '${profile.name}'?`))
+    if (!confirm(`Delete Root Profile '${profile.name}'?`))
       return;
     const res = await fetch(`/api/root-profiles/${encodeURIComponent(profile.name)}`, { method: "DELETE" });
     if (!res.ok)
       return pushLog(`Delete failed: ${await responseErrorText5(res)}`, "error");
-    pushLog(`Deleted Root Orchestrator Profile '${profile.name}'`, "warn");
+    pushLog(`Deleted Root Profile '${profile.name}'`, "warn");
     setSelectedName("");
     onChanged();
   };
@@ -34986,7 +34985,7 @@ function RootOrchestratorProfilesPanel({
               className: "flex items-center justify-between gap-3",
               children: [
                 /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(CardTitle, {
-                  children: "Root Orchestrator Profiles"
+                  children: "Root Profiles"
                 }, undefined, false, undefined, this),
                 /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Button, {
                   variant: "secondary",
@@ -35084,7 +35083,7 @@ function RootOrchestratorProfilesPanel({
             className: "space-y-4 pt-4",
             children: !selected ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("p", {
               className: "text-sm text-muted-foreground",
-              children: "Select a Root Orchestrator Profile."
+              children: "Select a Root Profile."
             }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(jsx_dev_runtime13.Fragment, {
               children: [
                 /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
@@ -35213,7 +35212,7 @@ function RootOrchestratorProfilesPanel({
         onSaved: () => {
           setDialog(null);
           onChanged();
-          pushLog("Saved Root Orchestrator Profile", "success");
+          pushLog("Saved Root Profile", "success");
         }
       }, undefined, false, undefined, this)
     ]
@@ -36627,7 +36626,7 @@ function App() {
               children: [
                 /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("h1", {
                   className: "whitespace-nowrap text-xl font-semibold tracking-tight",
-                  children: "\uD83E\uDDE0 Pi Orchestrator"
+                  children: "⌬ Pi Lattice"
                 }, undefined, false, undefined, this),
                 /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("nav", {
                   className: "flex min-w-0 flex-1 gap-1 overflow-x-auto rounded-md border border-border bg-card/50 p-1",

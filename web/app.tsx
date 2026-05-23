@@ -515,7 +515,7 @@ function App() {
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
 						<h1 className="whitespace-nowrap text-xl font-semibold tracking-tight">
-							🧠 Pi Orchestrator
+							⌬ Pi Lattice
 						</h1>
 						<nav
 							className="flex min-w-0 flex-1 gap-1 overflow-x-auto rounded-md border border-border bg-card/50 p-1"

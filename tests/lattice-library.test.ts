@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import {
-	ORCHESTRATOR_LIBRARY_SCHEMA,
+	LATTICE_LIBRARY_SCHEMA,
 	bootstrapLatticeLibrary,
 	discoverConfiguredLatticeLibraries,
 	discoverLatticeLibraryResources,
@@ -32,7 +32,7 @@ function writeManifest(dir: string, manifest: unknown) {
 	);
 }
 
-describe("orchestrator library manifest", () => {
+describe("Lattice Library manifest", () => {
 	it("loads a valid manifest and resolves configurable resource directories", () => {
 		withTempDir("pio-library-valid-", (dir) => {
 			fs.mkdirSync(path.join(dir, "orchestrator", "agents"), {
@@ -47,7 +47,7 @@ describe("orchestrator library manifest", () => {
 			fs.mkdirSync(path.join(dir, "pi", "skills"), { recursive: true });
 			fs.mkdirSync(path.join(dir, "pi", "extensions"), { recursive: true });
 			writeManifest(dir, {
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "team-ai",
 				description: "Team resources",
 				compatibility: { piLattice: ">=0.1.0" },
@@ -121,7 +121,7 @@ describe("orchestrator library manifest", () => {
 	it("treats missing resource directories as warnings", () => {
 		withTempDir("pio-library-missing-dirs-", (dir) => {
 			writeManifest(dir, {
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "personal-ai",
 				resources: {
 					agents: "agents",
@@ -149,7 +149,7 @@ describe("orchestrator library manifest", () => {
 	it("accepts compatible pi-lattice version ranges", () => {
 		withTempDir("pio-library-compatible-version-", (dir) => {
 			writeManifest(dir, {
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "compatible-version",
 				compatibility: { piLattice: ">=0.1.0 <1.0.0" },
 				resources: {},
@@ -167,7 +167,7 @@ describe("orchestrator library manifest", () => {
 	it("rejects libraries that require a newer pi-lattice version", () => {
 		withTempDir("pio-library-newer-version-", (dir) => {
 			writeManifest(dir, {
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "future-version",
 				compatibility: { piLattice: ">=999.0.0" },
 				resources: {},
@@ -178,9 +178,7 @@ describe("orchestrator library manifest", () => {
 				library.diagnostics.some(
 					(diagnostic) =>
 						diagnostic.level === "error" &&
-						diagnostic.message.includes(
-							"requires pi-lattice >=999.0.0",
-						),
+						diagnostic.message.includes("requires pi-lattice >=999.0.0"),
 				),
 			).toBe(true);
 		});
@@ -189,7 +187,7 @@ describe("orchestrator library manifest", () => {
 	it("rejects non-string pi-lattice compatibility values", () => {
 		withTempDir("pio-library-invalid-version-", (dir) => {
 			writeManifest(dir, {
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "invalid-version",
 				compatibility: { piLattice: 123 },
 				resources: {},
@@ -209,7 +207,7 @@ describe("orchestrator library manifest", () => {
 	it("rejects resource paths that escape the library root", () => {
 		withTempDir("pio-library-escape-", (dir) => {
 			writeManifest(dir, {
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "escape-test",
 				resources: {
 					agents: "../agents",
@@ -236,12 +234,12 @@ describe("orchestrator library manifest", () => {
 			fs.mkdirSync(one, { recursive: true });
 			fs.mkdirSync(two, { recursive: true });
 			writeManifest(one, {
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "one",
 				resources: {},
 			});
 			writeManifest(two, {
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "two",
 				resources: {},
 			});
@@ -265,12 +263,12 @@ describe("orchestrator library manifest", () => {
 			fs.mkdirSync(one, { recursive: true });
 			fs.mkdirSync(two, { recursive: true });
 			writeManifest(one, {
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "team",
 				resources: {},
 			});
 			writeManifest(two, {
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "team",
 				resources: {},
 			});
@@ -290,7 +288,7 @@ describe("orchestrator library manifest", () => {
 	});
 });
 
-describe("orchestrator library resource discovery", () => {
+describe("Lattice Library resource discovery", () => {
 	it("discovers one resource per category from a valid library", () => {
 		withTempDir("pio-library-discovery-", (dir) => {
 			fs.mkdirSync(path.join(dir, "agents"), { recursive: true });
@@ -303,7 +301,7 @@ describe("orchestrator library resource discovery", () => {
 				recursive: true,
 			});
 			writeManifest(dir, {
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "team-ai",
 				resources: {},
 			});
@@ -357,7 +355,7 @@ describe("orchestrator library resource discovery", () => {
 	it("returns warnings but no resources when resource directories are missing", () => {
 		withTempDir("pio-library-discovery-missing-", (dir) => {
 			writeManifest(dir, {
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "empty-library",
 				resources: {},
 			});
@@ -375,7 +373,7 @@ describe("orchestrator library resource discovery", () => {
 	});
 });
 
-describe("orchestrator library bootstrap", () => {
+describe("Lattice Library bootstrap", () => {
 	it("creates a starter library scaffold and registers in project settings for in-repo paths", () => {
 		withTempDir("pio-bootstrap-project-", (dir) => {
 			const result = bootstrapLatticeLibrary(
@@ -386,9 +384,7 @@ describe("orchestrator library bootstrap", () => {
 			expect(result.success).toBe(true);
 			expect(result.scope).toBe("project");
 			const root = path.join(dir, ".pi", "lattice-library");
-			expect(fs.existsSync(path.join(root, "lattice-library.json"))).toBe(
-				true,
-			);
+			expect(fs.existsSync(path.join(root, "lattice-library.json"))).toBe(true);
 			expect(
 				fs.existsSync(path.join(root, "agents", "example-researcher.md")),
 			).toBe(true);
@@ -461,11 +457,11 @@ describe("orchestrator library bootstrap", () => {
 	});
 });
 
-describe("configured orchestrator library discovery", () => {
+describe("configured Lattice Library discovery", () => {
 	function createLibrary(root: string, name: string, agentName: string) {
 		fs.mkdirSync(path.join(root, "agents"), { recursive: true });
 		writeManifest(root, {
-			schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+			schema: LATTICE_LIBRARY_SCHEMA,
 			name,
 			resources: {},
 		});
@@ -537,9 +533,7 @@ describe("configured orchestrator library discovery", () => {
 				path.join(dir, ".pi", "settings.json"),
 				JSON.stringify({
 					piLattice: {
-						disabledLibraries: [
-							".pi/pi-lattice/external-libraries/disabled",
-						],
+						disabledLibraries: [".pi/pi-lattice/external-libraries/disabled"],
 					},
 				}),
 			);
@@ -594,13 +588,7 @@ describe("configured orchestrator library discovery", () => {
 
 	it("reports duplicate namespace diagnostics from enabled auto-discovered libraries", () => {
 		withTempDir("pio-auto-duplicates-", (dir) => {
-			const one = path.join(
-				dir,
-				".pi",
-				"pi-lattice",
-				"libraries",
-				"one",
-			);
+			const one = path.join(dir, ".pi", "pi-lattice", "libraries", "one");
 			const two = path.join(
 				dir,
 				".pi",
@@ -629,7 +617,7 @@ describe("configured orchestrator library discovery", () => {
 	});
 });
 
-describe("orchestrator display settings", () => {
+describe("Lattice display settings", () => {
 	it("defaults to showing package examples and stores the toggle in project settings", () => {
 		withTempDir("pio-display-settings-", (dir) => {
 			const settingsPath = path.join(dir, ".pi", "settings.json");
@@ -657,7 +645,7 @@ describe("orchestrator display settings", () => {
 	});
 });
 
-describe("orchestrator library settings", () => {
+describe("Lattice Library settings", () => {
 	it("reads empty global and project settings", () => {
 		withTempDir("pio-library-settings-empty-", (dir) => {
 			const settings = readLatticeLibrarySettings(dir, {

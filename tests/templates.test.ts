@@ -52,9 +52,7 @@ describe("template backend", () => {
 		const { saveSkillTemplate, discoverSkillTemplates } = await import(
 			"../extensions/multi-agent/skill-templates.js"
 		);
-		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/lattice-library.js"
-		);
+		const { LATTICE_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/lattice-library.js");
 		const libraryRoot = path.join(
 			tmpDir,
 			".pi",
@@ -68,7 +66,7 @@ describe("template backend", () => {
 		fs.writeFileSync(
 			path.join(libraryRoot, "lattice-library.json"),
 			JSON.stringify({
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "team",
 				resources: { skillTemplates: "skill-templates" },
 			}),
@@ -100,9 +98,7 @@ describe("template backend", () => {
 		const { saveSkillTemplate, discoverSkillTemplates } = await import(
 			"../extensions/multi-agent/skill-templates.js"
 		);
-		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/lattice-library.js"
-		);
+		const { LATTICE_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/lattice-library.js");
 		const libraryRoot = path.join(
 			tmpDir,
 			".pi",
@@ -116,7 +112,7 @@ describe("template backend", () => {
 		fs.writeFileSync(
 			path.join(libraryRoot, "lattice-library.json"),
 			JSON.stringify({
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "team",
 				resources: { skillTemplates: "skill-templates" },
 			}),
@@ -146,9 +142,7 @@ describe("template backend", () => {
 		const { saveExtensionTemplate, discoverExtensionTemplates } = await import(
 			"../extensions/multi-agent/extension-templates.js"
 		);
-		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/lattice-library.js"
-		);
+		const { LATTICE_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/lattice-library.js");
 		for (const name of ["first", "second"]) {
 			const libraryRoot = path.join(
 				tmpDir,
@@ -163,7 +157,7 @@ describe("template backend", () => {
 			fs.writeFileSync(
 				path.join(libraryRoot, "lattice-library.json"),
 				JSON.stringify({
-					schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+					schema: LATTICE_LIBRARY_SCHEMA,
 					name,
 					resources: { extensionTemplates: "extension-templates" },
 				}),

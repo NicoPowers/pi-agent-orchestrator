@@ -341,9 +341,9 @@ describe("template API", () => {
 });
 
 describe("root profile API", () => {
-	it("lists, loads, saves, copies, and deletes root orchestrator profiles", async () => {
+	it("lists, loads, saves, copies, and deletes root profiles", async () => {
 		const { startServer } = await import("../extensions/multi-agent/server.js");
-		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
+		const { LATTICE_LIBRARY_SCHEMA } = await import(
 			"../extensions/multi-agent/lattice-library.js"
 		);
 		const tmpDir = fs.mkdtempSync(
@@ -354,7 +354,7 @@ describe("root profile API", () => {
 		fs.writeFileSync(
 			path.join(libraryRoot, "lattice-library.json"),
 			JSON.stringify({
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "team",
 				resources: { orchestratorProfiles: "profiles" },
 			}),

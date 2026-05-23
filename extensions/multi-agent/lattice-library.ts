@@ -1163,11 +1163,11 @@ export function bootstrapLatticeLibrary(
 	);
 	writeStarterFile(
 		path.join(resolvedTarget, "README.md"),
-		`# ${name}\n\nVersion-controlled Pi Lattice Library for root orchestrator profiles, agent types, templates, skills, and extensions.\n`,
+		`# ${name}\n\nVersion-controlled Pi Lattice Library for root profiles, agent types, templates, skills, and extensions.\n`,
 	);
 	writeStarterFile(
 		path.join(resolvedTarget, "orchestrator-profiles", "example-planner.md"),
-		"---\nname: example-planner\ndescription: Example root orchestrator profile for planning-heavy sessions.\nskillTemplates: example-root-skills\n---\n\nUse this profile when the root orchestrator should spend extra effort clarifying scope, decomposing work, and coordinating spawned agents.\n",
+		"---\nname: example-planner\ndescription: Example root profile for planning-heavy sessions.\nskillTemplates: example-root-skills\n---\n\nUse this profile when the root orchestrator should spend extra effort clarifying scope, decomposing work, and coordinating spawned agents.\n",
 	);
 	writeStarterFile(
 		path.join(resolvedTarget, "agents", "example-researcher.md"),

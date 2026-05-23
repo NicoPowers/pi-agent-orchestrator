@@ -35,9 +35,7 @@ describe("skill discovery API", () => {
 		const { discoverSkills } = await import(
 			"../extensions/multi-agent/skill-discovery.js"
 		);
-		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/lattice-library.js"
-		);
+		const { LATTICE_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/lattice-library.js");
 		const tmpDir = fs.mkdtempSync(
 			path.join(os.tmpdir(), "pi-library-skill-discovery-"),
 		);
@@ -49,7 +47,7 @@ describe("skill discovery API", () => {
 			fs.writeFileSync(
 				path.join(libraryRoot, "lattice-library.json"),
 				JSON.stringify({
-					schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+					schema: LATTICE_LIBRARY_SCHEMA,
 					name: "team",
 					resources: {},
 				}),
@@ -130,9 +128,7 @@ describe("skill discovery API", () => {
 		const { createSkill } = await import(
 			"../extensions/multi-agent/skill-discovery.js"
 		);
-		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/lattice-library.js"
-		);
+		const { LATTICE_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/lattice-library.js");
 		const tmpDir = fs.mkdtempSync(
 			path.join(os.tmpdir(), "pi-create-library-skill-"),
 		);
@@ -142,7 +138,7 @@ describe("skill discovery API", () => {
 			fs.writeFileSync(
 				path.join(libraryRoot, "lattice-library.json"),
 				JSON.stringify({
-					schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+					schema: LATTICE_LIBRARY_SCHEMA,
 					name: "team",
 					resources: { skills: "skills" },
 				}),
@@ -182,9 +178,7 @@ describe("skill discovery API", () => {
 		const { createSkill } = await import(
 			"../extensions/multi-agent/skill-discovery.js"
 		);
-		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/lattice-library.js"
-		);
+		const { LATTICE_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/lattice-library.js");
 		const tmpDir = fs.mkdtempSync(
 			path.join(os.tmpdir(), "pi-create-selected-library-skill-"),
 		);
@@ -195,7 +189,7 @@ describe("skill discovery API", () => {
 				fs.writeFileSync(
 					path.join(libraryRoot, "lattice-library.json"),
 					JSON.stringify({
-						schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+						schema: LATTICE_LIBRARY_SCHEMA,
 						name,
 						resources: { skills: "skills" },
 					}),
@@ -314,9 +308,7 @@ describe("skill discovery API", () => {
 		const { discoverSkills, copySkill } = await import(
 			"../extensions/multi-agent/skill-discovery.js"
 		);
-		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/lattice-library.js"
-		);
+		const { LATTICE_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/lattice-library.js");
 		const tmpDir = fs.mkdtempSync(
 			path.join(os.tmpdir(), "pi-copy-skill-library-"),
 		);
@@ -334,7 +326,7 @@ describe("skill discovery API", () => {
 				fs.writeFileSync(
 					path.join(libraryRoot, "lattice-library.json"),
 					JSON.stringify({
-						schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+						schema: LATTICE_LIBRARY_SCHEMA,
 						name,
 						resources: { skills: "skills" },
 					}),

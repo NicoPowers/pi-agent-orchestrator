@@ -65,13 +65,13 @@ describe("extension metadata discovery", () => {
 
   it("includes Lattice Library extensions after native and npm sources", async () => {
     const { discoverExtensions } = await import("../extensions/multi-agent/ext-discovery.js");
-    const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/lattice-library.js");
+    const { LATTICE_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/lattice-library.js");
     const libraryDir = path.join(tmpDir, "team-library");
     const extensionDir = path.join(libraryDir, "extensions", "browser-tools");
     fs.mkdirSync(extensionDir, { recursive: true });
     fs.mkdirSync(path.join(tmpDir, ".pi"), { recursive: true });
     fs.writeFileSync(path.join(tmpDir, ".pi", "settings.json"), JSON.stringify({ piLattice: { libraries: [libraryDir] } }), "utf-8");
-    fs.writeFileSync(path.join(libraryDir, "lattice-library.json"), JSON.stringify({ schema: ORCHESTRATOR_LIBRARY_SCHEMA, name: "team", resources: { agents: "agents", skillTemplates: "skill-templates", extensionTemplates: "extension-templates", skills: "skills", extensions: "extensions" } }), "utf-8");
+    fs.writeFileSync(path.join(libraryDir, "lattice-library.json"), JSON.stringify({ schema: LATTICE_LIBRARY_SCHEMA, name: "team", resources: { agents: "agents", skillTemplates: "skill-templates", extensionTemplates: "extension-templates", skills: "skills", extensions: "extensions" } }), "utf-8");
     fs.writeFileSync(path.join(extensionDir, "index.ts"), `// pi-orchestrator: { "description": "Team browser tools" }\nexport default function () {}`, "utf-8");
 
     const extension = discoverExtensions(tmpDir).find((ext) => ext.name === "extensions/browser-tools");

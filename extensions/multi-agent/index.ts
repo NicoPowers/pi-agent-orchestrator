@@ -104,7 +104,7 @@ function restoreOrchestrationState(ctx: any) {
 
 function rootProfileSystemPrompt(profile: RootOrchestratorProfile): string {
 	return [
-		`Active root orchestrator profile: ${profile.name}`,
+		`Active root profile: ${profile.name}`,
 		profile.description
 			? `Profile description: ${profile.description}`
 			: undefined,
@@ -500,7 +500,7 @@ export default function (pi: ExtensionAPI) {
 		name: "orchestrator_library_bootstrap",
 		label: "Bootstrap Lattice Library",
 		description:
-			"Create a starter Lattice Library at an explicit filesystem path and register it in Pi Orchestrator settings.",
+			"Create a starter Lattice Library at an explicit filesystem path and register it in Pi Lattice settings.",
 		parameters: Type.Object({
 			targetPath: Type.String({
 				description:
@@ -514,9 +514,7 @@ export default function (pi: ExtensionAPI) {
 			),
 		}),
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-			const { bootstrapLatticeLibrary } = await import(
-				"./lattice-library.js"
-			);
+			const { bootstrapLatticeLibrary } = await import("./lattice-library.js");
 			const result = bootstrapLatticeLibrary(
 				{
 					targetPath: params.targetPath,
@@ -1248,7 +1246,7 @@ export default function (pi: ExtensionAPI) {
 			}
 			if (choice.action === "select") {
 				const selected = await ctx.ui.select(
-					"Select root orchestrator profile",
+					"Select root profile",
 					choice.profiles.map((profile) => profile.name),
 				);
 				if (!selected) {
@@ -1263,7 +1261,7 @@ export default function (pi: ExtensionAPI) {
 					ctx.ui.notify(
 						choice.action === "error"
 							? choice.error
-							: "No orchestrator profile selected.",
+							: "No root profile selected.",
 						"error",
 					);
 					return;

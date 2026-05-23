@@ -103,16 +103,14 @@ describe("definition discovery", () => {
 		const { discoverDefinitions } = await import(
 			"../extensions/multi-agent/definitions.js"
 		);
-		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/lattice-library.js"
-		);
+		const { LATTICE_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/lattice-library.js");
 
 		const libraryRoot = path.join(tmpDir, "team-library");
 		fs.mkdirSync(path.join(libraryRoot, "agents"), { recursive: true });
 		fs.writeFileSync(
 			path.join(libraryRoot, "lattice-library.json"),
 			JSON.stringify({
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "team",
 				resources: { agents: "agents" },
 			}),
@@ -217,16 +215,14 @@ describe("definition saving", () => {
 		const { saveAgentDefinition, discoverDefinitions } = await import(
 			"../extensions/multi-agent/definitions.js"
 		);
-		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/lattice-library.js"
-		);
+		const { LATTICE_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/lattice-library.js");
 
 		const libraryRoot = path.join(tmpDir, "team-library");
 		fs.mkdirSync(path.join(libraryRoot, "agents"), { recursive: true });
 		fs.writeFileSync(
 			path.join(libraryRoot, "lattice-library.json"),
 			JSON.stringify({
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "team",
 				resources: { agents: "agents" },
 			}),

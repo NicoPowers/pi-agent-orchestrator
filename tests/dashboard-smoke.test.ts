@@ -349,7 +349,7 @@ describe("dashboard bundle smoke test", () => {
 			await new Promise((resolve) => setTimeout(resolve, 50));
 
 			expect(window.document.getElementById("root")?.textContent).toContain(
-				"Pi Orchestrator",
+				"Pi Lattice",
 			);
 			expect(window.document.getElementById("root")?.textContent).toContain(
 				"No agents running.",
@@ -465,7 +465,7 @@ describe("dashboard bundle smoke test", () => {
 			await new Promise((resolve) => setTimeout(resolve, 50));
 			const rootProfilesText =
 				window.document.getElementById("root")?.textContent || "";
-			expect(rootProfilesText).toContain("Root Orchestrator Profiles");
+			expect(rootProfilesText).toContain("Root Profiles");
 			expect(rootProfilesText).toContain("not spawnable Agent Types");
 			expect(rootProfilesText).toContain("read-only");
 

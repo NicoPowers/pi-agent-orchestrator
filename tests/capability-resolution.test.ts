@@ -75,9 +75,7 @@ describe("capability resolution", () => {
 		const { resolveCapabilities } = await import(
 			"../extensions/multi-agent/capability-resolution.js"
 		);
-		const { ORCHESTRATOR_LIBRARY_SCHEMA } = await import(
-			"../extensions/multi-agent/lattice-library.js"
-		);
+		const { LATTICE_LIBRARY_SCHEMA } = await import("../extensions/multi-agent/lattice-library.js");
 
 		const libraryRoot = path.join(
 			tmpDir,
@@ -92,7 +90,7 @@ describe("capability resolution", () => {
 		fs.writeFileSync(
 			path.join(libraryRoot, "lattice-library.json"),
 			JSON.stringify({
-				schema: ORCHESTRATOR_LIBRARY_SCHEMA,
+				schema: LATTICE_LIBRARY_SCHEMA,
 				name: "team",
 				resources: {},
 			}),

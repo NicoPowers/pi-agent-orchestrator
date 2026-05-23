@@ -24,7 +24,7 @@ function makePiHarness() {
 }
 
 describe("skill management tools", () => {
-	it("bootstraps an Lattice Library at an explicit path", async () => {
+	it("bootstraps a Lattice Library at an explicit path", async () => {
 		const extension = (await import("../extensions/multi-agent/index.js"))
 			.default;
 		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-library-tool-"));
