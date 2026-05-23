@@ -29,9 +29,25 @@ export interface IssueArtifactFiles {
 	buildersDir: string;
 }
 
+export type AgentStatus =
+	| "idle"
+	| "queued"
+	| "writing"
+	| "waiting"
+	| "streaming"
+	| "error"
+	| "exited";
+
+export interface PendingAgentSend {
+	message: string;
+	startedAt: number;
+	timeoutMs: number;
+	status: Extract<AgentStatus, "queued" | "writing" | "waiting" | "streaming">;
+}
+
 export interface AgentInfo {
 	name: string;
-	status: "idle" | "streaming" | "error" | "exited";
+	status: AgentStatus;
 	definition?: string;
 	parent?: string;
 	children: string[];
@@ -41,6 +57,7 @@ export interface AgentInfo {
 	artifactPath?: string;
 	artifactFiles?: IssueArtifactFiles;
 	runtimeTools?: RuntimeToolSnapshot;
+	pendingSend?: PendingAgentSend;
 	text?: string;
 }
 
@@ -299,9 +316,25 @@ export type ServerEvent =
 	| { type: "init"; data: { agents: Record<string, AgentInfo> } }
 	| { type: "agent-spawned"; data: AgentInfo }
 	| { type: "agent-killed"; data: { name: string } }
+	| {
+			type: "agent-status";
+			data: {
+				name: string;
+				status: AgentStatus;
+				pendingSend?: PendingAgentSend;
+			};
+		}
 	| { type: "agent-start"; data: { name: string } }
 	| { type: "agent-end"; data: { name: string; text: string } }
-	| { type: "agent-error"; data: { name: string; error: string } }
-	| { type: "agent-exit"; data: { name: string; code?: number | null } }
+	| { type: "agent-error"; data: { name: string; error: string; phase?: string } }
+	| {
+			type: "agent-exit";
+			data: {
+				name: string;
+				code?: number | null;
+				signal?: string | null;
+				reason?: string;
+			};
+		}
 	| { type: "agent-delta"; data: { name: string; delta: string } }
 	| { type: "delegate"; data: { from: string; to: string; task: string } };

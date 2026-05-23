@@ -59,11 +59,27 @@ export interface AgentDefinition {
 	filePath: string;
 }
 
+export type AgentStatus =
+	| "idle"
+	| "queued"
+	| "writing"
+	| "waiting"
+	| "streaming"
+	| "error"
+	| "exited";
+
+export interface PendingAgentSend {
+	message: string;
+	startedAt: number;
+	timeoutMs: number;
+	status: Extract<AgentStatus, "queued" | "writing" | "waiting" | "streaming">;
+}
+
 export interface Agent {
 	id: string;
 	proc: ChildProcess;
 	stdin: NodeJS.WritableStream;
-	status: "idle" | "streaming" | "error" | "exited";
+	status: AgentStatus;
 	accumulatedText: string;
 	history: Array<{ role: "user" | "assistant"; text: string }>;
 	events: Array<{ ts: number; type: string; event: any }>;
@@ -77,6 +93,7 @@ export interface Agent {
 	artifactFiles?: import("./artifacts.js").IssueArtifactFiles;
 	runtimeTools?: RuntimeToolSnapshot;
 	dashboardVisible?: boolean;
+	pendingSend?: PendingAgentSend;
 	_currentSend?: Promise<void>;
 	_nextTurn?: { resolve: () => void; reject: (e: Error) => void };
 	_rpcRequests?: Map<

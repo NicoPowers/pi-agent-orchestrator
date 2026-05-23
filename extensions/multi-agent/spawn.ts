@@ -1,7 +1,13 @@
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { type Agent, type AgentDefinition, agents, log } from "./state.js";
+import {
+	appendAgentEvent,
+	type Agent,
+	type AgentDefinition,
+	agents,
+	log,
+} from "./state.js";
 import {
 	isSpawnableAgentDefinition,
 	nonSpawnableAgentReason,
@@ -13,6 +19,33 @@ import {
 	renderIssueArtifactInstructions,
 	resolveIssueArtifactMetadata,
 } from "./artifacts.js";
+
+export function handleAgentProcessClose(
+	agent: Agent,
+	code: number | null,
+	signal?: NodeJS.Signals | null,
+): Error {
+	agent.status = "exited";
+	agent.pendingSend = undefined;
+	appendAgentEvent(agent, "agent_exit", { code, signal: signal || undefined });
+	const reason = signal ? `signal ${signal}` : `code ${code}`;
+	const err = new Error(`Agent '${agent.id}' exited with ${reason}`);
+	if (agent._nextTurn) {
+		agent._nextTurn.reject(err);
+		agent._nextTurn = undefined;
+	}
+	if (agent._rpcRequests) {
+		for (const pending of agent._rpcRequests.values()) {
+			clearTimeout(pending.timer);
+			pending.reject(err);
+		}
+		agent._rpcRequests.clear();
+	}
+	if (agent.dashboardVisible !== false) {
+		broadcast({ type: "agent-exit", data: { name: agent.id, code, signal } });
+	}
+	return err;
+}
 
 export function getPiInvocation(args: string[]): {
 	command: string;
@@ -364,6 +397,7 @@ export async function spawnAgent(
 				if (agent.events.length > 500) agent.events.shift();
 				if (event.type === "agent_start") {
 					agent.status = "streaming";
+					if (agent.pendingSend) agent.pendingSend.status = "streaming";
 					agent.accumulatedText = "";
 					if (agent.dashboardVisible !== false)
 						broadcast({ type: "agent-start", data: { name: agent.id } });
@@ -379,6 +413,7 @@ export async function spawnAgent(
 					}
 				} else if (event.type === "agent_end") {
 					agent.status = "idle";
+					agent.pendingSend = undefined;
 					const msgs = event.messages || [];
 					const lastAssistant = [...msgs]
 						.reverse()
@@ -527,21 +562,9 @@ export async function spawnAgent(
 		}
 	});
 
-	proc.on("close", (code) => {
-		log("spawn", `Agent '${id}' process closed`, { code });
-		agent.status = "exited";
-		const err = new Error(`Agent '${id}' exited with code ${code}`);
-		if (agent._nextTurn) {
-			agent._nextTurn.reject(err);
-			agent._nextTurn = undefined;
-		}
-		if (agent._rpcRequests) {
-			for (const pending of agent._rpcRequests.values()) {
-				clearTimeout(pending.timer);
-				pending.reject(err);
-			}
-			agent._rpcRequests.clear();
-		}
+	proc.on("close", (code, signal) => {
+		log("spawn", `Agent '${id}' process closed`, { code, signal });
+		handleAgentProcessClose(agent, code, signal);
 	});
 
 	proc.on("error", (err) => {

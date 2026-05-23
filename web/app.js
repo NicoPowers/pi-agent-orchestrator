@@ -35681,6 +35681,21 @@ function App() {
         });
         pushLog(`Agent ${ev.data.name} killed`, "warn");
         break;
+      case "agent-status":
+        setAgents((prev) => ({
+          ...prev,
+          [ev.data.name]: {
+            ...prev[ev.data.name] || {
+              name: ev.data.name,
+              turns: 0,
+              children: [],
+              worktree: ""
+            },
+            status: ev.data.status,
+            pendingSend: ev.data.pendingSend
+          }
+        }));
+        break;
       case "agent-delta":
         setAgents((prev) => {
           const current = prev[ev.data.name] || {
@@ -36080,6 +36095,16 @@ function formatInspectData(data) {
     }
   } else {
     lines.push("runtime tools: unknown");
+  }
+  if (data.pendingSend) {
+    lines.push(
+      "",
+      "Pending send:",
+      `status: ${data.pendingSend.status}`,
+      `started: ${new Date(data.pendingSend.startedAt).toLocaleString()}`,
+      `timeout: ${data.pendingSend.timeoutMs}ms`,
+      `message: ${JSON.stringify(data.pendingSend.message)}`
+    );
   }
   lines.push("", "Recent events:");
   let textBuffer = "";

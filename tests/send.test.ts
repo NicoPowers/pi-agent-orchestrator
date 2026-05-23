@@ -4,6 +4,7 @@ import {
 	sendToAgent,
 	steerAgent,
 } from "../extensions/multi-agent/send.js";
+import { handleAgentProcessClose } from "../extensions/multi-agent/spawn.js";
 import type { Agent } from "../extensions/multi-agent/state.js";
 
 function makeAgent(
@@ -70,6 +71,14 @@ async function waitForWrites(writes: string[], count: number) {
 	throw new Error(`expected ${count} write(s), saw ${writes.length}`);
 }
 
+async function waitForStatus(agent: Agent, status: Agent["status"]) {
+	for (let i = 0; i < 20; i++) {
+		if (agent.status === status) return;
+		await new Promise((resolve) => setTimeout(resolve, 0));
+	}
+	throw new Error(`expected status ${status}, saw ${agent.status}`);
+}
+
 describe("sendToAgent", () => {
 	it("writes prompt RPC, records user history, and clears previous text", async () => {
 		const { agent, writes } = makeAgent();
@@ -108,6 +117,52 @@ describe("sendToAgent", () => {
 		);
 
 		await send;
+	});
+
+	it("sets writing status and pending send metadata before prompt preflight resolves", async () => {
+		const { agent, writes } = makeAgent({}, () => {
+			/* Keep preflight pending. */
+		});
+
+		const send = sendToAgent(agent, "inspect me", 10).catch(() => {});
+		await waitForWrites(writes, 1);
+
+		expect(agent.status).toBe("writing");
+		expect(agent.pendingSend).toMatchObject({
+			message: "inspect me",
+			timeoutMs: 10,
+			status: "writing",
+		});
+		expect(typeof agent.pendingSend?.startedAt).toBe("number");
+
+		await send;
+	});
+
+	it("moves to waiting after preflight succeeds and clears pending send on turn completion", async () => {
+		const { agent } = makeAgent({}, (a, chunk) => {
+			const command = JSON.parse(chunk);
+			queueMicrotask(() => {
+				const pending = a._rpcRequests?.get(command.id);
+				if (!pending) return;
+				clearTimeout(pending.timer);
+				a._rpcRequests?.delete(command.id);
+				pending.resolve(true);
+			});
+		});
+
+		const send = sendToAgent(agent, "wait for model", 1_000);
+		await waitForStatus(agent, "waiting");
+		expect(agent.pendingSend).toMatchObject({
+			message: "wait for model",
+			timeoutMs: 1_000,
+			status: "waiting",
+		});
+
+		agent._nextTurn!.resolve();
+		await send;
+
+		expect(agent.status).toBe("idle");
+		expect(agent.pendingSend).toBeUndefined();
 	});
 
 	it("serializes concurrent sends so prompts do not overlap", async () => {
@@ -205,6 +260,18 @@ describe("sendToAgent", () => {
 			"No API key found for moonshotai.",
 		);
 		expect(commandId).toStartWith("rpc_");
+		expect(agent.status).toBe("error");
+		expect(agent.events).toContainEqual(
+			expect.objectContaining({
+				type: "send_error",
+				event: expect.objectContaining({
+					type: "send_error",
+					phase: "preflight",
+					error: "No API key found for moonshotai.",
+				}),
+			}),
+		);
+		expect(agent.pendingSend).toBeUndefined();
 		expect(agent._nextTurn).toBeUndefined();
 		expect(agent._currentSend).toBeUndefined();
 	});
@@ -229,6 +296,52 @@ describe("sendToAgent", () => {
 
 		expect(agent.history).toContainEqual({ role: "user", text: "hello" });
 		expect(agent.accumulatedText).toBe("OK");
+	});
+
+	it("records a timeout error event when prompt preflight never responds", async () => {
+		const { agent } = makeAgent({}, () => {
+			/* Keep preflight pending until RPC timeout. */
+		});
+
+		await expect(sendToAgent(agent, "timeout", 1)).rejects.toThrow(
+			"timed out",
+		);
+
+		expect(agent.status).toBe("error");
+		expect(agent.events).toContainEqual(
+			expect.objectContaining({
+				type: "send_error",
+				event: expect.objectContaining({
+					type: "send_error",
+					phase: "preflight",
+				}),
+			}),
+		);
+	});
+
+	it("marks the agent exited and records a terminal event when the process closes", async () => {
+		const { agent } = makeAgent();
+		let rejected: Error | undefined;
+		agent._nextTurn = {
+			resolve: () => {},
+			reject: (err) => {
+				rejected = err;
+			},
+		};
+
+		handleAgentProcessClose(agent, 7);
+
+		expect(agent.status).toBe("exited");
+		expect(rejected?.message).toContain("exited with code 7");
+		expect(agent.events).toContainEqual(
+			expect.objectContaining({
+				type: "agent_exit",
+				event: expect.objectContaining({
+					type: "agent_exit",
+					code: 7,
+				}),
+			}),
+		);
 	});
 });
 

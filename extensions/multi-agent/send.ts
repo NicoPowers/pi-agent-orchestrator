@@ -8,6 +8,14 @@ function isBrokenInputError(err: any): boolean {
 	);
 }
 
+function isTerminalStatus(status: Agent["status"]): boolean {
+	return status === "error" || status === "exited";
+}
+
+function isExitedStatus(status: Agent["status"]): boolean {
+	return status === "exited";
+}
+
 function agentInputClosedReason(agent: Agent): string | undefined {
 	if (agent.status === "error" || agent.status === "exited") {
 		return `Agent is ${agent.status}`;
@@ -50,6 +58,7 @@ export function markAgentInputError(agent: Agent, err: any): Error {
 	log("send", `Agent '${agent.id}' stdin error: ${normalized.message}`);
 
 	agent.status = isBrokenInputError(err) ? "exited" : "error";
+	agent.pendingSend = undefined;
 
 	if (agent._nextTurn) {
 		agent._nextTurn.reject(normalized);
@@ -120,11 +129,16 @@ export function rpcCommand<T = any>(
 	});
 }
 
+export type AgentSendUpdate =
+	| { type: "status"; status: Agent["status"] }
+	| { type: "error"; phase: "preflight" | "turn"; error: string };
+
 export async function sendToAgent(
 	agent: Agent,
 	message: string,
 	timeoutMs: number,
 	signal?: AbortSignal,
+	onUpdate?: (update: AgentSendUpdate) => void,
 ): Promise<void> {
 	log("send", `Agent '${agent.id}' queuing send`);
 	while (agent._currentSend) {
@@ -143,8 +157,17 @@ export async function sendToAgent(
 		}
 
 		agent.accumulatedText = "";
+		agent.status = "queued";
+		agent.pendingSend = {
+			message,
+			startedAt: Date.now(),
+			timeoutMs,
+			status: "queued",
+		};
+		onUpdate?.({ type: "status", status: agent.status });
 		appendAgentEvent(agent, "user_message", { message });
 
+		let phase: "preflight" | "turn" = "preflight";
 		let rejectTurn: ((e: Error) => void) | undefined;
 		let abortHandler: (() => void) | undefined;
 		const turnPromise = new Promise<void>((resolve, reject) => {
@@ -165,13 +188,34 @@ export async function sendToAgent(
 
 		try {
 			const cmd = { type: "prompt", message };
+			agent.status = "writing";
+			if (agent.pendingSend) agent.pendingSend.status = "writing";
+			onUpdate?.({ type: "status", status: agent.status });
 			await rpcCommand(agent, cmd, Math.min(timeoutMs, 30_000));
 			agent.history.push({ role: "user", text: message });
+			phase = "turn";
+			if (agent.status === "writing") agent.status = "waiting";
+			if (agent.pendingSend) agent.pendingSend.status = "waiting";
+			onUpdate?.({ type: "status", status: agent.status });
 			log("send", `Agent '${agent.id}' prompt written`);
 			await turnPromise;
+			if (!isTerminalStatus(agent.status)) {
+				agent.status = "idle";
+				onUpdate?.({ type: "status", status: agent.status });
+			}
 			log("send", `Agent '${agent.id}' send resolved`);
 		} catch (err: any) {
-			rejectTurn?.(err instanceof Error ? err : new Error(String(err)));
+			const error = err instanceof Error ? err : new Error(String(err));
+			rejectTurn?.(error);
+			if (!isExitedStatus(agent.status)) {
+				agent.status = "error";
+				onUpdate?.({ type: "status", status: agent.status });
+			}
+			appendAgentEvent(agent, "send_error", {
+				phase,
+				error: error.message,
+			});
+			onUpdate?.({ type: "error", phase, error: error.message });
 			throw err;
 		} finally {
 			if (agent._turnTimer) {
@@ -182,6 +226,7 @@ export async function sendToAgent(
 				signal.removeEventListener("abort", abortHandler);
 			}
 			agent._nextTurn = undefined;
+			agent.pendingSend = undefined;
 		}
 	};
 

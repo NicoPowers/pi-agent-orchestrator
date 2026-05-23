@@ -61,6 +61,7 @@ function serializeAgentForDashboard(agent: import("./state.js").Agent) {
 		artifactPath: agent.artifactPath,
 		artifactFiles: agent.artifactFiles,
 		runtimeTools: agent.runtimeTools,
+		pendingSend: agent.pendingSend,
 	};
 }
 

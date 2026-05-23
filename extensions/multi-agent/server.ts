@@ -2,7 +2,7 @@ import * as http from "node:http";
 import * as path from "node:path";
 import * as fs from "node:fs";
 import { type Agent, type AgentDefinition, agents, log } from "./state.js";
-import { rpcCommand, steerAgent } from "./send.js";
+import { rpcCommand, steerAgent, type AgentSendUpdate } from "./send.js";
 import {
 	logRuntimeToolConflicts,
 	readRuntimeToolSnapshot,
@@ -21,6 +21,8 @@ export interface ServerDeps {
 		agent: Agent,
 		message: string,
 		timeoutMs: number,
+		signal?: AbortSignal,
+		onUpdate?: (update: AgentSendUpdate) => void,
 	) => Promise<void>;
 	removeWorktree: (worktreePath: string) => Promise<void>;
 	discoverDefinitions: (cwd: string) => AgentDefinition[];
@@ -86,6 +88,7 @@ function serializeAgent(agent: Agent) {
 		artifactPath: agent.artifactPath,
 		artifactFiles: agent.artifactFiles,
 		runtimeTools: agent.runtimeTools,
+		pendingSend: agent.pendingSend,
 	};
 }
 
@@ -1453,6 +1456,7 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 					artifactPath: agent.artifactPath,
 					artifactFiles: agent.artifactFiles,
 					runtimeTools: agent.runtimeTools,
+					pendingSend: agent.pendingSend,
 					history: agent.history,
 					accumulatedText: agent.accumulatedText,
 					events: agent.events,
@@ -1521,7 +1525,23 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 
 			Promise.resolve().then(async () => {
 				try {
-					await deps.sendToAgent(agent, message, 300_000);
+					await deps.sendToAgent(agent, message, 300_000, undefined, (update) => {
+						if (update.type === "status") {
+							broadcast({
+								type: "agent-status",
+								data: {
+									name,
+									status: update.status,
+									pendingSend: agent.pendingSend,
+								},
+							});
+						} else {
+							broadcast({
+								type: "agent-error",
+								data: { name, error: update.error, phase: update.phase },
+							});
+						}
+					});
 					log("server", `Dashboard send to ${name} completed`);
 				} catch (err: any) {
 					broadcast({
@@ -1595,6 +1615,10 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 				await deps.removeWorktree(agent.worktreePath);
 			}
 
+			broadcast({
+				type: "agent-exit",
+				data: { name, code: null, signal: "SIGTERM", reason: "killed" },
+			});
 			agents.delete(name);
 			broadcast({ type: "agent-killed", data: { name } });
 			log("server", `Dashboard killed agent '${name}'`);
