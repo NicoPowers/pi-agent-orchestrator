@@ -30633,10 +30633,10 @@ function InspectTimeline({
                 children: [
                   "pending: ",
                   diagnostics.pendingStatus || "unknown",
-                  " · elapsed: ",
+                  " · elapsed:",
                   " ",
                   formatDuration(diagnostics.elapsedMs),
-                  " · threshold: ",
+                  " · threshold:",
                   " ",
                   formatDuration(diagnostics.thresholdMs)
                 ]
