@@ -725,6 +725,9 @@ function formatInspectData(data: any): string {
 			`message: ${JSON.stringify(data.pendingSend.message)}`,
 		);
 	}
+	if (data.stderrTail) {
+		lines.push("", "stderr tail:", data.stderrTail);
+	}
 	lines.push("", "Recent events:");
 	let textBuffer = "";
 	let textStartTime = "";

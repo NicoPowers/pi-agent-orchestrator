@@ -1475,6 +1475,7 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 					artifactFiles: agent.artifactFiles,
 					runtimeTools: agent.runtimeTools,
 					pendingSend: agent.pendingSend,
+					stderrTail: readStderrTail(agent.worktreePath),
 					history: agent.history,
 					accumulatedText: agent.accumulatedText,
 					events: agent.events,

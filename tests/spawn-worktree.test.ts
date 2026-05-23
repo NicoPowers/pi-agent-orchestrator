@@ -145,6 +145,35 @@ describe("spawn planning", () => {
 		expect(args.join(" ")).not.toContain("delegate-agent.ts");
 	});
 
+	it("loads bundled Cursor provider extension for cursor models", async () => {
+		const { bundledProviderExtensionPaths } = await import(
+			"../extensions/multi-agent/spawn.js"
+		);
+
+		const paths = bundledProviderExtensionPaths({
+			model: "cursor/composer-2.5",
+			repoCwd: process.cwd(),
+		});
+
+		expect(
+			paths.some((p) => p.endsWith("node_modules/pi-cursor-sdk/src/index.ts")),
+		).toBe(true);
+	});
+
+	it("disables ambient Cursor setting sources for cursor models", async () => {
+		const { buildProcessEnv } = await import(
+			"../extensions/multi-agent/spawn.js"
+		);
+
+		const env = buildProcessEnv({
+			model: "cursor/composer-2.5",
+			baseEnv: { EXISTING: "1" },
+		});
+
+		expect(env.EXISTING).toBe("1");
+		expect(env.PI_CURSOR_SETTING_SOURCES).toBe("none");
+	});
+
 	it("builds direct child process launch metadata with the worktree as cwd", async () => {
 		const { buildProcessLaunch } = await import(
 			"../extensions/multi-agent/spawn.js"

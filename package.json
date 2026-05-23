@@ -7,6 +7,7 @@
     "@os-eco/mulch-cli",
     "@os-eco/seeds-cli",
     "context-mode",
+    "pi-cursor-sdk",
     "pi-lens",
     "pi-web-access"
   ],
@@ -16,7 +17,8 @@
     "context-mode",
     "koffi",
     "pi-lens",
-    "protobufjs"
+    "protobufjs",
+    "sqlite3"
   ],
   "author": "",
   "license": "MIT",
@@ -45,6 +47,7 @@
       "./node_modules/@os-eco/mulch-cli/extensions/pi/index.ts",
       "./node_modules/@os-eco/seeds-cli/extensions/pi/index.ts",
       "./node_modules/context-mode/build/adapters/pi/extension.js",
+      "./node_modules/pi-cursor-sdk/src/index.ts",
       "./node_modules/pi-lens/index.ts",
       "./node_modules/pi-web-access/index.ts"
     ],
@@ -59,6 +62,7 @@
     "@os-eco/mulch-cli": "0.10.1",
     "@os-eco/seeds-cli": "0.4.7",
     "context-mode": "1.0.146",
+    "pi-cursor-sdk": "0.1.16",
     "pi-lens": "3.8.45",
     "pi-web-access": "0.10.7",
     "react": "^19.2.6",

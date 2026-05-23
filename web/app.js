@@ -36293,6 +36293,9 @@ function formatInspectData(data) {
   if (data.pendingSend) {
     lines.push("", "Pending send:", `status: ${data.pendingSend.status}`, `started: ${new Date(data.pendingSend.startedAt).toLocaleString()}`, `timeout: ${data.pendingSend.timeoutMs}ms`, `message: ${JSON.stringify(data.pendingSend.message)}`);
   }
+  if (data.stderrTail) {
+    lines.push("", "stderr tail:", data.stderrTail);
+  }
   lines.push("", "Recent events:");
   let textBuffer = "";
   let textStartTime = "";

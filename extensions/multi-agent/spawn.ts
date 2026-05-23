@@ -147,6 +147,38 @@ export function buildProcessLaunch(options: {
 	};
 }
 
+export function bundledProviderExtensionPaths(options: {
+	model?: string;
+	repoCwd: string;
+}): string[] {
+	const model = options.model?.trim().toLowerCase() || "";
+	const paths: string[] = [];
+	if (model.startsWith("cursor/")) {
+		paths.push(
+			path.join(
+				options.repoCwd,
+				"node_modules",
+				"pi-cursor-sdk",
+				"src",
+				"index.ts",
+			),
+		);
+	}
+	return paths.filter((candidate) => fs.existsSync(candidate));
+}
+
+export function buildProcessEnv(options: {
+	model?: string;
+	baseEnv?: NodeJS.ProcessEnv;
+}): NodeJS.ProcessEnv {
+	const env = { ...(options.baseEnv || process.env) };
+	const model = options.model?.trim().toLowerCase() || "";
+	if (model.startsWith("cursor/")) {
+		env.PI_CURSOR_SETTING_SOURCES = "none";
+	}
+	return env;
+}
+
 export async function spawnAgent(
 	id: string,
 	options: {
@@ -348,7 +380,17 @@ export async function spawnAgent(
 	}
 
 	// User-selected extensions: pass their container-visible absolute paths through unchanged.
-	const extraExtPaths: string[] = [];
+	const effectiveModel = definition?.model || model;
+	const extraExtPaths: string[] = bundledProviderExtensionPaths({
+		model: effectiveModel,
+		repoCwd,
+	});
+	for (const extensionPath of extraExtPaths) {
+		log("spawn", "Bundled provider extension will be loaded", {
+			model: effectiveModel,
+			path: extensionPath,
+		});
+	}
 	if (extensions && extensions.length > 0) {
 		for (const ext of extensions) {
 			if (fs.existsSync(ext.path)) {
@@ -364,7 +406,6 @@ export async function spawnAgent(
 		}
 	}
 
-	const effectiveModel = definition?.model || model;
 	const piArgs = buildPiArgs({
 		model,
 		definition,
@@ -378,16 +419,20 @@ export async function spawnAgent(
 	const piInvocation = getPiInvocation(piArgs);
 	const launch = buildProcessLaunch({ worktreePath, piInvocation });
 
+	const processEnv = buildProcessEnv({ model: effectiveModel });
 	log("spawn", `Starting agent '${id}' as child process`, {
 		worktree: worktreePath,
 		command: launch.command,
 		args: launch.args,
 		cwd: launch.cwd,
+		envOverrides: {
+			PI_CURSOR_SETTING_SOURCES: processEnv.PI_CURSOR_SETTING_SOURCES,
+		},
 	});
 
 	const proc = spawn(launch.command, launch.args, {
 		stdio: ["pipe", "pipe", "pipe"],
-		env: process.env,
+		env: processEnv,
 		cwd: launch.cwd,
 	});
 
