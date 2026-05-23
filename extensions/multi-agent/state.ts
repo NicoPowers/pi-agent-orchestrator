@@ -49,9 +49,15 @@ export interface AgentDefinition {
 	model?: string;
 	thinking?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
 	tools?: string[];
+	noTools?: boolean;
 	skills?: string[];
+	noSkills?: boolean;
 	skillTemplates?: string[];
 	extensionTemplates?: string[];
+	noExtensions?: boolean;
+	noContextFiles?: boolean;
+	isolated?: boolean;
+	delegate?: boolean;
 	systemPrompt: string;
 	source: "user" | "project" | "package";
 	readOnly?: boolean;

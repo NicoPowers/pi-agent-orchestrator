@@ -70,6 +70,7 @@ export function buildPiArgs(options: {
 	promptPath: string | null;
 	delegatePromptPath: string | null;
 	artifactPromptPath?: string | null;
+	runtimeToolsExtensionPath?: string | null;
 	delegateExtensionPath: string | null;
 	extraExtPaths: string[];
 }): string[] {
@@ -79,16 +80,25 @@ export function buildPiArgs(options: {
 		promptPath,
 		delegatePromptPath,
 		artifactPromptPath,
+		runtimeToolsExtensionPath,
 		delegateExtensionPath,
 		extraExtPaths,
 	} = options;
 	const effectiveModel = definition?.model || model;
 	const effectiveThinking = definition?.thinking;
 	const effectiveTools = definition?.tools ? [...definition.tools] : [];
+	const disableTools = !!definition?.noTools;
+	const disableSkills =
+		!!definition?.noSkills || !!definition?.isolated || !!definition?.skills;
+	const disableExtensions =
+		!!definition?.noExtensions || !!definition?.isolated;
+	const disableContextFiles =
+		!!definition?.noContextFiles || !!definition?.isolated;
 
 	const piArgs = ["--mode", "rpc", "--no-session"];
 	if (effectiveModel) piArgs.push("--model", effectiveModel);
 	if (effectiveThinking) piArgs.push("--thinking", effectiveThinking);
+	if (disableTools) piArgs.push("--no-tools");
 	if (effectiveTools.length > 0) {
 		piArgs.push("--tools", effectiveTools.join(","));
 	}
@@ -97,15 +107,24 @@ export function buildPiArgs(options: {
 		piArgs.push("--append-system-prompt", delegatePromptPath);
 	if (artifactPromptPath)
 		piArgs.push("--append-system-prompt", artifactPromptPath);
-	if (definition?.skills) {
+	if (disableContextFiles) piArgs.push("--no-context-files");
+	if (disableSkills) {
 		piArgs.push("--no-skills");
-		for (const skillPath of definition.skills) {
+		for (const skillPath of definition?.skills || []) {
 			piArgs.push("--skill", skillPath);
 		}
 	}
 
-	if (delegateExtensionPath || extraExtPaths.length > 0) {
+	if (
+		runtimeToolsExtensionPath ||
+		delegateExtensionPath ||
+		extraExtPaths.length > 0 ||
+		disableExtensions
+	) {
 		piArgs.push("--no-extensions");
+		if (runtimeToolsExtensionPath) {
+			piArgs.push("--extension", runtimeToolsExtensionPath);
+		}
 		if (delegateExtensionPath) {
 			piArgs.push("--extension", delegateExtensionPath);
 		}
@@ -199,6 +218,7 @@ export async function spawnAgent(
 	let promptPath: string | null = null;
 	let delegatePromptPath: string | null = null;
 	let artifactPromptPath: string | null = null;
+	const delegateEnabled = definition?.delegate ?? !definition?.isolated;
 	if (definition?.systemPrompt?.trim()) {
 		const filledPrompt = definition.systemPrompt
 			.replace(/\{\{name\}\}/g, id)
@@ -211,62 +231,64 @@ export async function spawnAgent(
 		});
 		promptPath = promptFile;
 
-		let delegateInstructions = [
-			"",
-			"---",
-			"",
-			"## Delegation",
-			"",
-			"You have access to a `delegate` tool. Use it to route work to sibling agents when:",
-			"- The task is better suited to another agent's specialty",
-			"- You want a second opinion or review",
-			"- The task can be parallelized",
-			"",
-			"To delegate, call the `delegate` tool with:",
-			"- `target`: name of the sibling agent",
-			"- `task`: clear instructions for what they should do",
-			"",
-			"You may delegate MULTIPLE times in a single turn. For example:",
-			"1. Delegate 'find all auth-related code' to scout",
-			"2. Review scout's findings",
-			"3. Delegate 'check src/login.js for SQL injection' to scout",
-			"4. Synthesize both responses into your final answer",
-			"",
-			"Wait for each delegate response before making your next move.",
-			"",
-			"If you are the root orchestrator and a task would benefit from focused research, parallel implementation, or specialized review, consider creating a sub-agent using the create_sub_agent tool. Always provide a clear reason.",
-			"",
-		].join("\n");
-
-		// List sibling agents that share this worktree so this agent knows who it can delegate to
-		const siblingList: string[] = [];
-		for (const [otherId, otherAgent] of agents.entries()) {
-			if (otherAgent.worktreePath === worktreePath && otherId !== id) {
-				const typeLabel = otherAgent.definition?.name
-					? ` (${otherAgent.definition.name})`
-					: "";
-				siblingList.push(`- ${otherId}${typeLabel}`);
-			}
-		}
-		if (siblingList.length > 0) {
-			delegateInstructions += [
+		if (delegateEnabled) {
+			let delegateInstructions = [
 				"",
-				"### Available Agents",
+				"---",
 				"",
-				"You can delegate to the following agents in your team:",
-				...siblingList,
+				"## Delegation",
 				"",
-				"If you need to reach your parent agent, use their name as the `target`.",
+				"You have access to a `delegate` tool. Use it to route work to sibling agents when:",
+				"- The task is better suited to another agent's specialty",
+				"- You want a second opinion or review",
+				"- The task can be parallelized",
+				"",
+				"To delegate, call the `delegate` tool with:",
+				"- `target`: name of the sibling agent",
+				"- `task`: clear instructions for what they should do",
+				"",
+				"You may delegate MULTIPLE times in a single turn. For example:",
+				"1. Delegate 'find all auth-related code' to scout",
+				"2. Review scout's findings",
+				"3. Delegate 'check src/login.js for SQL injection' to scout",
+				"4. Synthesize both responses into your final answer",
+				"",
+				"Wait for each delegate response before making your next move.",
+				"",
+				"If you are the root orchestrator and a task would benefit from focused research, parallel implementation, or specialized review, consider creating a sub-agent using the create_sub_agent tool. Always provide a clear reason.",
 				"",
 			].join("\n");
-		}
 
-		const delegatePromptFile = path.join(promptDir, `${id}-delegate.md`);
-		fs.writeFileSync(delegatePromptFile, delegateInstructions, {
-			encoding: "utf-8",
-			mode: 0o600,
-		});
-		delegatePromptPath = delegatePromptFile;
+			// List sibling agents that share this worktree so this agent knows who it can delegate to
+			const siblingList: string[] = [];
+			for (const [otherId, otherAgent] of agents.entries()) {
+				if (otherAgent.worktreePath === worktreePath && otherId !== id) {
+					const typeLabel = otherAgent.definition?.name
+						? ` (${otherAgent.definition.name})`
+						: "";
+					siblingList.push(`- ${otherId}${typeLabel}`);
+				}
+			}
+			if (siblingList.length > 0) {
+				delegateInstructions += [
+					"",
+					"### Available Agents",
+					"",
+					"You can delegate to the following agents in your team:",
+					...siblingList,
+					"",
+					"If you need to reach your parent agent, use their name as the `target`.",
+					"",
+				].join("\n");
+			}
+
+			const delegatePromptFile = path.join(promptDir, `${id}-delegate.md`);
+			fs.writeFileSync(delegatePromptFile, delegateInstructions, {
+				encoding: "utf-8",
+				mode: 0o600,
+			});
+			delegatePromptPath = delegatePromptFile;
+		}
 	}
 
 	if (
@@ -293,17 +315,36 @@ export async function spawnAgent(
 	const extDir = path.join(worktreePath, ".pi", "extensions");
 	fs.mkdirSync(extDir, { recursive: true });
 
-	// Always copy delegate-agent.ts into worktree
-	let delegateExtensionPath: string | null = null;
+	// Always copy runtime-tools reporter so the dashboard can inspect active tools without adding a tool.
+	let runtimeToolsExtensionPath: string | null = null;
 	try {
-		const delegateSource = path.join(__dirname, "..", "delegate-agent.ts");
-		if (fs.existsSync(delegateSource)) {
-			const delegateDest = path.join(extDir, "delegate-agent.ts");
-			fs.copyFileSync(delegateSource, delegateDest);
-			delegateExtensionPath = delegateDest;
+		const runtimeToolsSource = path.join(
+			__dirname,
+			"..",
+			"runtime-tools-reporter.ts",
+		);
+		if (fs.existsSync(runtimeToolsSource)) {
+			const runtimeToolsDest = path.join(extDir, "runtime-tools-reporter.ts");
+			fs.copyFileSync(runtimeToolsSource, runtimeToolsDest);
+			runtimeToolsExtensionPath = runtimeToolsDest;
 		}
 	} catch {
 		/* ignore copy failures */
+	}
+
+	// Copy delegate-agent.ts into worktree unless disabled for isolated/basic agents.
+	let delegateExtensionPath: string | null = null;
+	if (delegateEnabled) {
+		try {
+			const delegateSource = path.join(__dirname, "..", "delegate-agent.ts");
+			if (fs.existsSync(delegateSource)) {
+				const delegateDest = path.join(extDir, "delegate-agent.ts");
+				fs.copyFileSync(delegateSource, delegateDest);
+				delegateExtensionPath = delegateDest;
+			}
+		} catch {
+			/* ignore copy failures */
+		}
 	}
 
 	// User-selected extensions: pass their container-visible absolute paths through unchanged.
@@ -330,6 +371,7 @@ export async function spawnAgent(
 		promptPath,
 		delegatePromptPath,
 		artifactPromptPath,
+		runtimeToolsExtensionPath,
 		delegateExtensionPath,
 		extraExtPaths,
 	});

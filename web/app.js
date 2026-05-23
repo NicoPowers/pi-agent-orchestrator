@@ -29848,7 +29848,11 @@ function previewMarkdown(agent) {
   if (agent.text)
     return agent.text;
   if (agent.pendingSend) {
-    return [`**You:** ${agent.pendingSend.message}`, "", "_waiting for response…_"].join(`
+    return [
+      `**You:** ${agent.pendingSend.message}`,
+      "",
+      "_waiting for response…_"
+    ].join(`
 `);
   }
   return "";
@@ -35784,6 +35788,16 @@ function App() {
         setAgentStats(await res.json());
     } catch {}
   }, []);
+  const refreshAgents = import_react10.useCallback(async () => {
+    try {
+      const res = await fetch("/api/agents");
+      if (!res.ok)
+        return;
+      const raw = await res.json();
+      const list4 = Array.isArray(raw) ? raw : [];
+      setAgents((prev) => Object.fromEntries(list4.map((agent) => [agent.name, { ...prev[agent.name], ...agent }])));
+    } catch {}
+  }, []);
   const refreshTemplates = import_react10.useCallback(async () => {
     setSkillsLoading(true);
     try {
@@ -35974,10 +35988,16 @@ function App() {
     refreshRootProfiles();
     refreshModels();
     refreshTemplates();
+    refreshAgents();
     refreshStats();
-    const interval = setInterval(refreshStats, 5000);
-    return () => clearInterval(interval);
+    const statsInterval = setInterval(refreshStats, 5000);
+    const agentsInterval = setInterval(refreshAgents, 2000);
+    return () => {
+      clearInterval(statsInterval);
+      clearInterval(agentsInterval);
+    };
   }, [
+    refreshAgents,
     refreshModels,
     refreshRootProfiles,
     refreshStats,
@@ -36015,6 +36035,10 @@ function App() {
       if (!res.ok)
         throw new Error(await res.text());
       const data = await res.json();
+      setAgents((prev) => ({
+        ...prev,
+        [name2]: { ...prev[name2], ...data }
+      }));
       setInspectText(formatInspectData(data));
     } catch (e) {
       setInspectText(`Inspect failed: ${e.message}`);

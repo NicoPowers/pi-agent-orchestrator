@@ -168,6 +168,22 @@ function App() {
 		}
 	}, []);
 
+	const refreshAgents = useCallback(async () => {
+		try {
+			const res = await fetch("/api/agents");
+			if (!res.ok) return;
+			const raw = await res.json();
+			const list = (Array.isArray(raw) ? raw : []) as AgentState[];
+			setAgents((prev) =>
+				Object.fromEntries(
+					list.map((agent) => [agent.name, { ...prev[agent.name], ...agent }]),
+				),
+			);
+		} catch {
+			// live agent refresh is best-effort; SSE remains primary
+		}
+	}, []);
+
 	const refreshTemplates = useCallback(async () => {
 		setSkillsLoading(true);
 		try {
@@ -375,10 +391,16 @@ function App() {
 		refreshRootProfiles();
 		refreshModels();
 		refreshTemplates();
+		refreshAgents();
 		refreshStats();
-		const interval = setInterval(refreshStats, 5_000);
-		return () => clearInterval(interval);
+		const statsInterval = setInterval(refreshStats, 5_000);
+		const agentsInterval = setInterval(refreshAgents, 2_000);
+		return () => {
+			clearInterval(statsInterval);
+			clearInterval(agentsInterval);
+		};
 	}, [
+		refreshAgents,
 		refreshModels,
 		refreshRootProfiles,
 		refreshStats,
@@ -419,6 +441,10 @@ function App() {
 			const res = await fetch(`/api/agents/${encodeURIComponent(name)}/events`);
 			if (!res.ok) throw new Error(await res.text());
 			const data = await res.json();
+			setAgents((prev) => ({
+				...prev,
+				[name]: { ...prev[name], ...data },
+			}));
 			setInspectText(formatInspectData(data));
 		} catch (e: any) {
 			setInspectText(`Inspect failed: ${e.message}`);

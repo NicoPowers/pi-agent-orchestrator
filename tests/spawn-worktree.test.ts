@@ -111,6 +111,40 @@ describe("spawn planning", () => {
 		expect(args.join(" ")).not.toContain("/tmp/workspace");
 	});
 
+	it("isolates basic test agents from external skills, context files, and delegate while keeping built-in tools", async () => {
+		const { buildPiArgs } = await import("../extensions/multi-agent/spawn.js");
+
+		const args = buildPiArgs({
+			model: "fallback-model",
+			definition: {
+				name: "test-agent",
+				description: "Basic test agent",
+				isolated: true,
+				delegate: false,
+				systemPrompt: "",
+				source: "project",
+				filePath: "/agents/test-agent.md",
+			},
+			promptPath: null,
+			delegatePromptPath: null,
+			runtimeToolsExtensionPath:
+				"/tmp/pi-worktree-test/.pi/extensions/runtime-tools-reporter.ts",
+			delegateExtensionPath: null,
+			artifactPromptPath: null,
+			extraExtPaths: [],
+		});
+
+		expect(args).not.toContain("--no-tools");
+		expect(args).not.toContain("--tools");
+		expect(args).toContain("--no-skills");
+		expect(args).toContain("--no-context-files");
+		expect(args).toContain("--no-extensions");
+		expect(args).toContain(
+			"/tmp/pi-worktree-test/.pi/extensions/runtime-tools-reporter.ts",
+		);
+		expect(args.join(" ")).not.toContain("delegate-agent.ts");
+	});
+
 	it("builds direct child process launch metadata with the worktree as cwd", async () => {
 		const { buildProcessLaunch } = await import(
 			"../extensions/multi-agent/spawn.js"

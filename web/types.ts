@@ -79,9 +79,15 @@ export interface AgentTypeInfo {
 	model?: string;
 	thinking?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
 	tools?: string[];
+	noTools?: boolean;
 	skills?: string[];
+	noSkills?: boolean;
 	skillTemplates?: string[];
 	extensionTemplates?: string[];
+	noExtensions?: boolean;
+	noContextFiles?: boolean;
+	isolated?: boolean;
+	delegate?: boolean;
 	prompt?: string;
 	systemPrompt?: string;
 	source: string;

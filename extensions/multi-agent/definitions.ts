@@ -2,170 +2,255 @@ import { getAgentDir, parseFrontmatter } from "@earendil-works/pi-coding-agent";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
-import { type AgentClass, type AgentDefinition } from "./state.js";
+import type { AgentClass, AgentDefinition } from "./state.js";
 import { discoverConfiguredOrchestratorLibraries } from "./orchestrator-library.js";
 
 function isDirectory(p: string): boolean {
-  try {
-    return fs.statSync(p).isDirectory();
-  } catch {
-    return false;
-  }
+	try {
+		return fs.statSync(p).isDirectory();
+	} catch {
+		return false;
+	}
 }
 
 function findProjectAgentsDir(cwd: string): string | null {
-  let currentDir = cwd;
-  while (true) {
-    const candidate = path.join(currentDir, ".pi", "agents");
-    if (isDirectory(candidate)) return candidate;
-    const parentDir = path.dirname(currentDir);
-    if (parentDir === currentDir) return null;
-    currentDir = parentDir;
-  }
+	let currentDir = cwd;
+	while (true) {
+		const candidate = path.join(currentDir, ".pi", "agents");
+		if (isDirectory(candidate)) return candidate;
+		const parentDir = path.dirname(currentDir);
+		if (parentDir === currentDir) return null;
+		currentDir = parentDir;
+	}
 }
 
 function getPackageAgentsDir(): string | null {
-  try {
-    const extDir = __dirname;
-    const candidate = path.join(extDir, "..", "..", "agents");
-    if (isDirectory(candidate)) return candidate;
-  } catch {
-    /* __dirname may not be available in some loaders */
-  }
-  return null;
+	try {
+		const extDir = __dirname;
+		const candidate = path.join(extDir, "..", "..", "agents");
+		if (isDirectory(candidate)) return candidate;
+	} catch {
+		/* __dirname may not be available in some loaders */
+	}
+	return null;
 }
 
-export function resolveSkillPath(raw: string, agentFileDir: string, cwd: string): string {
-  if (path.isAbsolute(raw)) return raw;
-  const relativeToAgent = path.resolve(agentFileDir, raw);
-  if (fs.existsSync(relativeToAgent)) return relativeToAgent;
-  const relativeToCwd = path.resolve(cwd, raw);
-  if (fs.existsSync(relativeToCwd)) return relativeToCwd;
-  const globalSkill = path.join(getAgentDir(), "skills", raw);
-  if (fs.existsSync(globalSkill)) return globalSkill;
-  const globalSkillAlt = path.join(os.homedir(), ".agents", "skills", raw);
-  if (fs.existsSync(globalSkillAlt)) return globalSkillAlt;
-  const projectSkill = path.join(cwd, ".pi", "skills", raw);
-  if (fs.existsSync(projectSkill)) return projectSkill;
-  const projectSkillAlt = path.join(cwd, ".agents", "skills", raw);
-  if (fs.existsSync(projectSkillAlt)) return projectSkillAlt;
-  return relativeToCwd;
+export function resolveSkillPath(
+	raw: string,
+	agentFileDir: string,
+	cwd: string,
+): string {
+	if (path.isAbsolute(raw)) return raw;
+	const relativeToAgent = path.resolve(agentFileDir, raw);
+	if (fs.existsSync(relativeToAgent)) return relativeToAgent;
+	const relativeToCwd = path.resolve(cwd, raw);
+	if (fs.existsSync(relativeToCwd)) return relativeToCwd;
+	const globalSkill = path.join(getAgentDir(), "skills", raw);
+	if (fs.existsSync(globalSkill)) return globalSkill;
+	const globalSkillAlt = path.join(os.homedir(), ".agents", "skills", raw);
+	if (fs.existsSync(globalSkillAlt)) return globalSkillAlt;
+	const projectSkill = path.join(cwd, ".pi", "skills", raw);
+	if (fs.existsSync(projectSkill)) return projectSkill;
+	const projectSkillAlt = path.join(cwd, ".agents", "skills", raw);
+	if (fs.existsSync(projectSkillAlt)) return projectSkillAlt;
+	return relativeToCwd;
 }
 
-export const SPAWNABLE_AGENT_CLASSES = ["lead", "scout", "implementer", "reviewer"] as const;
+export const SPAWNABLE_AGENT_CLASSES = [
+	"lead",
+	"scout",
+	"implementer",
+	"reviewer",
+] as const;
 export const RESERVED_AGENT_CLASS: AgentClass = "orchestrator";
 
 export function normalizeAgentClass(value: unknown, name?: string): AgentClass {
-  const raw = typeof value === "string" ? value.trim().toLowerCase() : "";
-  if (raw === "lead" || raw === "scout" || raw === "implementer" || raw === "reviewer" || raw === "orchestrator") return raw;
-  if (name?.toLowerCase().includes("orchestrator")) return "orchestrator";
-  if (name?.toLowerCase().includes("review")) return "reviewer";
-  if (name?.toLowerCase().includes("research") || name?.toLowerCase().includes("scout")) return "scout";
-  if (name?.toLowerCase().includes("lead")) return "lead";
-  return "implementer";
+	const raw = typeof value === "string" ? value.trim().toLowerCase() : "";
+	if (
+		raw === "lead" ||
+		raw === "scout" ||
+		raw === "implementer" ||
+		raw === "reviewer" ||
+		raw === "orchestrator"
+	)
+		return raw;
+	if (name?.toLowerCase().includes("orchestrator")) return "orchestrator";
+	if (name?.toLowerCase().includes("review")) return "reviewer";
+	if (
+		name?.toLowerCase().includes("research") ||
+		name?.toLowerCase().includes("scout")
+	)
+		return "scout";
+	if (name?.toLowerCase().includes("lead")) return "lead";
+	return "implementer";
 }
 
-export function isSpawnableAgentDefinition(definition: AgentDefinition): boolean {
-  return definition.agentClass !== RESERVED_AGENT_CLASS;
+export function isSpawnableAgentDefinition(
+	definition: AgentDefinition,
+): boolean {
+	return definition.agentClass !== RESERVED_AGENT_CLASS;
 }
 
-export function nonSpawnableAgentReason(definition: AgentDefinition): string | undefined {
-  if (definition.agentClass === RESERVED_AGENT_CLASS) return `Agent type '${definition.name}' is reserved for the root /orchestrate session and cannot be spawned as a child agent.`;
-  return undefined;
+function parseBoolean(value: unknown): boolean | undefined {
+	if (typeof value === "boolean") return value;
+	if (typeof value !== "string") return undefined;
+	const normalized = value.trim().toLowerCase();
+	if (["true", "yes", "on", "1"].includes(normalized)) return true;
+	if (["false", "no", "off", "0"].includes(normalized)) return false;
+	return undefined;
 }
 
-function loadDefinitionsFromDir(dir: string, source: "user" | "project" | "package", cwd: string): AgentDefinition[] {
-  const defs: AgentDefinition[] = [];
-  if (!fs.existsSync(dir)) return defs;
+function isDisabledListValue(value: unknown): boolean {
+	if (typeof value !== "string") return false;
+	return ["none", "off", "false", "no", "disabled"].includes(
+		value.trim().toLowerCase(),
+	);
+}
 
-  let entries: fs.Dirent[];
-  try {
-    entries = fs.readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return defs;
-  }
+function parseList(value: unknown): string[] | undefined {
+	if (typeof value !== "string" || isDisabledListValue(value)) return undefined;
+	const items = value
+		.split(",")
+		.map((item) => item.trim())
+		.filter(Boolean);
+	return items.length > 0 ? items : undefined;
+}
 
-  for (const entry of entries) {
-    if (!entry.name.endsWith(".md")) continue;
-    if (!entry.isFile() && !entry.isSymbolicLink()) continue;
+export function nonSpawnableAgentReason(
+	definition: AgentDefinition,
+): string | undefined {
+	if (definition.agentClass === RESERVED_AGENT_CLASS)
+		return `Agent type '${definition.name}' is reserved for the root /orchestrate session and cannot be spawned as a child agent.`;
+	return undefined;
+}
 
-    const filePath = path.join(dir, entry.name);
-    let content: string;
-    try {
-      content = fs.readFileSync(filePath, "utf-8");
-    } catch {
-      continue;
-    }
+function loadDefinitionsFromDir(
+	dir: string,
+	source: "user" | "project" | "package",
+	cwd: string,
+): AgentDefinition[] {
+	const defs: AgentDefinition[] = [];
+	if (!fs.existsSync(dir)) return defs;
 
-    const { frontmatter, body } = parseFrontmatter<Record<string, string>>(content);
-    if (!frontmatter.name || !frontmatter.description) continue;
+	let entries: fs.Dirent[];
+	try {
+		entries = fs.readdirSync(dir, { withFileTypes: true });
+	} catch {
+		return defs;
+	}
 
-    const tools = frontmatter.tools
-      ?.split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
+	for (const entry of entries) {
+		if (!entry.name.endsWith(".md")) continue;
+		if (!entry.isFile() && !entry.isSymbolicLink()) continue;
 
-    const skills = frontmatter.skills
-      ?.split(",")
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((s) => resolveSkillPath(s, dir, cwd));
+		const filePath = path.join(dir, entry.name);
+		let content: string;
+		try {
+			content = fs.readFileSync(filePath, "utf-8");
+		} catch {
+			continue;
+		}
 
-    const skillTemplates = frontmatter.skillTemplates
-      ?.split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
+		const { frontmatter, body } =
+			parseFrontmatter<Record<string, string>>(content);
+		if (!frontmatter.name || !frontmatter.description) continue;
 
-    const extensionTemplates = frontmatter.extensionTemplates
-      ?.split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
+		const tools = parseList(frontmatter.tools);
+		const noTools =
+			parseBoolean((frontmatter as any).noTools) ||
+			isDisabledListValue(frontmatter.tools);
 
-    defs.push({
-      name: frontmatter.name,
-      description: frontmatter.description,
-      agentClass: normalizeAgentClass((frontmatter as any).class || (frontmatter as any).agentClass, frontmatter.name),
-      model: frontmatter.model,
-      thinking: (frontmatter.thinking as AgentDefinition["thinking"]) || undefined,
-      tools: tools && tools.length > 0 ? tools : undefined,
-      skills: skills && skills.length > 0 ? skills : undefined,
-      skillTemplates: skillTemplates && skillTemplates.length > 0 ? skillTemplates : undefined,
-      extensionTemplates: extensionTemplates && extensionTemplates.length > 0 ? extensionTemplates : undefined,
-      systemPrompt: body,
-      source,
-      filePath,
-      readOnly: source === "package",
-      example: source === "package" && frontmatter.name.startsWith("pio-example-"),
-    });
-  }
+		const skills = parseList(frontmatter.skills)?.map((s) =>
+			resolveSkillPath(s, dir, cwd),
+		);
+		const noSkills =
+			parseBoolean((frontmatter as any).noSkills) ||
+			isDisabledListValue(frontmatter.skills);
 
-  return defs;
+		const skillTemplates = parseList(frontmatter.skillTemplates);
+		const extensionTemplates = parseList(frontmatter.extensionTemplates);
+		const noExtensions =
+			parseBoolean((frontmatter as any).noExtensions) ||
+			isDisabledListValue((frontmatter as any).extensions);
+		const noContextFiles =
+			parseBoolean((frontmatter as any).noContextFiles) ||
+			parseBoolean((frontmatter as any).contextFiles) === false;
+		const isolated = parseBoolean((frontmatter as any).isolated) || false;
+		const delegate = parseBoolean((frontmatter as any).delegate);
+
+		defs.push({
+			name: frontmatter.name,
+			description: frontmatter.description,
+			agentClass: normalizeAgentClass(
+				(frontmatter as any).class || (frontmatter as any).agentClass,
+				frontmatter.name,
+			),
+			model: frontmatter.model,
+			thinking:
+				(frontmatter.thinking as AgentDefinition["thinking"]) || undefined,
+			tools,
+			noTools: noTools || undefined,
+			skills,
+			noSkills: noSkills || undefined,
+			skillTemplates,
+			extensionTemplates,
+			noExtensions: noExtensions || undefined,
+			noContextFiles: noContextFiles || undefined,
+			isolated: isolated || undefined,
+			delegate,
+			systemPrompt: body,
+			source,
+			filePath,
+			readOnly: source === "package",
+			example:
+				source === "package" && frontmatter.name.startsWith("pio-example-"),
+		});
+	}
+
+	return defs;
 }
 
 export function discoverDefinitions(cwd: string): AgentDefinition[] {
-  const userDir = path.join(getAgentDir(), "agents");
-  const projectDir = findProjectAgentsDir(cwd);
-  const packageDir = getPackageAgentsDir();
+	const userDir = path.join(getAgentDir(), "agents");
+	const projectDir = findProjectAgentsDir(cwd);
+	const packageDir = getPackageAgentsDir();
 
-  const userDefs = loadDefinitionsFromDir(userDir, "user", cwd);
-  const projectDefs = projectDir ? loadDefinitionsFromDir(projectDir, "project", cwd) : [];
-  const packageDefs = packageDir ? loadDefinitionsFromDir(packageDir, "package", cwd) : [];
-  const libraryDefs = discoverConfiguredOrchestratorLibraries(cwd).resources
-    .filter((resource) => resource.kind === "agents")
-    .flatMap((resource) => loadDefinitionsFromDir(path.dirname(resource.filePath), "project", cwd).filter((definition) => definition.filePath === resource.filePath))
-    .map((definition) => ({ ...definition, source: "project" as const, readOnly: false }));
+	const userDefs = loadDefinitionsFromDir(userDir, "user", cwd);
+	const projectDefs = projectDir
+		? loadDefinitionsFromDir(projectDir, "project", cwd)
+		: [];
+	const packageDefs = packageDir
+		? loadDefinitionsFromDir(packageDir, "package", cwd)
+		: [];
+	const libraryDefs = discoverConfiguredOrchestratorLibraries(cwd)
+		.resources.filter((resource) => resource.kind === "agents")
+		.flatMap((resource) =>
+			loadDefinitionsFromDir(
+				path.dirname(resource.filePath),
+				"project",
+				cwd,
+			).filter((definition) => definition.filePath === resource.filePath),
+		)
+		.map((definition) => ({
+			...definition,
+			source: "project" as const,
+			readOnly: false,
+		}));
 
-  const map = new Map<string, AgentDefinition>();
-  for (const d of packageDefs) map.set(d.name, d);
-  for (const d of userDefs) map.set(d.name, d);
-  for (const d of projectDefs) map.set(d.name, d);
-  for (const d of libraryDefs) map.set(d.name, d);
+	const map = new Map<string, AgentDefinition>();
+	for (const d of packageDefs) map.set(d.name, d);
+	for (const d of userDefs) map.set(d.name, d);
+	for (const d of projectDefs) map.set(d.name, d);
+	for (const d of libraryDefs) map.set(d.name, d);
 
-  return Array.from(map.values());
+	return Array.from(map.values());
 }
 
-export function getDefinition(name: string, cwd: string): AgentDefinition | undefined {
-  return discoverDefinitions(cwd).find((d) => d.name === name);
+export function getDefinition(
+	name: string,
+	cwd: string,
+): AgentDefinition | undefined {
+	return discoverDefinitions(cwd).find((d) => d.name === name);
 }
 
 /**
@@ -173,42 +258,63 @@ export function getDefinition(name: string, cwd: string): AgentDefinition | unde
  * Prefers project-level .pi/agents/ when available, otherwise falls back to user agents dir.
  */
 export function saveAgentDefinition(
-  def: AgentDefinition,
-  cwd: string
+	def: AgentDefinition,
+	cwd: string,
 ): { success: boolean; path?: string; error?: string; status?: number } {
-  try {
-    const agentClass = normalizeAgentClass(def.agentClass, def.name);
-    const normalizedDef = { ...def, agentClass };
-    if (!isSpawnableAgentDefinition(normalizedDef)) return { success: false, error: nonSpawnableAgentReason(normalizedDef), status: 403 };
-    const library = discoverConfiguredOrchestratorLibraries(cwd).libraries.find((candidate) => candidate.valid && candidate.manifest);
-    const projectDir = findProjectAgentsDir(cwd);
-    const targetDir = library ? library.resourceDirs.agents.resolvedPath : (projectDir || path.join(getAgentDir(), "agents"));
+	try {
+		const agentClass = normalizeAgentClass(def.agentClass, def.name);
+		const normalizedDef = { ...def, agentClass };
+		if (!isSpawnableAgentDefinition(normalizedDef))
+			return {
+				success: false,
+				error: nonSpawnableAgentReason(normalizedDef),
+				status: 403,
+			};
+		const library = discoverConfiguredOrchestratorLibraries(cwd).libraries.find(
+			(candidate) => candidate.valid && candidate.manifest,
+		);
+		const projectDir = findProjectAgentsDir(cwd);
+		const targetDir = library
+			? library.resourceDirs.agents.resolvedPath
+			: projectDir || path.join(getAgentDir(), "agents");
 
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-    }
+		if (!fs.existsSync(targetDir)) {
+			fs.mkdirSync(targetDir, { recursive: true });
+		}
 
-    const filePath = path.join(targetDir, `${def.name}.md`);
+		const filePath = path.join(targetDir, `${def.name}.md`);
 
-    const frontmatterLines = [
-      `name: ${def.name}`,
-      `description: ${def.description || ""}`,
-    ];
-    frontmatterLines.push(`class: ${agentClass}`);
-    if (def.model) frontmatterLines.push(`model: ${def.model}`);
-    if (def.thinking) frontmatterLines.push(`thinking: ${def.thinking}`);
-    if (def.tools && def.tools.length > 0) frontmatterLines.push(`tools: ${def.tools.join(", ")}`);
-    if (def.skills && def.skills.length > 0) frontmatterLines.push(`skills: ${def.skills.join(", ")}`);
-    if (def.skillTemplates && def.skillTemplates.length > 0) frontmatterLines.push(`skillTemplates: ${def.skillTemplates.join(", ")}`);
-    if (def.extensionTemplates && def.extensionTemplates.length > 0) frontmatterLines.push(`extensionTemplates: ${def.extensionTemplates.join(", ")}`);
+		const frontmatterLines = [
+			`name: ${def.name}`,
+			`description: ${def.description || ""}`,
+		];
+		frontmatterLines.push(`class: ${agentClass}`);
+		if (def.model) frontmatterLines.push(`model: ${def.model}`);
+		if (def.thinking) frontmatterLines.push(`thinking: ${def.thinking}`);
+		if (def.tools && def.tools.length > 0)
+			frontmatterLines.push(`tools: ${def.tools.join(", ")}`);
+		if (def.noTools) frontmatterLines.push("noTools: true");
+		if (def.skills && def.skills.length > 0)
+			frontmatterLines.push(`skills: ${def.skills.join(", ")}`);
+		if (def.noSkills) frontmatterLines.push("noSkills: true");
+		if (def.skillTemplates && def.skillTemplates.length > 0)
+			frontmatterLines.push(`skillTemplates: ${def.skillTemplates.join(", ")}`);
+		if (def.extensionTemplates && def.extensionTemplates.length > 0)
+			frontmatterLines.push(
+				`extensionTemplates: ${def.extensionTemplates.join(", ")}`,
+			);
+		if (def.noExtensions) frontmatterLines.push("noExtensions: true");
+		if (def.noContextFiles) frontmatterLines.push("noContextFiles: true");
+		if (def.isolated) frontmatterLines.push("isolated: true");
+		if (def.delegate === false) frontmatterLines.push("delegate: false");
 
-    const frontmatter = `---\n${frontmatterLines.join("\n")}\n---`;
-    const body = (def as any).prompt || def.systemPrompt || "";
-    const content = `${frontmatter}\n\n${body}\n`;
+		const frontmatter = `---\n${frontmatterLines.join("\n")}\n---`;
+		const body = (def as any).prompt || def.systemPrompt || "";
+		const content = `${frontmatter}\n\n${body}\n`;
 
-    fs.writeFileSync(filePath, content, "utf-8");
-    return { success: true, path: filePath };
-  } catch (err: any) {
-    return { success: false, error: err.message };
-  }
+		fs.writeFileSync(filePath, content, "utf-8");
+		return { success: true, path: filePath };
+	} catch (err: any) {
+		return { success: false, error: err.message };
+	}
 }
