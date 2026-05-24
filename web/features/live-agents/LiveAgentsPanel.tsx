@@ -53,6 +53,8 @@ function previewMarkdown(agent: AgentState): string {
 	return "";
 }
 
+const LIVE_AGENT_CARD_CLASS = "min-h-[28rem]";
+
 function isAgentSettingUp(agent: AgentState): boolean {
 	return (
 		!!agent.setupPending &&
@@ -121,31 +123,28 @@ export function AgentsPanel({
 			<CardHeader>
 				<CardTitle>Active Agents</CardTitle>
 			</CardHeader>
-			<CardContent className="space-y-4">
-				<SpawnAgentForm
-					agentTypes={spawnableTypes}
-					onAgentSpawned={onAgentSpawned}
-					onAgentSpawnFailed={onAgentSpawnFailed}
-					pushLog={pushLog}
-				/>
-				{!entries.length ? (
-					<div className="rounded-md border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-						No agents running.
-					</div>
-				) : (
-					<div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
-						{entries.map(([name, agent]) => (
-							<AgentCard
-								key={name}
-								name={name}
-								agent={agent}
-								onInspect={onInspect}
-								onAgentKilled={onAgentKilled}
-								pushLog={pushLog}
-							/>
-						))}
-					</div>
-				)}
+			<CardContent>
+				<div
+					className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3"
+					data-testid="live-agent-grid"
+				>
+					<SpawnAgentForm
+						agentTypes={spawnableTypes}
+						onAgentSpawned={onAgentSpawned}
+						onAgentSpawnFailed={onAgentSpawnFailed}
+						pushLog={pushLog}
+					/>
+					{entries.map(([name, agent]) => (
+						<AgentCard
+							key={name}
+							name={name}
+							agent={agent}
+							onInspect={onInspect}
+							onAgentKilled={onAgentKilled}
+							pushLog={pushLog}
+						/>
+					))}
+				</div>
 			</CardContent>
 		</Card>
 	);
@@ -168,12 +167,20 @@ function SpawnAgentForm({
 	const [model, setModel] = useState("");
 	const [issueId, setIssueId] = useState("");
 	const [busy, setBusy] = useState(false);
+	const [expanded, setExpanded] = useState(false);
 
 	useEffect(() => {
 		if (selectedType || !firstTypeName) return;
 		setSelectedType(firstTypeName);
 		setName((current) => current || spawnNameFor(firstTypeName));
 	}, [firstTypeName, selectedType]);
+
+	const resetDraft = () => {
+		setName(spawnNameFor(selectedType));
+		setModel("");
+		setIssueId("");
+		setExpanded(false);
+	};
 
 	const spawn = async () => {
 		const spawnName = name.trim();
@@ -219,6 +226,9 @@ function SpawnAgentForm({
 			});
 			pushLog(`Spawned ${agent.name}`, "success");
 			setName(spawnNameFor(selectedType || agent.definition));
+			setModel("");
+			setIssueId("");
+			setExpanded(false);
 		} catch (e: any) {
 			onAgentSpawnFailed?.(spawnName);
 			pushLog(`Spawn failed: ${e.message}`, "error");
@@ -228,51 +238,78 @@ function SpawnAgentForm({
 	};
 
 	return (
-		<div className="rounded-md border border-border bg-card/40 p-3">
-			<div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-				<div>
-					<div className="text-sm font-semibold">Spawn persistent agent</div>
-					<div className="text-xs text-muted-foreground">
-						Creates a live agent that stays inspectable until you kill it.
+		<div
+			className={`${LIVE_AGENT_CARD_CLASS} rounded-md border border-dashed border-border bg-card/40 p-3`}
+			data-live-agent-card="true"
+			data-testid="spawn-agent-draft-card"
+			aria-label="Add Agent"
+		>
+			{!expanded ? (
+				<div className="flex h-full min-h-48 flex-col items-center justify-center gap-3 text-center">
+					<div>
+						<div className="text-sm font-semibold">Add Agent</div>
+						<div className="mt-1 text-xs text-muted-foreground">
+							Create a persistent live agent in this grid.
+						</div>
 					</div>
+					<Button onClick={() => setExpanded(true)}>+ Add Agent</Button>
 				</div>
-				<Button onClick={spawn} disabled={busy || !name.trim()}>
-					{busy ? "Spawning…" : "Spawn Agent"}
-				</Button>
-			</div>
-			<div className="grid gap-2 md:grid-cols-3">
-				<Input
-					value={name}
-					onChange={(e) => setName(e.target.value)}
-					placeholder="Agent name"
-				/>
-				<Select
-					value={selectedType}
-					onChange={(e) => {
-						setSelectedType(e.target.value);
-						if (!name.trim()) setName(spawnNameFor(e.target.value));
-					}}
-					aria-label="Agent type"
-				>
-					<option value="">No type / default</option>
-					{agentTypes.map((type) => (
-						<option key={type.name} value={type.name}>
-							{type.name}
-						</option>
-					))}
-				</Select>
-				<Input
-					value={model}
-					onChange={(e) => setModel(e.target.value)}
-					placeholder="Optional model override"
-				/>
-			</div>
-			<Input
-				className="mt-2"
-				value={issueId}
-				onChange={(e) => setIssueId(e.target.value)}
-				placeholder="Optional Seeds issue id for handoff artifacts"
-			/>
+			) : (
+				<>
+					<div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+						<div>
+							<div className="text-sm font-semibold">Add Agent</div>
+							<div className="text-xs text-muted-foreground">
+								Creates a live agent that stays inspectable until you kill it.
+							</div>
+						</div>
+						<div className="flex gap-2">
+							<Button variant="secondary" onClick={resetDraft} disabled={busy}>
+								Cancel
+							</Button>
+							<Button onClick={spawn} disabled={busy || !name.trim()}>
+								{busy ? "Spawning…" : "Spawn Agent"}
+							</Button>
+						</div>
+					</div>
+					<div className="grid gap-2 md:grid-cols-3">
+						<Input
+							value={name}
+							onInput={(e) => setName(e.currentTarget.value)}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="Agent name"
+						/>
+						<Select
+							value={selectedType}
+							onChange={(e) => {
+								setSelectedType(e.target.value);
+								if (!name.trim()) setName(spawnNameFor(e.target.value));
+							}}
+							aria-label="Agent type"
+						>
+							<option value="">No type / default</option>
+							{agentTypes.map((type) => (
+								<option key={type.name} value={type.name}>
+									{type.name}
+								</option>
+							))}
+						</Select>
+						<Input
+							value={model}
+							onInput={(e) => setModel(e.currentTarget.value)}
+							onChange={(e) => setModel(e.target.value)}
+							placeholder="Optional model override"
+						/>
+					</div>
+					<Input
+						className="mt-2"
+						value={issueId}
+						onInput={(e) => setIssueId(e.currentTarget.value)}
+						onChange={(e) => setIssueId(e.target.value)}
+						placeholder="Optional Seeds issue id for handoff artifacts"
+					/>
+				</>
+			)}
 		</div>
 	);
 }
@@ -366,7 +403,7 @@ function AgentCard({
 	};
 	return (
 		<Card
-			className={`transition-all duration-1000 ease-out ${
+			className={`${LIVE_AGENT_CARD_CLASS} transition-all duration-1000 ease-out ${
 				removing
 					? "pointer-events-none translate-y-2 scale-[0.98] border-muted opacity-0"
 					: setupPending
@@ -379,6 +416,7 @@ function AgentCard({
 			}`}
 			aria-busy={setupPending || removing}
 			aria-disabled={interactionsDisabled}
+			data-live-agent-card="true"
 		>
 			<CardHeader className="border-b border-border">
 				<div className="flex items-center justify-between gap-3">

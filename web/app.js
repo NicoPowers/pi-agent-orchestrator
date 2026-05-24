@@ -29848,6 +29848,7 @@ function previewMarkdown(agent) {
   }
   return "";
 }
+var LIVE_AGENT_CARD_CLASS = "min-h-[28rem]";
 function isAgentSettingUp(agent) {
   return !!agent.setupPending && !agent.runtimeTools && agent.status !== "error" && agent.status !== "exited";
 }
@@ -29941,29 +29942,26 @@ function AgentsPanel({
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(CardContent, {
-        className: "space-y-4",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(SpawnAgentForm, {
-            agentTypes: spawnableTypes,
-            onAgentSpawned,
-            onAgentSpawnFailed,
-            pushLog
-          }, undefined, false, undefined, this),
-          !entries.length ? /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
-            className: "rounded-md border border-dashed border-border p-8 text-center text-sm text-muted-foreground",
-            children: "No agents running."
-          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
-            className: "grid gap-4 xl:grid-cols-2 2xl:grid-cols-3",
-            children: entries.map(([name2, agent]) => /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(AgentCard, {
+        children: /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+          className: "grid gap-4 xl:grid-cols-2 2xl:grid-cols-3",
+          "data-testid": "live-agent-grid",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(SpawnAgentForm, {
+              agentTypes: spawnableTypes,
+              onAgentSpawned,
+              onAgentSpawnFailed,
+              pushLog
+            }, undefined, false, undefined, this),
+            entries.map(([name2, agent]) => /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(AgentCard, {
               name: name2,
               agent,
               onInspect,
               onAgentKilled,
               pushLog
             }, name2, false, undefined, this))
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
+      }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
@@ -29979,12 +29977,19 @@ function SpawnAgentForm({
   const [model, setModel] = import_react2.useState("");
   const [issueId, setIssueId] = import_react2.useState("");
   const [busy, setBusy] = import_react2.useState(false);
+  const [expanded, setExpanded] = import_react2.useState(false);
   import_react2.useEffect(() => {
     if (selectedType || !firstTypeName)
       return;
     setSelectedType(firstTypeName);
     setName((current) => current || spawnNameFor(firstTypeName));
   }, [firstTypeName, selectedType]);
+  const resetDraft = () => {
+    setName(spawnNameFor(selectedType));
+    setModel("");
+    setIssueId("");
+    setExpanded(false);
+  };
   const spawn = async () => {
     const spawnName = name2.trim();
     if (!spawnName) {
@@ -30030,6 +30035,9 @@ function SpawnAgentForm({
       });
       pushLog(`Spawned ${agent.name}`, "success");
       setName(spawnNameFor(selectedType || agent.definition));
+      setModel("");
+      setIssueId("");
+      setExpanded(false);
     } catch (e) {
       onAgentSpawnFailed?.(spawnName);
       pushLog(`Spawn failed: ${e.message}`, "error");
@@ -30038,72 +30046,111 @@ function SpawnAgentForm({
     }
   };
   return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
-    className: "rounded-md border border-border bg-card/40 p-3",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
-        className: "mb-3 flex flex-wrap items-center justify-between gap-2",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
-                className: "text-sm font-semibold",
-                children: "Spawn persistent agent"
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
-                className: "text-xs text-muted-foreground",
-                children: "Creates a live agent that stays inspectable until you kill it."
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Button, {
-            onClick: spawn,
-            disabled: busy || !name2.trim(),
-            children: busy ? "Spawning…" : "Spawn Agent"
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
-        className: "grid gap-2 md:grid-cols-3",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Input, {
-            value: name2,
-            onChange: (e) => setName(e.target.value),
-            placeholder: "Agent name"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Select, {
-            value: selectedType,
-            onChange: (e) => {
-              setSelectedType(e.target.value);
-              if (!name2.trim())
-                setName(spawnNameFor(e.target.value));
-            },
-            "aria-label": "Agent type",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("option", {
-                value: "",
-                children: "No type / default"
-              }, undefined, false, undefined, this),
-              agentTypes.map((type) => /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("option", {
-                value: type.name,
-                children: type.name
-              }, type.name, false, undefined, this))
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Input, {
-            value: model,
-            onChange: (e) => setModel(e.target.value),
-            placeholder: "Optional model override"
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Input, {
-        className: "mt-2",
-        value: issueId,
-        onChange: (e) => setIssueId(e.target.value),
-        placeholder: "Optional Seeds issue id for handoff artifacts"
-      }, undefined, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
+    className: `${LIVE_AGENT_CARD_CLASS} rounded-md border border-dashed border-border bg-card/40 p-3`,
+    "data-live-agent-card": "true",
+    "data-testid": "spawn-agent-draft-card",
+    "aria-label": "Add Agent",
+    children: !expanded ? /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+      className: "flex h-full min-h-48 flex-col items-center justify-center gap-3 text-center",
+      children: [
+        /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+              className: "text-sm font-semibold",
+              children: "Add Agent"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+              className: "mt-1 text-xs text-muted-foreground",
+              children: "Create a persistent live agent in this grid."
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Button, {
+          onClick: () => setExpanded(true),
+          children: "+ Add Agent"
+        }, undefined, false, undefined, this)
+      ]
+    }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(jsx_dev_runtime6.Fragment, {
+      children: [
+        /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+          className: "mb-3 flex flex-wrap items-center justify-between gap-2",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+                  className: "text-sm font-semibold",
+                  children: "Add Agent"
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+                  className: "text-xs text-muted-foreground",
+                  children: "Creates a live agent that stays inspectable until you kill it."
+                }, undefined, false, undefined, this)
+              ]
+            }, undefined, true, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+              className: "flex gap-2",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Button, {
+                  variant: "secondary",
+                  onClick: resetDraft,
+                  disabled: busy,
+                  children: "Cancel"
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Button, {
+                  onClick: spawn,
+                  disabled: busy || !name2.trim(),
+                  children: busy ? "Spawning…" : "Spawn Agent"
+                }, undefined, false, undefined, this)
+              ]
+            }, undefined, true, undefined, this)
+          ]
+        }, undefined, true, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+          className: "grid gap-2 md:grid-cols-3",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Input, {
+              value: name2,
+              onInput: (e) => setName(e.currentTarget.value),
+              onChange: (e) => setName(e.target.value),
+              placeholder: "Agent name"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Select, {
+              value: selectedType,
+              onChange: (e) => {
+                setSelectedType(e.target.value);
+                if (!name2.trim())
+                  setName(spawnNameFor(e.target.value));
+              },
+              "aria-label": "Agent type",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("option", {
+                  value: "",
+                  children: "No type / default"
+                }, undefined, false, undefined, this),
+                agentTypes.map((type) => /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("option", {
+                  value: type.name,
+                  children: type.name
+                }, type.name, false, undefined, this))
+              ]
+            }, undefined, true, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Input, {
+              value: model,
+              onInput: (e) => setModel(e.currentTarget.value),
+              onChange: (e) => setModel(e.target.value),
+              placeholder: "Optional model override"
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Input, {
+          className: "mt-2",
+          value: issueId,
+          onInput: (e) => setIssueId(e.currentTarget.value),
+          onChange: (e) => setIssueId(e.target.value),
+          placeholder: "Optional Seeds issue id for handoff artifacts"
+        }, undefined, false, undefined, this)
+      ]
+    }, undefined, true, undefined, this)
+  }, undefined, false, undefined, this);
 }
 function AgentCard({
   name: name2,
@@ -30187,9 +30234,10 @@ function AgentCard({
     }
   };
   return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Card, {
-    className: `transition-all duration-1000 ease-out ${removing ? "pointer-events-none translate-y-2 scale-[0.98] border-muted opacity-0" : setupPending ? "border-primary/40 bg-card/70 opacity-100" : stuck ? "border-amber-400/60 bg-amber-400/10 opacity-100" : agent.status === "streaming" ? "border-primary/50 opacity-100" : "opacity-100"}`,
+    className: `${LIVE_AGENT_CARD_CLASS} transition-all duration-1000 ease-out ${removing ? "pointer-events-none translate-y-2 scale-[0.98] border-muted opacity-0" : setupPending ? "border-primary/40 bg-card/70 opacity-100" : stuck ? "border-amber-400/60 bg-amber-400/10 opacity-100" : agent.status === "streaming" ? "border-primary/50 opacity-100" : "opacity-100"}`,
     "aria-busy": setupPending || removing,
     "aria-disabled": interactionsDisabled,
+    "data-live-agent-card": "true",
     children: [
       /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(CardHeader, {
         className: "border-b border-border",

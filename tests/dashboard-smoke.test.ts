@@ -352,7 +352,7 @@ describe("dashboard bundle smoke test", () => {
 				"Pi Lattice",
 			);
 			expect(window.document.getElementById("root")?.textContent).toContain(
-				"No agents running.",
+				"Add Agent",
 			);
 			const roadmapNav = Array.from(
 				window.document.getElementsByTagName("button"),
