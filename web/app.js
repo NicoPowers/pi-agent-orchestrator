@@ -35389,6 +35389,25 @@ function RoadmapPanel({ pushLog }) {
       setLoading(false);
     }
   };
+  const updateIssuePatch = async (issueId, patch2) => {
+    const res = await fetch(`/api/roadmap/issues/${encodeURIComponent(issueId)}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(patch2)
+    });
+    if (!res.ok)
+      throw new Error(await res.text());
+    const nextOverview = await res.json();
+    setOverview(nextOverview);
+  };
+  const updateIssueStatus = async (issueId, status) => {
+    await updateIssuePatch(issueId, { status });
+    pushLog?.(`Updated Roadmap issue ${issueId} status to ${formatStatus(status)}`, "success");
+  };
+  const updateIssueDescription = async (issueId, description) => {
+    await updateIssuePatch(issueId, { description });
+    pushLog?.(`Updated Roadmap issue ${issueId} description`, "success");
+  };
   import_react9.useEffect(() => {
     refresh();
   }, []);
@@ -35424,7 +35443,7 @@ function RoadmapPanel({ pushLog }) {
                 }, undefined, false, undefined, this),
                 /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("p", {
                   className: "mt-1 text-sm text-muted-foreground",
-                  children: "Read-only, epic-first view of active project work."
+                  children: "Epic-first view of active project work. Open an issue to update its status."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
@@ -35461,12 +35480,18 @@ function RoadmapPanel({ pushLog }) {
         backIssue: detailBackIssue,
         onBack: backToIssue,
         onClose: closeIssue,
-        onSelectIssue: selectIssue
+        onSelectIssue: selectIssue,
+        onUpdateStatus: updateIssueStatus,
+        pushLog,
+        onUpdateDescription: updateIssueDescription
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
-function RoadmapSummary({ overview, onSelectIssue }) {
+function RoadmapSummary({
+  overview,
+  onSelectIssue
+}) {
   const hierarchy = import_react9.useMemo(() => buildRoadmapHierarchy(overview), [overview]);
   const focusEpic = import_react9.useMemo(() => findFocusEpic(hierarchy), [hierarchy]);
   const [expandedEpicIds, setExpandedEpicIds] = import_react9.useState(new Set);
@@ -35529,7 +35554,8 @@ function RoadmapSummary({ overview, onSelectIssue }) {
             children: [
               "Source: ",
               overview.source.exists ? "loaded" : "missing",
-              " · ",
+              " ·",
+              " ",
               overview.source.path
             ]
           }, undefined, true, undefined, this)
@@ -35549,7 +35575,11 @@ function RoadmapSummary({ overview, onSelectIssue }) {
     ]
   }, undefined, true, undefined, this);
 }
-function FocusEpic({ group, onSelectIssue, onExpand }) {
+function FocusEpic({
+  group,
+  onSelectIssue,
+  onExpand
+}) {
   const activeCount = group.activeChildren.length;
   return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
     className: "rounded-lg border border-primary/40 bg-primary/5 p-3",
@@ -35604,7 +35634,12 @@ function FocusEpic({ group, onSelectIssue, onExpand }) {
     }, undefined, true, undefined, this)
   }, undefined, false, undefined, this);
 }
-function RoadmapHierarchyView({ hierarchy, expandedEpicIds, onToggleEpic, onSelectIssue }) {
+function RoadmapHierarchyView({
+  hierarchy,
+  expandedEpicIds,
+  onToggleEpic,
+  onSelectIssue
+}) {
   const { active, closed } = splitEpicGroups(hierarchy);
   return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
     className: "space-y-3 rounded-md border border-border p-4",
@@ -35688,7 +35723,12 @@ function RoadmapHierarchyView({ hierarchy, expandedEpicIds, onToggleEpic, onSele
     ]
   }, undefined, true, undefined, this);
 }
-function EpicRow({ group, expanded, onToggleEpic, onSelectIssue }) {
+function EpicRow({
+  group,
+  expanded,
+  onToggleEpic,
+  onSelectIssue
+}) {
   const blockedCount = group.activeChildren.filter((issue) => issue.unresolvedBlockers.length).length;
   return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
     className: "rounded-lg border border-border bg-background/40",
@@ -35771,7 +35811,10 @@ function EpicRow({ group, expanded, onToggleEpic, onSelectIssue }) {
     ]
   }, undefined, true, undefined, this);
 }
-function UngroupedIssues({ issues, onSelectIssue }) {
+function UngroupedIssues({
+  issues,
+  onSelectIssue
+}) {
   const active = sortIssueViews(issues.filter((issue) => issue.status !== "closed"));
   const closed = sortIssueViews(issues.filter((issue) => issue.status === "closed"));
   const total = active.length + closed.length;
@@ -35815,7 +35858,11 @@ function UngroupedIssues({ issues, onSelectIssue }) {
     ]
   }, undefined, true, undefined, this);
 }
-function IssueCard({ issue, compact, onSelectIssue }) {
+function IssueCard({
+  issue,
+  compact,
+  onSelectIssue
+}) {
   const blockerText = issue.unresolvedBlockers.map(formatDependency).join(", ");
   return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("button", {
     type: "button",
@@ -35862,7 +35909,26 @@ function IssueCard({ issue, compact, onSelectIssue }) {
     ]
   }, undefined, true, undefined, this);
 }
-function IssueDetailDialog({ overview, issue, backIssue, onBack, onClose, onSelectIssue }) {
+function IssueDetailDialog({
+  overview,
+  issue,
+  backIssue,
+  onBack,
+  onClose,
+  onSelectIssue,
+  onUpdateStatus,
+  onUpdateDescription,
+  pushLog
+}) {
+  const [draftStatus, setDraftStatus] = import_react9.useState("open");
+  const [statusSaving, setStatusSaving] = import_react9.useState(false);
+  const [statusError, setStatusError] = import_react9.useState("");
+  const [statusMessage, setStatusMessage] = import_react9.useState("");
+  const [descriptionEditing, setDescriptionEditing] = import_react9.useState(false);
+  const [draftDescription, setDraftDescription] = import_react9.useState("");
+  const [descriptionSaving, setDescriptionSaving] = import_react9.useState(false);
+  const [descriptionError, setDescriptionError] = import_react9.useState("");
+  const [descriptionMessage, setDescriptionMessage] = import_react9.useState("");
   const blockers = issue ? overview.dependencyMap.blockers[issue.id] || [] : [];
   const dependents = issue ? overview.dependencyMap.dependents[issue.id] || [] : [];
   const epicGroup = import_react9.useMemo(() => {
@@ -35873,11 +35939,80 @@ function IssueDetailDialog({ overview, issue, backIssue, onBack, onClose, onSele
   const epicBuckets = epicGroup ? bucketEpicTasks(epicGroup, overview) : undefined;
   const isEpic = issue?.type === "epic";
   const returnEpicId = backIssue?.id || (isEpic ? issue?.id : undefined);
+  import_react9.useEffect(() => {
+    if (!issue)
+      return;
+    setDraftStatus(toEditableStatus(issue.status));
+  }, [issue?.id, issue?.status]);
+  import_react9.useEffect(() => {
+    if (!issue)
+      return;
+    setDraftDescription(issue.description || "");
+    setDescriptionEditing(false);
+  }, [issue?.id, issue?.description]);
+  import_react9.useEffect(() => {
+    setStatusError("");
+    setStatusMessage("");
+    setDescriptionError("");
+    setDescriptionMessage("");
+  }, [issue?.id]);
+  const descriptionDirty = !!issue && draftDescription !== (issue.description || "");
+  const saveStatus = async () => {
+    if (!issue || draftStatus === issue.status)
+      return;
+    setStatusSaving(true);
+    setStatusError("");
+    setStatusMessage("");
+    try {
+      await onUpdateStatus(issue.id, draftStatus);
+      setStatusMessage(`Status updated to ${formatStatus(draftStatus)}`);
+    } catch (err) {
+      const message = err?.message || "Failed to update status";
+      setDraftStatus(toEditableStatus(issue.status));
+      setStatusError(`Failed to update status: ${message}`);
+      pushLog?.(`Failed to update Roadmap issue ${issue.id}: ${message}`, "error");
+    } finally {
+      setStatusSaving(false);
+    }
+  };
+  const startDescriptionEdit = () => {
+    if (!issue)
+      return;
+    setDraftDescription(issue.description || "");
+    setDescriptionEditing(true);
+    setDescriptionError("");
+    setDescriptionMessage("");
+  };
+  const cancelDescriptionEdit = () => {
+    setDraftDescription(issue?.description || "");
+    setDescriptionEditing(false);
+    setDescriptionError("");
+  };
+  const saveDescription = async () => {
+    if (!issue)
+      return;
+    setDescriptionSaving(true);
+    setDescriptionError("");
+    setDescriptionMessage("");
+    try {
+      await onUpdateDescription(issue.id, draftDescription);
+      setDescriptionEditing(false);
+      setDescriptionMessage("Description updated");
+    } catch (err) {
+      const message = err?.message || "Failed to update description";
+      setDescriptionError(`Failed to update description: ${message}`);
+      pushLog?.(`Failed to update Roadmap issue ${issue.id} description: ${message}`, "error");
+    } finally {
+      setDescriptionSaving(false);
+    }
+  };
   return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Dialog, {
     open: !!issue,
     title: issue ? detailTitle(issue.type) : "Issue Details",
     onOpenChange: onClose,
     className: isEpic ? "max-w-6xl" : "max-w-4xl",
+    confirmOnClose: descriptionDirty,
+    confirmCloseMessage: "Discard unsaved description changes?",
     children: issue && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
       className: "space-y-4",
       children: [
@@ -35917,6 +36052,63 @@ function IssueDetailDialog({ overview, issue, backIssue, onBack, onClose, onSele
             /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("h3", {
               className: "mt-2 text-xl font-semibold",
               children: issue.title
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+          className: "rounded border border-border bg-card/40 p-3",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+              className: "flex flex-wrap items-end gap-2",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("label", {
+                  className: "text-sm font-semibold",
+                  children: [
+                    "Status",
+                    /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("select", {
+                      "aria-label": "Issue status",
+                      className: "mt-1 block rounded border border-border bg-background px-2 py-1 text-sm font-normal",
+                      value: draftStatus,
+                      disabled: statusSaving,
+                      onChange: (event) => {
+                        setDraftStatus(event.target.value);
+                        setStatusError("");
+                        setStatusMessage("");
+                      },
+                      children: [
+                        /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("option", {
+                          value: "open",
+                          children: "Open"
+                        }, undefined, false, undefined, this),
+                        /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("option", {
+                          value: "in_progress",
+                          children: "In progress"
+                        }, undefined, false, undefined, this),
+                        /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("option", {
+                          value: "closed",
+                          children: "Closed"
+                        }, undefined, false, undefined, this)
+                      ]
+                    }, undefined, true, undefined, this)
+                  ]
+                }, undefined, true, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Button, {
+                  type: "button",
+                  variant: "secondary",
+                  className: "px-2 py-1 text-xs",
+                  disabled: statusSaving || draftStatus === issue.status,
+                  onClick: saveStatus,
+                  children: statusSaving ? "Saving…" : "Save status"
+                }, undefined, false, undefined, this)
+              ]
+            }, undefined, true, undefined, this),
+            statusMessage && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("p", {
+              className: "mt-2 text-sm text-primary",
+              children: statusMessage
+            }, undefined, false, undefined, this),
+            statusError && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("p", {
+              className: "mt-2 text-sm text-destructive",
+              children: statusError
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this),
@@ -35964,13 +36156,63 @@ function IssueDetailDialog({ overview, issue, backIssue, onBack, onClose, onSele
                 }, undefined, true, undefined, this),
                 /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("h4", {
-                      className: "mb-2 text-sm font-semibold",
-                      children: "Description"
-                    }, undefined, false, undefined, this),
                     /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+                      className: "mb-2 flex flex-wrap items-center justify-between gap-2",
+                      children: [
+                        /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("h4", {
+                          className: "text-sm font-semibold",
+                          children: "Description"
+                        }, undefined, false, undefined, this),
+                        descriptionEditing ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+                          className: "flex flex-wrap gap-2",
+                          children: [
+                            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Button, {
+                              type: "button",
+                              variant: "secondary",
+                              className: "px-2 py-1 text-xs",
+                              disabled: descriptionSaving || !descriptionDirty,
+                              onClick: saveDescription,
+                              children: descriptionSaving ? "Saving…" : "Save description"
+                            }, undefined, false, undefined, this),
+                            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Button, {
+                              type: "button",
+                              variant: "ghost",
+                              className: "px-2 py-1 text-xs",
+                              disabled: descriptionSaving,
+                              onClick: cancelDescriptionEdit,
+                              children: "Cancel"
+                            }, undefined, false, undefined, this)
+                          ]
+                        }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Button, {
+                          type: "button",
+                          variant: "secondary",
+                          className: "px-2 py-1 text-xs",
+                          onClick: startDescriptionEdit,
+                          children: "Edit description"
+                        }, undefined, false, undefined, this)
+                      ]
+                    }, undefined, true, undefined, this),
+                    descriptionEditing ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("textarea", {
+                      "aria-label": "Issue description",
+                      className: "min-h-48 w-full rounded border border-border bg-background/50 p-3 text-sm text-muted-foreground",
+                      value: draftDescription,
+                      disabled: descriptionSaving,
+                      onInput: (event) => {
+                        setDraftDescription(event.currentTarget.value);
+                        setDescriptionError("");
+                        setDescriptionMessage("");
+                      }
+                    }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
                       className: "max-h-80 overflow-auto whitespace-pre-wrap rounded border border-border bg-background/50 p-3 text-sm text-muted-foreground",
                       children: issue.description || "No description."
+                    }, undefined, false, undefined, this),
+                    descriptionMessage && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("p", {
+                      className: "mt-2 text-sm text-primary",
+                      children: descriptionMessage
+                    }, undefined, false, undefined, this),
+                    descriptionError && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("p", {
+                      className: "mt-2 text-sm text-destructive",
+                      children: descriptionError
                     }, undefined, false, undefined, this)
                   ]
                 }, undefined, true, undefined, this),
@@ -36001,7 +36243,11 @@ function IssueDetailDialog({ overview, issue, backIssue, onBack, onClose, onSele
     }, undefined, true, undefined, this)
   }, undefined, false, undefined, this);
 }
-function EpicTasksPanel({ buckets, epicId, onSelectIssue }) {
+function EpicTasksPanel({
+  buckets,
+  epicId,
+  onSelectIssue
+}) {
   const total = Object.values(buckets).reduce((sum, issues) => sum + issues.length, 0);
   const active = total - buckets.closed.length;
   return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
@@ -36080,7 +36326,12 @@ function EpicTasksPanel({ buckets, epicId, onSelectIssue }) {
     ]
   }, undefined, true, undefined, this);
 }
-function TaskBucketSection({ title, issues, muted, onSelectIssue }) {
+function TaskBucketSection({
+  title,
+  issues,
+  muted,
+  onSelectIssue
+}) {
   return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("section", {
     className: muted ? "opacity-70" : undefined,
     children: [
@@ -36115,7 +36366,13 @@ function TaskBucketSection({ title, issues, muted, onSelectIssue }) {
     ]
   }, undefined, true, undefined, this);
 }
-function DependencyList({ title, dependencies, backIssueId, onSelectIssue, onClose }) {
+function DependencyList({
+  title,
+  dependencies,
+  backIssueId,
+  onSelectIssue,
+  onClose
+}) {
   return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
     children: [
       /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("h4", {
@@ -36188,7 +36445,14 @@ function findFocusEpic(hierarchy) {
   return candidates.find((group) => group.epic.status === "in_progress") || [...candidates].sort((a, b) => (b.epic.updatedAt ?? "").localeCompare(a.epic.updatedAt ?? ""))[0];
 }
 function flattenHierarchy(hierarchy) {
-  return [...hierarchy.epics.flatMap((group) => [group.epic, ...group.activeChildren, ...group.closedChildren]), ...hierarchy.ungrouped];
+  return [
+    ...hierarchy.epics.flatMap((group) => [
+      group.epic,
+      ...group.activeChildren,
+      ...group.closedChildren
+    ]),
+    ...hierarchy.ungrouped
+  ];
 }
 function detailTitle(type) {
   if (type === "epic")
@@ -36200,6 +36464,11 @@ function formatDependency(dependency) {
 }
 function formatStatus(status) {
   return status.replace(/_/g, " ");
+}
+function toEditableStatus(status) {
+  if (status === "in_progress" || status === "closed")
+    return status;
+  return "open";
 }
 function formatDate(value) {
   return value ? new Date(value).toLocaleString() : undefined;
