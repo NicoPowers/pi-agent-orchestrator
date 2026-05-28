@@ -20,6 +20,7 @@ import {
 	resolveIssueArtifactMetadata,
 } from "./artifacts.js";
 import {
+	defaultObservabilitySessionId,
 	prepareAgentDebugArtifacts,
 	persistAgentDebugSnapshot,
 } from "./debug-artifacts.js";
@@ -73,9 +74,37 @@ export function getPiInvocation(args: string[]): {
 	return { command: "pi", args };
 }
 
+const LATTICE_SESSION_RUN_ID = `run-${defaultObservabilitySessionId()}`;
+
+function sanitizeSessionIdPart(
+	value: string | undefined,
+	fallback: string,
+): string {
+	const sanitized = (value || fallback)
+		.trim()
+		.replace(/[^A-Za-z0-9._-]+/g, "-")
+		.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, "")
+		.slice(0, 80)
+		.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, "");
+	return sanitized || fallback;
+}
+
+export function buildAgentSessionId(options: {
+	agentId: string;
+	runId?: string;
+}): string {
+	return [
+		"pi-lattice",
+		sanitizeSessionIdPart(options.runId || LATTICE_SESSION_RUN_ID, "run"),
+		sanitizeSessionIdPart(options.agentId, "agent"),
+	].join(".");
+}
+
 export function buildPiArgs(options: {
 	model?: string;
 	definition?: AgentDefinition;
+	agentId?: string;
+	sessionRunId?: string;
 	promptPath: string | null;
 	delegatePromptPath: string | null;
 	artifactPromptPath?: string | null;
@@ -86,6 +115,8 @@ export function buildPiArgs(options: {
 	const {
 		model,
 		definition,
+		agentId,
+		sessionRunId,
 		promptPath,
 		delegatePromptPath,
 		artifactPromptPath,
@@ -104,7 +135,11 @@ export function buildPiArgs(options: {
 	const disableContextFiles =
 		!!definition?.noContextFiles || !!definition?.isolated;
 
-	const piArgs = ["--mode", "rpc", "--no-session"];
+	const agentSessionId = buildAgentSessionId({
+		agentId: agentId || definition?.name || "agent",
+		runId: sessionRunId,
+	});
+	const piArgs = ["--mode", "rpc", "--session-id", agentSessionId];
 	if (effectiveModel) piArgs.push("--model", effectiveModel);
 	if (effectiveThinking) piArgs.push("--thinking", effectiveThinking);
 	if (disableTools) piArgs.push("--no-tools");
@@ -418,6 +453,7 @@ export async function spawnAgent(
 	const piArgs = buildPiArgs({
 		model,
 		definition,
+		agentId: id,
 		promptPath,
 		delegatePromptPath,
 		artifactPromptPath,

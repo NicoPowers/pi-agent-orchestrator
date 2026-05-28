@@ -58,7 +58,12 @@ describe("spawn planning", () => {
 
 		expect(args).toContain("--mode");
 		expect(args).toContain("rpc");
-		expect(args).toContain("--no-session");
+		expect(args).toContain("--session-id");
+		const sessionId = args[args.indexOf("--session-id") + 1];
+		expect(sessionId).toStartWith("pi-lattice.run-");
+		expect(sessionId).toEndWith(".coder");
+		expect(sessionId).toMatch(/^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])$/);
+		expect(args).not.toContain("--no-session");
 		expect(args).toContain("definition-model");
 		expect(args).toContain("--thinking");
 		expect(args).toContain("low");
@@ -77,6 +82,23 @@ describe("spawn planning", () => {
 			2,
 		);
 		expect(args.join(" ")).not.toContain("/tmp/workspace");
+	});
+
+	it("builds stable valid Pi session IDs for child agents", async () => {
+		const { buildAgentSessionId } = await import(
+			"../extensions/multi-agent/spawn.js"
+		);
+
+		const sessionId = buildAgentSessionId({
+			agentId: "Lead Agent!!",
+			runId: "run:2026/05/28",
+		});
+
+		expect(sessionId).toBe("pi-lattice.run-2026-05-28.Lead-Agent");
+		expect(
+			buildAgentSessionId({ agentId: "Lead Agent!!", runId: "run:2026/05/28" }),
+		).toBe(sessionId);
+		expect(sessionId).toMatch(/^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])$/);
 	});
 
 	it("keeps exact tool allowlists when extra extensions register runtime tools", async () => {
