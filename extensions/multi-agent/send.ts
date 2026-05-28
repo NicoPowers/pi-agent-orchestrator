@@ -1,4 +1,9 @@
-import { appendAgentEvent, type Agent, log } from "./state.js";
+import {
+	appendAgentEvent,
+	type Agent,
+	log,
+	type NativePiSessionMetadata,
+} from "./state.js";
 import { persistAgentDebugSnapshot } from "./debug-artifacts.js";
 
 function isBrokenInputError(err: any): boolean {
@@ -128,6 +133,50 @@ export function rpcCommand<T = any>(
 			reject(err);
 		});
 	});
+}
+
+export interface RpcBashOptions {
+	excludeFromContext?: boolean;
+	timeoutMs?: number;
+}
+
+export function rpcBashCommand<T = any>(
+	agent: Agent,
+	command: string,
+	options: RpcBashOptions | number = {},
+): Promise<T> {
+	const resolvedOptions: RpcBashOptions =
+		typeof options === "number" ? { timeoutMs: options } : options;
+	return rpcCommand<T>(
+		agent,
+		{
+			type: "bash",
+			command,
+			excludeFromContext: resolvedOptions.excludeFromContext ?? true,
+		},
+		resolvedOptions.timeoutMs,
+	);
+}
+
+export async function refreshAgentNativeSession(
+	agent: Agent,
+	timeoutMs = 5_000,
+): Promise<NativePiSessionMetadata | undefined> {
+	const state = await rpcCommand<any>(agent, { type: "get_state" }, timeoutMs);
+	const metadata: NativePiSessionMetadata = {
+		sessionId:
+			typeof state?.sessionId === "string" ? state.sessionId : undefined,
+		sessionFile:
+			typeof state?.sessionFile === "string" ? state.sessionFile : undefined,
+		sessionName:
+			typeof state?.sessionName === "string" ? state.sessionName : undefined,
+		reportedAt: Date.now(),
+	};
+	if (!metadata.sessionId && !metadata.sessionFile && !metadata.sessionName) {
+		return undefined;
+	}
+	agent.nativeSession = metadata;
+	return metadata;
 }
 
 export type AgentSendUpdate =

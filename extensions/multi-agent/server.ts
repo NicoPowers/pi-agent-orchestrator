@@ -135,6 +135,7 @@ function serializeAgent(agent: Agent) {
 		issueId: agent.issueId,
 		artifactPath: agent.artifactPath,
 		artifactFiles: agent.artifactFiles,
+		nativeSession: agent.nativeSession,
 		runtimeTools: agent.runtimeTools,
 		pendingSend: agent.pendingSend,
 		turnDiagnostics: timeline.metadata.turnDiagnostics,
@@ -345,11 +346,28 @@ export async function startServer(deps: ServerDeps): Promise<ServerHandle> {
 							{ type: "get_session_stats" },
 							5_000,
 						);
-						const state = await rpcCommand(
+						const state = await rpcCommand<any>(
 							agent,
 							{ type: "get_state" },
 							5_000,
 						).catch(() => undefined);
+						if (state) {
+							agent.nativeSession = {
+								sessionId:
+									typeof state.sessionId === "string"
+										? state.sessionId
+										: agent.nativeSession?.sessionId,
+								sessionFile:
+									typeof state.sessionFile === "string"
+										? state.sessionFile
+										: agent.nativeSession?.sessionFile,
+								sessionName:
+									typeof state.sessionName === "string"
+										? state.sessionName
+										: agent.nativeSession?.sessionName,
+								reportedAt: Date.now(),
+							};
+						}
 						return [name, { stats, state }];
 					} catch (err: any) {
 						return [name, { error: err.message }];

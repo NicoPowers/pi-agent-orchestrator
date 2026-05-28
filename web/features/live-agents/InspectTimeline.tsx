@@ -146,6 +146,20 @@ export function InspectTimeline({
 					)}
 				</InspectSection>
 			</section>
+			<InspectSection title="Pi session">
+				<InspectField
+					label="id"
+					value={metadata.nativeSession?.sessionId || "—"}
+				/>
+				<InspectField
+					label="file"
+					value={metadata.nativeSession?.sessionFile || "—"}
+				/>
+				<InspectField
+					label="name"
+					value={metadata.nativeSession?.sessionName || "—"}
+				/>
+			</InspectSection>
 			<InspectSection title="Handoff">
 				<InspectField label="issue" value={metadata.issueId || "—"} />
 				<InspectField label="artifacts" value={metadata.artifactPath || "—"} />

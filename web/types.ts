@@ -45,6 +45,13 @@ export interface PendingAgentSend {
 	status: Extract<AgentStatus, "queued" | "writing" | "waiting" | "streaming">;
 }
 
+export interface NativePiSessionMetadata {
+	sessionId?: string;
+	sessionFile?: string;
+	sessionName?: string;
+	reportedAt?: number;
+}
+
 export interface TurnDiagnostics {
 	stuck: boolean;
 	elapsedMs?: number;
@@ -67,6 +74,7 @@ export interface AgentInfo {
 	issueId?: string;
 	artifactPath?: string;
 	artifactFiles?: IssueArtifactFiles;
+	nativeSession?: NativePiSessionMetadata;
 	runtimeTools?: RuntimeToolSnapshot;
 	pendingSend?: PendingAgentSend;
 	turnDiagnostics?: TurnDiagnostics;

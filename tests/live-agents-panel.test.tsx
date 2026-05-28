@@ -695,6 +695,42 @@ describe("Live Agents dashboard", () => {
 		}
 	});
 
+	it("shows native Pi session metadata on agent cards", async () => {
+		const sessionFile = "/repo/.pi/sessions/pi-lattice.run-abc.lead.jsonl";
+		const { window, cleanup } = await render(
+			<AgentsPanel
+				agents={{
+					lead: {
+						name: "lead",
+						status: "idle",
+						definition: "lead",
+						children: [],
+						turns: 0,
+						worktree: "/tmp/pi-worktree-lead",
+						nativeSession: {
+							sessionId: "pi-lattice.run-abc.lead",
+							sessionFile,
+						},
+					},
+				}}
+				stats={{}}
+				onInspect={() => {}}
+				pushLog={() => {}}
+			/>,
+		);
+		try {
+			const text = window.document.body.textContent || "";
+			expect(text).toContain("Pi session:");
+			expect(text).toContain("pi-lattice.run-abc.lead");
+			const session = Array.from(window.document.querySelectorAll("span")).find(
+				(element) => element.textContent?.includes("Pi session:"),
+			);
+			expect(session?.getAttribute("title")).toBe(sessionFile);
+		} finally {
+			await cleanup();
+		}
+	});
+
 	it("shows issue handoff metadata on agent cards", async () => {
 		const artifactPath =
 			"/workspaces/repo/.pi/pi-lattice/issues/pi-lattice-f91c";

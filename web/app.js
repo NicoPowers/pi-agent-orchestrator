@@ -29841,6 +29841,11 @@ function shortPath(p) {
     return "";
   return p.length > 42 ? "…" + p.slice(-39) : p;
 }
+function shortSessionId(id) {
+  if (!id)
+    return "";
+  return id.length > 36 ? `${id.slice(0, 16)}…${id.slice(-16)}` : id;
+}
 function statusVariant(status) {
   if (status === "idle")
     return "success";
@@ -30294,6 +30299,16 @@ function AgentCard({
       pushLog(`Artifact path: ${agent.artifactPath}`);
     }
   };
+  const copyNativeSession = async () => {
+    const nativeSession = agent.nativeSession;
+    const value = nativeSession?.sessionFile || nativeSession?.sessionId || "";
+    try {
+      await navigator.clipboard.writeText(value);
+      pushLog(`Copied Pi session metadata for ${name2}`, "success");
+    } catch {
+      pushLog(`Pi session: ${value || "unknown"}`);
+    }
+  };
   return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Card, {
     className: `${LIVE_AGENT_CARD_CLASS} transition-all duration-1000 ease-out ${removing ? "pointer-events-none translate-y-2 scale-[0.98] border-muted opacity-0" : setupPending ? "border-primary/40 bg-card/70 opacity-100" : stuck ? "border-amber-400/60 bg-amber-400/10 opacity-100" : agent.status === "streaming" ? "border-primary/50 opacity-100" : "opacity-100"}`,
     "aria-busy": setupPending || removing,
@@ -30388,6 +30403,24 @@ function AgentCard({
                   children: [
                     "issue: ",
                     agent.issueId
+                  ]
+                }, undefined, true, undefined, this),
+                agent.nativeSession?.sessionId && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(jsx_dev_runtime6.Fragment, {
+                  children: [
+                    /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+                      title: agent.nativeSession.sessionFile || agent.nativeSession.sessionId,
+                      children: [
+                        "Pi session: ",
+                        shortSessionId(agent.nativeSession.sessionId)
+                      ]
+                    }, undefined, true, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Button, {
+                      variant: "secondary",
+                      className: "px-2 py-1 text-xs",
+                      onClick: copyNativeSession,
+                      disabled: interactionsDisabled,
+                      children: "Copy Session"
+                    }, undefined, false, undefined, this)
                   ]
                 }, undefined, true, undefined, this),
                 agent.artifactPath && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(jsx_dev_runtime6.Fragment, {
@@ -30705,6 +30738,23 @@ function InspectTimeline({
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(InspectSection, {
+        title: "Pi session",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(InspectField, {
+            label: "id",
+            value: metadata.nativeSession?.sessionId || "—"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(InspectField, {
+            label: "file",
+            value: metadata.nativeSession?.sessionFile || "—"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(InspectField, {
+            label: "name",
+            value: metadata.nativeSession?.sessionName || "—"
+          }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(InspectSection, {

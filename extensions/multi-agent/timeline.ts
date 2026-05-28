@@ -45,6 +45,7 @@ export interface AgentTimeline {
 		turnDiagnostics?: TurnDiagnostics;
 		turns: number;
 		launch?: Agent["launch"];
+		nativeSession?: Agent["nativeSession"];
 		observabilityPath?: string;
 	};
 	definition?: ReturnType<typeof summarizeDefinition>;
@@ -88,6 +89,7 @@ export function buildAgentTimeline(
 			}),
 			turns: Math.floor(agent.history.length / 2),
 			launch: agent.launch,
+			nativeSession: agent.nativeSession,
 			observabilityPath: agent.observability?.agentPath,
 		},
 		definition: agent.definition

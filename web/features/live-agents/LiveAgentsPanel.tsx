@@ -23,6 +23,11 @@ function shortPath(p?: string): string {
 	return p.length > 42 ? "…" + p.slice(-39) : p;
 }
 
+function shortSessionId(id?: string): string {
+	if (!id) return "";
+	return id.length > 36 ? `${id.slice(0, 16)}…${id.slice(-16)}` : id;
+}
+
 function statusVariant(
 	status: AgentInfo["status"],
 ): "default" | "success" | "destructive" | "outline" {
@@ -430,6 +435,16 @@ function AgentCard({
 			pushLog(`Artifact path: ${agent.artifactPath}`);
 		}
 	};
+	const copyNativeSession = async () => {
+		const nativeSession = agent.nativeSession;
+		const value = nativeSession?.sessionFile || nativeSession?.sessionId || "";
+		try {
+			await navigator.clipboard.writeText(value);
+			pushLog(`Copied Pi session metadata for ${name}`, "success");
+		} catch {
+			pushLog(`Pi session: ${value || "unknown"}`);
+		}
+	};
 	return (
 		<Card
 			className={`${LIVE_AGENT_CARD_CLASS} transition-all duration-1000 ease-out ${
@@ -499,6 +514,26 @@ function AgentCard({
 							)}
 							{agent.issueId && (
 								<Badge variant="outline">issue: {agent.issueId}</Badge>
+							)}
+							{agent.nativeSession?.sessionId && (
+								<>
+									<span
+										title={
+											agent.nativeSession.sessionFile ||
+											agent.nativeSession.sessionId
+										}
+									>
+										Pi session: {shortSessionId(agent.nativeSession.sessionId)}
+									</span>
+									<Button
+										variant="secondary"
+										className="px-2 py-1 text-xs"
+										onClick={copyNativeSession}
+										disabled={interactionsDisabled}
+									>
+										Copy Session
+									</Button>
+								</>
 							)}
 							{agent.artifactPath && (
 								<>

@@ -82,6 +82,39 @@ describe("InspectTimeline", () => {
 		}
 	});
 
+	it("renders native Pi session metadata for the inspected agent", async () => {
+		const { window, cleanup } = await render(
+			<InspectTimeline
+				timeline={{
+					metadata: {
+						name: "lead",
+						status: "idle",
+						worktree: "/tmp/pi-worktree-lead",
+						children: [],
+						turns: 0,
+						nativeSession: {
+							sessionId: "pi-lattice.run-abc.lead",
+							sessionFile: "/repo/.pi/sessions/pi-lattice.run-abc.lead.jsonl",
+							sessionName: "lead session",
+						},
+					},
+					entries: [],
+				}}
+			/>,
+		);
+		try {
+			const text = window.document.body.textContent || "";
+			expect(text).toContain("Pi session");
+			expect(text).toContain("pi-lattice.run-abc.lead");
+			expect(text).toContain("lead session");
+			expect(text).toContain(
+				"/repo/.pi/sessions/pi-lattice.run-abc.lead.jsonl",
+			);
+		} finally {
+			await cleanup();
+		}
+	});
+
 	it("renders detailed context and cost telemetry for the inspected agent", async () => {
 		const { window, cleanup } = await render(
 			<InspectTimeline

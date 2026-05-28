@@ -13,7 +13,11 @@ import {
 	nonSpawnableAgentReason,
 } from "./definitions.js";
 import { createWorktree } from "./worktree.js";
-import { markAgentInputError, sendToAgent } from "./send.js";
+import {
+	markAgentInputError,
+	refreshAgentNativeSession,
+	sendToAgent,
+} from "./send.js";
 import { broadcast } from "./server.js";
 import {
 	renderIssueArtifactInstructions,
@@ -461,6 +465,9 @@ export async function spawnAgent(
 		delegateExtensionPath,
 		extraExtPaths,
 	});
+	const sessionIdIndex = piArgs.indexOf("--session-id");
+	const launchSessionId =
+		sessionIdIndex >= 0 ? piArgs[sessionIdIndex + 1] : undefined;
 	const piInvocation = getPiInvocation(piArgs);
 	const launch = buildProcessLaunch({ worktreePath, piInvocation });
 
@@ -509,10 +516,18 @@ export async function spawnAgent(
 			pid: proc.pid,
 			startedAt: Date.now(),
 		},
+		nativeSession: launchSessionId
+			? { sessionId: launchSessionId, reportedAt: Date.now() }
+			: undefined,
 		observability,
 		_rpcRequests: new Map(),
 	};
 	persistAgentDebugSnapshot(agent, { repoCwd });
+	void refreshAgentNativeSession(agent, 2_000)
+		.then(() => persistAgentDebugSnapshot(agent, { repoCwd }))
+		.catch(() => {
+			/* get_state is best-effort during startup */
+		});
 
 	const flush = () => {
 		const lines = agent.buffer.split("\n");

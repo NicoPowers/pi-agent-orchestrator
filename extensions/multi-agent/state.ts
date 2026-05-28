@@ -89,6 +89,13 @@ export interface AgentLaunchMetadata {
 	startedAt: number;
 }
 
+export interface NativePiSessionMetadata {
+	sessionId?: string;
+	sessionFile?: string;
+	sessionName?: string;
+	reportedAt: number;
+}
+
 export interface AgentObservabilityArtifacts {
 	sessionId: string;
 	agentId: string;
@@ -118,6 +125,7 @@ export interface Agent {
 	dashboardVisible?: boolean;
 	pendingSend?: PendingAgentSend;
 	launch?: AgentLaunchMetadata;
+	nativeSession?: NativePiSessionMetadata;
 	observability?: AgentObservabilityArtifacts;
 	_currentSend?: Promise<void>;
 	_nextTurn?: { resolve: () => void; reject: (e: Error) => void };

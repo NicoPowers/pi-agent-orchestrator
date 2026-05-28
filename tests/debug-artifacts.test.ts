@@ -47,6 +47,12 @@ function makeAgent(overrides: Partial<Agent> = {}): Agent {
 			pid: 123,
 			startedAt: 1_700_000_000_000,
 		},
+		nativeSession: {
+			sessionId: "pi-lattice.run-123.lead-one",
+			sessionFile: "/repo/.pi/sessions/pi-lattice.run-123.lead-one.jsonl",
+			sessionName: "lead one",
+			reportedAt: 1_700_000_000_100,
+		},
 		...overrides,
 	};
 }
@@ -76,6 +82,11 @@ describe("agent debug artifacts", () => {
 			expect(record?.timeline.metadata.launch).toMatchObject({
 				command: "pi",
 				cwd: "/tmp/pi-worktree-lead",
+			});
+			expect(record?.timeline.metadata.nativeSession).toMatchObject({
+				sessionId: "pi-lattice.run-123.lead-one",
+				sessionFile: "/repo/.pi/sessions/pi-lattice.run-123.lead-one.jsonl",
+				sessionName: "lead one",
 			});
 			expect(record?.timeline.stderrTail).toBe("warn");
 			expect(artifacts.timelinePath).toContain(

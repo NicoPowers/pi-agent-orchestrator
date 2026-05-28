@@ -1,5 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import {
+	refreshAgentNativeSession,
+	rpcBashCommand,
 	rpcCommand,
 	sendToAgent,
 	steerAgent,
@@ -94,6 +96,55 @@ async function expectRejectionMessage(
 }
 
 describe("sendToAgent", () => {
+	it("runs internal RPC bash commands excluded from child model context by default", async () => {
+		const { agent, writes } = makeAgent({}, (a, chunk) => {
+			const command = JSON.parse(chunk);
+			queueMicrotask(() => {
+				const pending = a._rpcRequests?.get(command.id);
+				if (!pending) return;
+				clearTimeout(pending.timer);
+				a._rpcRequests?.delete(command.id);
+				pending.resolve({ output: "ok", exitCode: 0, cancelled: false });
+			});
+		});
+
+		await rpcBashCommand(agent, "git status --short", 1_000);
+
+		const command = JSON.parse(writes[0]!.trim());
+		expect(command).toMatchObject({
+			type: "bash",
+			command: "git status --short",
+			excludeFromContext: true,
+		});
+	});
+
+	it("captures native Pi session metadata from RPC get_state", async () => {
+		const { agent } = makeAgent({}, (a, chunk) => {
+			const command = JSON.parse(chunk);
+			queueMicrotask(() => {
+				const pending = a._rpcRequests?.get(command.id);
+				if (!pending) return;
+				clearTimeout(pending.timer);
+				a._rpcRequests?.delete(command.id);
+				pending.resolve({
+					sessionId: "pi-lattice.run-abc.lead",
+					sessionFile: "/repo/.pi/sessions/pi-lattice.run-abc.lead.jsonl",
+					sessionName: "lead session",
+				});
+			});
+		});
+
+		const metadata = await refreshAgentNativeSession(agent, 1_000);
+
+		expect(metadata).toMatchObject({
+			sessionId: "pi-lattice.run-abc.lead",
+			sessionFile: "/repo/.pi/sessions/pi-lattice.run-abc.lead.jsonl",
+			sessionName: "lead session",
+		});
+		expect(agent.nativeSession).toMatchObject(metadata!);
+		expect(typeof agent.nativeSession?.reportedAt).toBe("number");
+	});
+
 	it("writes prompt RPC, records user history, and clears previous text", async () => {
 		const { agent, writes } = makeAgent();
 
